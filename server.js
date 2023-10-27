@@ -1,17 +1,23 @@
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+dotenv.config({ path: "./config.env" });
+const app = require("./app");
 
-require('dotenv').config();
-const mongoose = require('mongoose');
-const express = require('express');
-const app = express();
-
-
-
-mongoose.connect('mongodb://127.0.0.1/gigachat')
-  .then(() => console.log('Connected to MongoDB...'))
-  .catch(err => console.error('Could not connect to MongoDB...'));
-
-app.use(express.json());
+const DB = process.env.DATABASE.replace(
+  "<PASSWORD>",
+  process.env.DATABASE_PASSWORD
+);
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("DB connection successful!"))
+  .catch((error) => {
+    console.error("Error connecting to the database:", error);
+  });
 
 const port = process.env.PORT || 3000;
-
-app.listen(port, () => console.log(`Listening on port ${port}...`));
+const server = app.listen(port, () => {
+  console.log(`App running on port ${port}...`);
+}); // the result of calling app.listen is a server
