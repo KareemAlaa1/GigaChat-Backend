@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const { mongoose, Schema } = require('mongoose');
 const validator = require('validator');
 
 const userSchema = new Schema({
@@ -34,9 +33,7 @@ const userSchema = new Schema({
   phone: {
     type: Number,
     validate: {
-      validator: (value) => {
-        return typeof value === 'integer';
-      },
+      validator: (value) => typeof value === 'number',
       message: 'phone must be numbers',
     },
   },

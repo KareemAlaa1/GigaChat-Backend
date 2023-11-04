@@ -1,8 +1,7 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+const { mongoose, Schema } = require('mongoose');
 const validator = require('validator');
 
-var chatSchema = new Schema({
+const chatSchema = new Schema({
   usersList: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -17,6 +16,6 @@ var chatSchema = new Schema({
   ],
 });
 
-const Chat = mongoose.model('Chat', chatSchema)
+const Chat = mongoose.model('Chat', chatSchema);
 
-module.exports = Chat
+module.exports = Chat;
