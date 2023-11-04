@@ -36,3 +36,7 @@ const notificationSchema = new Schema({
     ref: 'User',
   },
 });
+
+const Notification = mongoose.model('Notification', notificationSchema);
+
+module.exports = Notification;
