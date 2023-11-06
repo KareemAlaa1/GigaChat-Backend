@@ -1,6 +1,6 @@
-const { mongoose, Schema } = require('mongoose');
+const mongoose = require('mongoose');
 
-const tweetSchema = new Schema({
+const tweetSchema = new mongoose.Schema({
   user_id: {
     type: Schema.Types.ObjectId,
     ref: 'User',

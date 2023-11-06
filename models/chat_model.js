@@ -1,7 +1,7 @@
-const { mongoose, Schema } = require('mongoose');
+const mongoose = require('mongoose');
 const validator = require('validator');
 
-const chatSchema = new Schema({
+const chatSchema = new mongoose.Schema({
   usersList: [
     {
       type: mongoose.Schema.Types.ObjectId,
