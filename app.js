@@ -20,7 +20,8 @@ app.use((req, res, next) => {
 
 
 //  ROUTES
-app.use('/api/v1/users', userRouter);
+// app.use('/api/v1/users', userRouter);
+app.use('/api/user', userRouter);
 
 // Handling  Wrong Route Req. 
 app.all('*', (req, res, next) => {
@@ -31,5 +32,3 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler); // the final middleWare for express
 
 module.exports = app;
-
-
