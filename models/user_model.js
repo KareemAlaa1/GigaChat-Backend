@@ -5,6 +5,7 @@ const userSchema = new Schema({
   username: {
     type: String,
     required: true,
+    unique: true,
   },
   email: {
     type: String,
@@ -13,6 +14,7 @@ const userSchema = new Schema({
       validator: (value) => validator.isEmail(value),
       message: 'Email is invalid',
     },
+    unique: true,
   },
   password: {
     type: String,
@@ -36,6 +38,7 @@ const userSchema = new Schema({
       validator: (value) => typeof value === 'number',
       message: 'phone must be numbers',
     },
+    unique: true,
   },
   nickname: {
     type: String,

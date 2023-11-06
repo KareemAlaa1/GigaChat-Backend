@@ -4,6 +4,7 @@ const hashtagSchema = new Schema({
   title: {
     type: String,
     required: [true, 'A hashtag must have a title'],
+    unique: true,
   },
   count: {
     type: Number,
@@ -12,8 +13,10 @@ const hashtagSchema = new Schema({
   },
   tweet_list: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
+      tweet: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tweet',
+      },
     },
   ],
 });

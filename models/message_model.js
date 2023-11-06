@@ -1,6 +1,6 @@
 const { mongoose, Schema } = require('mongoose');
 const messageSchema = new Schema({
-  discription: {
+  description: {
     type: String,
     required: true,
   },
@@ -23,6 +23,7 @@ const messageSchema = new Schema({
   },
   sendTime: {
     type: Date,
+    default: Date.now(),
     required: true,
   },
   isDeleted: {
