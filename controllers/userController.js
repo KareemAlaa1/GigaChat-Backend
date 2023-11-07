@@ -3,7 +3,7 @@ const User = require('../models/user_model');
 const express = require('express');
 
 const UserController = {
-  update_profile: async (req, res) => {
+  updateProfile: async (req, res) => {
     try {
 
         // get the sent data 
@@ -19,6 +19,7 @@ const UserController = {
         if(req.query.birthDate)
             updatedProfileData.birthDate = req.query.birthDate;
 
+        if(Object.keys(updatedProfileData).length === 0) return res.status(400).send('Bad Request');
         // update tha user
         const user = await User.findByIdAndUpdate(req.query._id, updatedProfileData, {new: true});
 
