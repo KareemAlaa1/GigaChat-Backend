@@ -14,9 +14,6 @@ const UserController = {
         .select('username nickname _id bio profile_image banner_image location website birth_date joined_date followingUsers followersUsers');
 
         if(!user) return res.status(404).send({error: 'user not found'});
-
-        user.followers_num =  user.followingUsers.length;
-        user.followings_num =  user.followersUsers.length;
         
         const result = {};
         result.status = 'success';
