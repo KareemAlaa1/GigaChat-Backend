@@ -11,7 +11,7 @@ const UserController = {
 
       const user = await User
         .findOne({username: username})
-        .select('username nickname _id bio profile_image banner_image location website birth_date joined_date followingUsers followersUsers');
+        .select('username nickname _id bio profileImage bannerImage location website birthDate joinedAt followingUsers followersUsers');
 
         if(!user) return res.status(404).send({error: 'user not found'});
         
