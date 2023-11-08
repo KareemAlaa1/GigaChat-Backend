@@ -3,6 +3,47 @@ const User = require('../models/user_model');
 const express = require('express');
 
 const UserController = {
+  
+  getProfile: async (req, res) => {
+    try {
+      const username = req.params.username;
+      if(!username) return res.status(400).send({error: 'Bad Request'});
+
+      const user = await User
+        .findOne({username: username})
+        .select('username nickname _id bio profile_image banner_image location website birth_date joined_date followingUsers followersUsers');
+
+        if(!user) return res.status(404).send({error: 'user not found'});
+
+        user.followers_num =  user.followingUsers.length;
+        user.followings_num =  user.followersUsers.length;
+        
+        const result = {};
+        result.status = 'success';
+        result.user = {
+          username: user.username,
+          nickname: user.nickname,
+          _id:user._id, 
+          bio: user.bio, 
+          profile_image: user.profileImage,
+          banner_image: user.bannerImage, 
+          location: user.location, 
+          website: user.website, 
+          birth_date: user.birthDate, 
+          joined_date: user.joinedAt, 
+          followings_num: user.followersUsers.length, 
+          followers_num: user.followingUsers.length
+        };
+
+        return res.status(200).send(result);
+
+    } catch (error) {
+      // Handle and log errors
+      console.error(error);
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
+
   updateProfile: async (req, res) => {
     try {
 
@@ -24,7 +65,7 @@ const UserController = {
         const user = await User.findByIdAndUpdate(req.query._id, updatedProfileData, {new: true});
 
         // check if the user doesn't exist
-        if (!user) return res.status(404).send('user Not Found');
+        if (!user) return res.status(404).send('user not Found');
 
         return res.status(204).end();
     } catch (error) {
@@ -33,6 +74,7 @@ const UserController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
+
 };
 
 module.exports = UserController;
