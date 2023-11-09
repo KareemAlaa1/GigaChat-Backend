@@ -8,6 +8,8 @@ const tweetRouter = require('./routes/tweetRoutes');
 const HomepageRouter = require('./routes/homepage_router');
 const HashtagRouter = require('./routes/hashtag_router');
 
+const userRouter = require('./routes/userRoutes');
+
 const app = express();
 
 // MIDDLEWARES

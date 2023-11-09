@@ -1,9 +1,21 @@
+const express = require('express');
+const userController = require('../controllers/userController');
+const authController = require('../controllers/authController');
 
 const express = require('express');
 const userRouter = express.Router();
 const UserController = require('../controllers/userController');
 const { upload } = require('../utils/firebase');
 
+
+
+userRouter.all('/signup', authController.signUp);
+
+userRouter.post('/login', authController.login);
+
+userRouter.patch('/updateMe', authController.protect, userController.updateUsernameOrEmail);
+
+userRouter.delete('/deleteMe', authController.protect, userController.deleteUser);
 
 userRouter.get('/profile/:username', UserController.getProfile);
 
@@ -19,5 +31,7 @@ userRouter.delete('/profile/banner', UserController.deleteProfileBanner);
 
 module.exports = userRouter; 
 
+
+const router = express.Router();
 
 

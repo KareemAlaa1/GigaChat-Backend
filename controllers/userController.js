@@ -1,11 +1,41 @@
 const express = require('express');
 const User = require('../models/user_model');
 const { bucket, uuidv4 } = require('../utils/firebase');
+const catchAsync = require('../utils/catchAsync');
 
 const DEFAULT_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
 
 const UserController = {
+
+  updateUsernameOrEmail: catchAsync(async (req, res, next) => {
+    // 1) Create Error if user Posted password data
+    // i dont think it is even good idea -> i wont do it
+  
+    // 2) filter unwanted fields {banned fields}
+    const filteredBody = filterObj(req.body, 'username', 'email');
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+      new: true,
+      runValidators: true,
+    }); // { is the option obj} will run the validator again to check the email and new: true to return the new user data
+  
+    // 3) sent the responce
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: updatedUser,
+      },
+    });
+  }),
+
+  deleteUser: catchAsync(async (req, res, next) => {
+    await User.findByIdAndUpdate(req.user.id, { active: false });
+    res.status(204).json({
+      status: 'success',
+      data: null,
+    });
+  }),
+
   getProfile: async (req, res) => {
     try {
       const { username } = req.params.username;
@@ -193,3 +223,12 @@ const UserController = {
 };
 
 module.exports = UserController;
+
+const filterObj = (obj, ...filter) => {
+  const newObj = {};
+  Object.keys(obj).forEach((el) => {
+    //Object.key(objName) array contian the key names of the object properties
+    if (filter.includes(el)) newObj[el] = obj[el];
+  });
+  return newObj;
+};
