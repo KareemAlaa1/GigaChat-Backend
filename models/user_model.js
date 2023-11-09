@@ -153,6 +153,14 @@ userSchema.pre('save', function (next) {
   this.passwordChangedAt = Date.now() - 1000; // video 136 min:16 -> why he minus 1 sec
   next();
 });
+// Query MiddleWare
+
+userSchema.pre(/^find/, function (next) {
+  // /^find/ reguler expression
+  // we use normal function to access the this keyword
+  this.find({ active: { $ne: false } });
+  next();
+});
 
 const User = mongoose.model('User', userSchema);
 
