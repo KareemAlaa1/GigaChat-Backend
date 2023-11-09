@@ -22,13 +22,13 @@ class APIFeatures {
   sort() {
     if (this.queryString.sort) {
       const sortBy = this.queryString.sort.split(',').join(' ');
-      if (typeof this.query === 'Array') {
+      if (this.query.type === 'array') {
         this.query = sortByProperties(this.query, sortBy);
       } else {
         this.query = this.query.sort(sortBy);
       }
     } else {
-      if (typeof this.query === 'Array') {
+      if (this.query.type === 'array') {
         this.query = this.query.sort((a, b) => a.createdAt - b.createdAt);
       } else {
         this.query = this.query.sort('-createdAt');
@@ -54,7 +54,7 @@ class APIFeatures {
     const limit = this.queryString.limit * 1 || 100;
     const skip = (page - 1) * limit;
 
-    if (typeof this.query === 'Array') {
+    if (this.query.type === 'array') {
       const skippedArray = this.query.slice(skip);
       const limitedArray = limit ? skippedArray.slice(0, limit) : skippedArray;
       this.query = limitedArray;
