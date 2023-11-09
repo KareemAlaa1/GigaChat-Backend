@@ -4,6 +4,8 @@ require('./db/mongoose');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
+const userRouter = require('./routes/userRoutes');
+
 const app = express();
 
 // MIDDLEWARES
@@ -16,6 +18,9 @@ app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
+
+//ROUTES
+app.use('/api/v1/users', userRouter);
 
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
