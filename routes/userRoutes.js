@@ -13,6 +13,9 @@ userRouter.post('/profile/image', upload.single('profile_image'),UserController.
 
 userRouter.post('/profile/banner', upload.single('profile_banner'),UserController.updateProfileBanner);
 
+userRouter.delete('/profile/image', upload.single('profile_image'),UserController.deleteProfileImage);
+
+userRouter.delete('/profile/banner', upload.single('profile_banner'),UserController.deleteProfileBanner);
 
 module.exports = userRouter; 
 

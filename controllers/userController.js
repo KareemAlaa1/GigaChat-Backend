@@ -3,6 +3,8 @@ const User = require('../models/user_model');
 const express = require('express');
 const { bucket, uuidv4 } = require('../utils/firebase');
 
+const DEFAULT_IMAGE_URL = 'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
+
 const UserController = {
 
   getProfile: async (req, res) => {
@@ -93,7 +95,7 @@ const UserController = {
 
       if(!user) return res.status(404).send('user not Found'); 
 
-      result = {status: 'image uploaded successfully',  image_profile_url: url };
+      const result = {status: 'image uploaded successfully',  image_profile_url: url };
       res.status(200).send(result);
 
     } catch (error) {
@@ -123,7 +125,45 @@ const UserController = {
 
       if(!user) return res.status(404).send('user not Found'); 
 
-      result = {status: 'image uploaded successfully',  image_profile_url: url };
+      const result = {status: 'image uploaded successfully',  image_profile_url: url };
+      res.status(200).send(result);
+
+    } catch (error) {
+      // Handle and log errors
+      console.error(error);
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
+
+  deleteProfileImage: async (req, res) => {
+    try {
+
+      if(!req.body._id) return res.status(400).send('Bad Request');
+      
+      const user = await User.findByIdAndUpdate(req.body._id, {profileImage: DEFAULT_IMAGE_URL}, {new: true}).select('profileImage');
+      if(!user) return res.status(404).send('user not Found');
+
+      const result = {status: 'image uploaded successfully',  image_profile_url: DEFAULT_IMAGE_URL };
+      
+      res.status(200).send(result);
+
+    } catch (error) {
+      // Handle and log errors
+      console.error(error);
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
+
+  deleteProfileBanner: async (req, res) => {
+    try {
+
+      if(!req.body._id) return res.status(400).send('Bad Request');
+      
+      const user = await User.findByIdAndUpdate(req.body._id, {profileBanner: DEFAULT_IMAGE_URL}, {new: true}).select('profileBanner');
+      if(!user) return res.status(404).send('user not Found');
+
+      const result = {status: 'image uploaded successfully',  image_profile_url: DEFAULT_IMAGE_URL };
+      
       res.status(200).send(result);
 
     } catch (error) {
