@@ -3,6 +3,8 @@ const morgan = require('morgan');
 require('./db/mongoose');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const userRouter = require('./routes/userRoutes');
+const tweetRouter = require('./routes/tweetRoutes');
 
 const app = express();
 
@@ -18,12 +20,13 @@ app.use((req, res, next) => {
 });
 
 // Handling  Wrong Route Req.
+//Routs
 
-//  ROUTES
-// app.use('/api/v1/users', userRouter);
 app.use('/api/user', userRouter);
 
-// Handling  Wrong Route Req. 
+app.use('/api/tweets', tweetRouter);
+
+// Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
   //create ourError obj and send it
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
