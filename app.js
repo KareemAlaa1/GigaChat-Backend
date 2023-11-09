@@ -3,7 +3,6 @@ const morgan = require('morgan');
 require('./db/mongoose');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
-const HomepageRouter = require('./routes/homepage.router');
 
 const app = express();
 
@@ -18,8 +17,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(HomepageRouter);
-
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
   //create ourError obj and send it
@@ -29,5 +26,3 @@ app.all('*', (req, res, next) => {
 app.use(globalErrorHandler); // the final middleWare for express
 
 module.exports = app;
-
-
