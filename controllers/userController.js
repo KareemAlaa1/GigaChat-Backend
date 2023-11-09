@@ -87,7 +87,7 @@ const UserController = {
         return res.status(400).send('Bad Request');
       // update tha user
       const user = await User.findByIdAndUpdate(
-        req.query._id,
+        req.user._id,
         updatedProfileData,
         { new: true },
       );
@@ -222,8 +222,6 @@ const UserController = {
   },
 };
 
-module.exports = UserController;
-
 const filterObj = (obj, ...filter) => {
   const newObj = {};
   Object.keys(obj).forEach((el) => {
@@ -232,3 +230,6 @@ const filterObj = (obj, ...filter) => {
   });
   return newObj;
 };
+
+module.exports = UserController;
+
