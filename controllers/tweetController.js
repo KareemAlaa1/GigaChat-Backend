@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Tweet = require('../models/tweet_model');
 const User = require('../models/user_model');
+const extractHashtags = require('../utils/extract_hashtags');
 
 const {
   getUserDatabyId,
@@ -19,13 +20,16 @@ exports.addTweet = async (req, res) => {
     await User.findByIdAndUpdate(req.body.userId, {
       $push: { tweetList: retTweet.id },
     });
-    console.log(retTweet);
+
     res.status(201).json({
       status: 'Tweet Add Success',
       data: {
         tweet: retTweet,
       },
     });
+
+    extractHashtags(newTweet);
+
   } catch (err) {
     res.status(400).json({
       status: 'bad request',
