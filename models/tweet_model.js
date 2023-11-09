@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const tweetSchema = new mongoose.Schema({
   userId: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'A tweet must have an owner'],
   },
@@ -36,26 +36,26 @@ const tweetSchema = new mongoose.Schema({
   },
   repliesList: [
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Tweet',
     },
   ],
   likersList: [
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
   ],
   retweetList: [
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Tweet',
     },
   ],
   quoteRetweetList: [
     // for future updates
     {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Tweet',
     },
   ],
@@ -74,7 +74,7 @@ const tweetSchema = new mongoose.Schema({
     },
   },
   referredTweetId: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Tweet',
   },
   createdAt: {
