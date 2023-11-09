@@ -1,4 +1,3 @@
-const catchAsync = require('../utils/catchAsync');
 const Hashtag = require('../models/hashtag_model');
 
 // extract the hashtags in the tweet description
