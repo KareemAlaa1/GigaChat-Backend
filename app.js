@@ -3,6 +3,7 @@ const morgan = require('morgan');
 require('./db/mongoose');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const HomepageRouter = require('./routes/homepage_router');
 
 const app = express();
 
@@ -16,6 +17,8 @@ app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
+
+app.use(HomepageRouter);
 
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
