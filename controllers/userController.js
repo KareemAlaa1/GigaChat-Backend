@@ -75,6 +75,9 @@ const UserController = {
 
   updateProfileImage: async (req, res) => {
     try {
+
+      if(!req.file) return res.status(400).send('Bad Request'); 
+
       const fileName = uuidv4() + '-' + req.file.originalname;
       const file = bucket.file(fileName);
   
@@ -99,7 +102,37 @@ const UserController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
+
+  updateProfileBanner: async (req, res) => {
+    try {
+
+      if(!req.file) return res.status(400).send('Bad Request'); 
+
+      const fileName = uuidv4() + '-' + req.file.originalname;
+      const file = bucket.file(fileName);
   
+      await file.createWriteStream().end(req.file.buffer);
+  
+      // Get the download URL with a token
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '12-31-9999', // Set the expiration date to infinity :D
+      });
+      
+      const user = await User.findByIdAndUpdate(req.body._id, {profileBanner: url}, {new: true}).select('profileBanner');
+
+      if(!user) return res.status(404).send('user not Found'); 
+
+      result = {status: 'image uploaded successfully',  image_profile_url: url };
+      res.status(200).send(result);
+
+    } catch (error) {
+      // Handle and log errors
+      console.error(error);
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
+
 
 };
 

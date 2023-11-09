@@ -11,6 +11,9 @@ userRouter.post('/profile', UserController.updateProfile);
 
 userRouter.post('/profile/image', upload.single('profile_image'),UserController.updateProfileImage);
 
+userRouter.post('/profile/banner', upload.single('profile_banner'),UserController.updateProfileBanner);
+
+
 module.exports = userRouter; 
 
 
