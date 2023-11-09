@@ -5,6 +5,8 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const userRouter = require('./routes/userRoutes');
 const tweetRouter = require('./routes/tweetRoutes');
+const HomepageRouter = require('./routes/homepage_router');
+const HashtagRouter = require('./routes/hashtag_router');
 
 const app = express();
 
@@ -19,11 +21,13 @@ app.use((req, res, next) => {
   next();
 });
 
+
 // Handling  Wrong Route Req.
 //Routs
 
 app.use('/api/user', userRouter);
-
+app.use('/api/homepage', HomepageRouter);
+app.use('/api/trends',HashtagRouter);
 app.use('/api/tweets', tweetRouter);
 
 // Handling  Wrong Route Req.
