@@ -18,6 +18,12 @@ app.use((req, res, next) => {
 });
 
 // Handling  Wrong Route Req.
+
+//  ROUTES
+// app.use('/api/v1/users', userRouter);
+app.use('/api/user', userRouter);
+
+// Handling  Wrong Route Req. 
 app.all('*', (req, res, next) => {
   //create ourError obj and send it
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

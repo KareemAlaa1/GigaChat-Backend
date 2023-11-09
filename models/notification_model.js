@@ -1,5 +1,5 @@
-const { mongoose, Schema } = require('mongoose');
-const notificationSchema = new Schema({
+const mongoose = require('mongoose');
+const notificationSchema = new mongoose.Schema({
   description: {
     type: String,
   },
