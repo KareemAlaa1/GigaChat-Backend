@@ -1,5 +1,7 @@
 const { mongoose, Schema } = require('mongoose');
 const validator = require('validator');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new Schema({
   username: {
@@ -18,7 +20,20 @@ const userSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: [true, 'Please provide a password'],
+    minlength: 8,
+    select: false,
+  },
+  passwordConfirm: {
+    type: String,
+    required: [true, 'Please confirm your password'],
+    validate: {
+      // This only works on CREATE and SAVE!!!
+      validator: function (el) {
+        return el === this.password;
+      },
+      message: 'Passwords are not the same!',
+    },
   },
   bio: {
     type: String,
@@ -105,11 +120,18 @@ const userSchema = new Schema({
   ],
   joinedAt: {
     type: Date,
-    required: true,
   },
   isDeleted: {
     type: Boolean,
     default: false,
+  },
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
   },
 });
 
