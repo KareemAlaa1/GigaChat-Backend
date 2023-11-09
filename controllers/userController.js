@@ -1,9 +1,10 @@
 
 const User = require('../models/user_model');
 const express = require('express');
+const { bucket, uuidv4 } = require('../utils/firebase');
 
 const UserController = {
-  
+
   getProfile: async (req, res) => {
     try {
       const username = req.params.username;
@@ -71,6 +72,34 @@ const UserController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
+
+  updateProfileImage: async (req, res) => {
+    try {
+      const fileName = uuidv4() + '-' + req.file.originalname;
+      const file = bucket.file(fileName);
+  
+      await file.createWriteStream().end(req.file.buffer);
+  
+      // Get the download URL with a token
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '12-31-9999', // Set the expiration date to infinity :D
+      });
+      
+      const user = await User.findByIdAndUpdate(req.body._id, {profileImage: url}, {new: true}).select('profileImage');
+
+      if(!user) return res.status(404).send('user not Found'); 
+
+      result = {status: 'image uploaded successfully',  image_profile_url: url };
+      res.status(200).send(result);
+
+    } catch (error) {
+      // Handle and log errors
+      console.error(error);
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
+  
 
 };
 
