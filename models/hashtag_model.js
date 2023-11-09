@@ -13,10 +13,8 @@ const hashtagSchema = new Schema({
   },
   tweet_list: [
     {
-      tweet: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Tweet',
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tweet',
     },
   ],
 });
