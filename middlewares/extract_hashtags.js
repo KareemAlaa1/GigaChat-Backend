@@ -3,7 +3,7 @@ const Hashtag = require('../models/hashtag_model');
 
 // extract the hashtags in the tweet description
 const extractHashtags = async (tweet) => {
-  const tweetId = tweet._id;
+  const tweetId = tweet.id;
   const tweetDescription = tweet.description;
   const words = tweetDescription.split(' ');
   const hashtagWords = words.filter((word) => /^#/.test(word));
@@ -26,10 +26,3 @@ const extractHashtags = async (tweet) => {
     }
   });
 };
-
-// const extractHashtagsTest = async () => {
-//   const tweet = await Tweet.findById('654c193b688f342c88a547e8');
-//     extractHashtags(tweet);
-// };
-
-// extractHashtagsTest();
