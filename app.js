@@ -1,9 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
-
+require('./db/mongoose');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
-const userRouter = require('./routes/userRoutes');
+const HomepageRouter = require('./routes/homepage.router');
 
 const app = express();
 
@@ -18,11 +18,9 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(HomepageRouter);
 
-//  ROUTES
-app.use('/api/v1/users', userRouter);
-
-// Handling  Wrong Route Req. 
+// Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
   //create ourError obj and send it
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
