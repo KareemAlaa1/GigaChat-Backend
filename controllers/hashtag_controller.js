@@ -38,6 +38,7 @@ exports.getHastagTweets = catchAsync(
       res.status(404).send('HashTag not found');
     } else {
       // Now, the tweet_list should be populated with actual Tweet documents
+      req.query.type = 'array';
       const apiFeatures = new APIFeatures(hashtag.tweet_list, req.query)
         .sort()
         .paginate();
