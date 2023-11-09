@@ -134,6 +134,25 @@ const userSchema = new Schema({
     select: false,
   },
 });
+// Document MiddleWare
+
+userSchema.pre('save', async function (next) {
+  // Only run this function if password was actually modified
+  if (!this.isModified('password')) return next();
+
+  // Hash the password with cost of 12
+  this.password = await bcrypt.hash(this.password, 12); //.hash is async
+
+  // Delete passwordConfirm field
+  this.passwordConfirm = undefined;
+  next();
+});
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next(); // not changed or the user is new
+
+  this.passwordChangedAt = Date.now() - 1000; // video 136 min:16 -> why he minus 1 sec
+  next();
+});
 
 const User = mongoose.model('User', userSchema);
 
