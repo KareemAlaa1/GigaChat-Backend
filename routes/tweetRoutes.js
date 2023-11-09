@@ -1,15 +1,11 @@
 const express = require('express');
 const tweetController = require('../controllers/tweetController');
 
-const router = express.Router();
+const tweetRouter = express.Router();
 
-// router.param('id', tourController.checkID);
+tweetRouter.post('/', tweetController.addTweet);
+tweetRouter.get(':tweetId', tweetController.getTweet);
+tweetRouter.delete(':tweetId', tweetController.deleteTweet);
+tweetRouter.get('/likers/:tweetId', tweetController.getTweetLikers);
 
-router.route('/').post(tweetController.addTweet);
-router
-  .route('/:tweetId')
-  .get(tweetController.getTweet)
-  .delete(tweetController.deleteTweet);
-
-router.route('/likers/:tweetId').get(tweetController.getTweetLikers);
-module.exports = router;
+module.exports = tweetRouter;
