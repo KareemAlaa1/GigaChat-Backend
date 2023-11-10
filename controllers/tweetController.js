@@ -13,7 +13,8 @@ const {
 const TweetController = {
   addTweet: async (req, res) => {
     try {
-      req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
+      // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
+      req.body.userId = req.user._id;
       const newTweet = await Tweet.create(req.body);
       let retTweet = {};
       retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
@@ -80,7 +81,8 @@ const TweetController = {
 
   deleteTweet: async (req, res) => {
     try {
-      req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
+      // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
+      req.body.userId = req.user._id;
       const tweet = await getTweetDatabyId(req.params.tweetId);
       if (tweet === null) {
         res.status(404).json({

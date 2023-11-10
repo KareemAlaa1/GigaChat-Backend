@@ -1,32 +1,70 @@
 const jwt = require('jsonwebtoken');
+const uniqueSlug = require('unique-slug');
 const { promisify } = require('util'); //util.promisify
 const AppError = require('../utils/appError');
 const User = require('../models/user_model');
 const catchAsync = require('../utils/catchAsync');
+const sendEmail = require('../utils/email');
 
 const signToken = (id) =>
   jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+const generateUserName = async (nickname) => {
+  // Generate a unique username based on the nickname
+  const baseUsername = nickname.toLowerCase();
+  const generatedUsername = uniqueSlug(baseUsername);
+
+  // Check the uniqueness of the generated username
+  const isUsernameTaken = await User.exists({ username: generatedUsername });
+  // if some shit happen
+  const finalUsername = isUsernameTaken
+    ? `${generatedUsername}-${Math.floor(Math.random() * 1000)}`
+    : generatedUsername;
+
+  return finalUsername;
+};
+
 exports.signUp = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
-    username: req.body.username,
     email: req.body.email,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    phone: req.body.phone,
+    nickname: req.body.nickname,
+    birthDate: req.body.birthDate,
     joinedAt: Date.now(),
   });
-  const token = signToken(newUser._id);
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  // 2) Generate random code
+  const confirmCode = newUser.createConfirmCode();
+  await newUser.save({ validateBeforeSave: false });
+
+  const message = `Your confirm Code is ${confirmCode}`;
+
+  try {
+    await sendEmail({
+      email: req.body.email,
+      subject: 'Your Confirm Code (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        email: req.body.email,
+        message: 'Code sent to the email the user provide',
+      },
+    });
+  } catch (err) {
+    newUser.confirmEmailCode = undefined;
+    newUser.confirmEmailExpires = undefined;
+    await newUser.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
+    );
+  }
 });
+
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -80,7 +118,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 3) Check if user still exists
   // if the user deleted we no more need to send data
   const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
+  if (!currentUser || !currentUser.active) {
     return next(
       new AppError(
         'The user belonging to this token does no longer exist.',
@@ -101,4 +139,196 @@ exports.protect = catchAsync(async (req, res, next) => {
   // GRANT ACCESS TO PROTECTED ROUTE
   req.user = currentUser; // will be usefull later
   next();
+});
+
+exports.confirmEmail = catchAsync(async (req, res, next) => {
+  const { confirmEmailCode, email } = req.body;
+  if (!email || !confirmEmailCode) {
+    return next(new AppError('email and confirmEmailCode required', 400));
+  }
+  //const user = await User.findOne({ email,_bypassMiddleware:true }); //NOT WORKING YET to prevent the inacitve filter
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new AppError('There is no user with email this address.', 404));
+  }
+
+  if (!user.confirmEmailCode) {
+    return next(
+      new AppError('There is no new confirmEmail request recieved .', 404),
+    );
+  }
+
+  const waitConfirm = await user.correctConfirmCode(
+    confirmEmailCode,
+    user.confirmEmailCode,
+  );
+  if (!waitConfirm) {
+    return next(new AppError('The Code is Invalid or Expired ', 401));
+  }
+  user.confirmEmailExpires = undefined;
+  user.confirmEmailCode = undefined;
+  const generatedUsername = await generateUserName(user.nickname);
+  user.username = generatedUsername;
+  await user.save();
+  const token = signToken(user._id);
+  res.status(201).json({
+    token,
+    status: 'success',
+    data: {
+      user,
+      message: 'Confirm done successfully',
+    },
+  });
+});
+
+exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) {
+    return next(new AppError('email and confirmEmailCode required', 400));
+  }
+  console.log(email);
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new AppError('There is no user with email this address.', 404));
+  }
+
+  // 2) Generate random code
+  const confirmCode = user.createConfirmCode();
+  await user.save({ validateBeforeSave: false });
+
+  const message = `Your confirm Code is ${confirmCode}`;
+
+  try {
+    await sendEmail({
+      email: req.body.email,
+      subject: 'Your Confirm Code (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        email: req.body.email,
+        message: 'Code sent to the email the user provided',
+      },
+    });
+  } catch (err) {
+    user.confirmEmailCode = undefined;
+    user.confirmEmailExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
+    );
+  }
+});
+
+exports.AssignUsername = catchAsync(async (req, res, next) => {
+  const { username } = req.body;
+  if (!username) {
+    return next(new AppError(' Username is required', 400));
+  }
+  // Verification token
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+    // after splite take the second element
+  }
+
+  if (!token) {
+    return next(
+      new AppError(
+        'You have not confirmed your email Please confirm to get access.',
+        401,
+      ),
+    );
+  }
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
+    );
+  }
+  // Check if the user name is the same as the old one
+  if (username !== currentUser.username) {
+    // Check if the new username is unique
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return next(new AppError('The username is already taken.', 400));
+    }
+  }
+
+  // Assign UserName
+  currentUser.username = username;
+  await currentUser.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'username updated successfully',
+    },
+  });
+});
+
+exports.AssignPassword = catchAsync(async (req, res, next) => {
+  const { password } = req.body;
+  if (!password) {
+    return next(new AppError(' password is required', 400));
+  }
+  // Check the password size
+  if (password.length < 8) {
+    return next(new AppError('the password should be 8 litters or more.', 401));
+  }
+  // Verification token
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+    // after splite take the second element
+  }
+
+  if (!token) {
+    return next(
+      new AppError(
+        'You have not confirmed your email Please confirm to get access.',
+        401,
+      ),
+    );
+  }
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
+    );
+  }
+
+  // Assign password
+  currentUser.password = password;
+
+  // Activate the User
+  currentUser.active = true;
+  await currentUser.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      currentUser,
+    },
+  });
 });

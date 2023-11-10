@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
     unique: true,
   },
   email: {
@@ -20,20 +19,8 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
     minlength: 8,
     select: false,
-  },
-  passwordConfirm: {
-    type: String,
-    required: [true, 'Please confirm your password'],
-    validate: {
-      // This only works on CREATE and SAVE!!!
-      validator: function (el) {
-        return el === this.password;
-      },
-      message: 'Passwords are not the same!',
-    },
   },
   bio: {
     type: String,
@@ -53,7 +40,7 @@ const userSchema = new mongoose.Schema({
       validator: (value) => typeof value === 'number',
       message: 'phone must be numbers',
     },
-    unique: true,
+    default: '00000000000',
   },
   nickname: {
     type: String,
@@ -128,10 +115,11 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  confirmEmailCode: String,
+  confirmEmailExpires: Date,
   active: {
     type: Boolean,
-    default: true,
-    select: false,
+    default: false,
   },
 });
 // Document MiddleWare
@@ -155,12 +143,22 @@ userSchema.pre('save', function (next) {
 });
 // Query MiddleWare
 
-userSchema.pre(/^find/, function (next) {
-  // /^find/ reguler expression
-  // we use normal function to access the this keyword
-  this.find({ active: { $ne: false } });
-  next();
-});
+// NOT WORKING
+// userSchema.pre(/^find/, function (next) {
+//   // /^find/ reguler expression
+//   // we use normal function to access the this keyword
+//   // bypass to allow specific query to still select the inactive user
+//   if (!this.getQuery()._bypassMiddleware) {
+//     this.find({ active: { $ne: false } });
+//   }
+//   next();
+// });
+// i will put the following insteed untill i find sol.
+
+// userSchema.pre('findById', function (next) {
+//   this.find({ active: { $ne: false } });
+//   next();
+// });
 
 // Instance Methods
 
@@ -203,6 +201,37 @@ userSchema.methods.createPasswordResetToken = function () {
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //ten minute from now
 
   return resetToken;
+};
+userSchema.methods.createConfirmCode = function () {
+  let code = crypto.randomBytes(4).readUInt32BE(0);
+  code = code.toString().padStart(8, '0');
+
+  // we always save our sensitive data in encrypted form
+  this.confirmEmailCode = crypto
+    .createHash('sha256')
+    .update(code)
+    .digest('hex');
+
+  console.log({ code }, this.passwordResetToken);
+
+  this.confirmEmailExpires = Date.now() + 10 * 60 * 1000; //ten minute from now
+
+  return code;
+};
+userSchema.methods.correctConfirmCode = async function (
+  candidateCode,
+  userConfirmCode,
+) {
+  if (!candidateCode || !userConfirmCode) return false;
+  candidateCode = crypto
+    .createHash('sha256')
+    .update(candidateCode)
+    .digest('hex');
+
+  if (candidateCode === userConfirmCode) {
+    return Date.now() < this.confirmEmailExpires;
+  }
+  return false;
 };
 
 const User = mongoose.model('User', userSchema);
