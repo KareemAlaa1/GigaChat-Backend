@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 const catchAsync = require('../utils/catchAsync');
 const Hashtag = require('../models/hashtag_model');
-const APIFeatures = require('../utils/api_features');
+const {
+  selectNeededInfoForUser,
+  selectNeededInfoForTweets,
+  APIFeatures
+} = require('../utils/api_features');
+
 exports.getAllHashtages = catchAsync(
   async (
     req,
@@ -34,7 +39,7 @@ exports.getHastagTweets = catchAsync(
       .populate({
         path: 'tweet_list',
         populate: {
-          path: 'user_id',
+          path: 'userId',
           model: 'User',
         },
       })
@@ -44,27 +49,20 @@ exports.getHastagTweets = catchAsync(
     } else {
       // filter deleted tweets and anu not tweet type
       hashtag.tweet_list = hashtag.tweet_list.filter(
-        (tweet) => tweet.isDeleted !== true && tweet.type === 'tweet',
+        (tweet) => tweet.isDeleted !== true && tweet.type !== 'reply',
       );
-      // Now, the tweet_list should be populated with actual Tweet documents
-      req.query.type = 'array';
-      req.query.fields =
-        '_id,description,media,type,referredTweetId,createdAt,user_id,';
-      const apiFeatures = new APIFeatures(hashtag.tweet_list, req.query)
-        .sort()
-        .paginate()
-        .limitFields();
-      hashtag.tweet_list.forEach((tweet) => {
-        req.query.type = 'array';
-        req.query.fields = '';
-        req.query.excludes =
-          'location,website,mutedUsers,blockingUsers,likedTweets,notificationList,chatList,mentionList,isDeleted,__v,';
-        const apiFeaturesUser = new APIFeatures(
-          [tweet.user_id],
-          req.query,
-        ).excludeFields();
-      });
-      res.status(200).send(await apiFeatures.query);
+
+      hashtag.tweet_list = await Promise.all(
+        hashtag.tweet_list.map(async (tweet) => {
+          tweet = { ...tweet, tweetOwner: tweet.userId };
+          await selectNeededInfoForUser(tweet, req);
+          return tweet;
+        }),
+      );
+
+      res
+        .status(200)
+        .send(await selectNeededInfoForTweets(hashtag.tweet_list, req));
     }
   },
 );
