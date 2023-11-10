@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 
-// Initialize Firebase Admin SDK (replace with your service account key)
+// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert({
     "type": "service_account",
