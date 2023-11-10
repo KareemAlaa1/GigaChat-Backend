@@ -230,3 +230,110 @@ const filterObj = (obj, ...filter) => {
 
 module.exports = UserController;
 
+function calculateAge(birthDate) {
+  const today = new Date();
+  const birthDateObj = new Date(birthDate);
+
+  let age = today.getFullYear() - birthDateObj.getFullYear();
+  const monthDiff = today.getMonth() - birthDateObj.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
+  ) {
+    age -= 1;
+  }
+  return age;
+}
+
+// MICRO EndPoints
+
+exports.checkBirthDate = (req, res) => {
+  const { birthDate } = req.body;
+  if (!birthDate) {
+    return res
+      .status(400)
+      .json({ error: 'birthDate is required in the request body' });
+  }
+  const userAge = calculateAge(birthDate);
+
+  if (userAge >= 13) {
+    res.json({ message: 'User is above 13 years old.' });
+  } else {
+    res.status(403).json({
+      error: 'User must be at least 13 years old Or Wrong date Format ',
+    });
+  }
+};
+
+exports.checkAvailableUsername = catchAsync(async (req, res, next) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res
+      .status(400)
+      .json({ error: 'Username is required in the request body' });
+  }
+
+  const existingUser = await User.findOne({ username });
+
+  if (existingUser) {
+    return res.status(409).json({ error: 'Username already exists' });
+  }
+
+  res.status(200).json({ message: 'Username is available' });
+});
+
+exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ error: 'Email is required in the request body' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    return res.status(409).json({ error: 'Email already exists' });
+  }
+
+  res.status(200).json({ message: 'Email is available' });
+});
+
+exports.checkExistedEmail = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res
+      .status(400)
+      .json({ error: 'Email is required in the request body' });
+  }
+
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    return res.status(200).json({ message: 'Email is existed' });
+  }
+
+  res.status(404).json({ error: 'Email is not existed' });
+});
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//

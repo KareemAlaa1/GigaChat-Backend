@@ -7,7 +7,24 @@ const { upload } = require('../utils/firebase');
 
 
 
+//  Micro endPoints router
+userRouter.post('/checkBirthDate', userController.checkBirthDate);
+
+userRouter.post('/checkAvailableUsername', userController.checkAvailableUsername);
+
+userRouter.post('/checkAvailableEmail', userController.checkAvailableEmail);
+
+userRouter.post('/checkExistedEmail', userController.checkExistedEmail);
+
 userRouter.all('/signup', authController.signUp);
+
+userRouter.post('/confirmEmail', authController.confirmEmail);
+
+userRouter.post('/resendConfirmEmail', authController.resendConfirmEmail);
+
+userRouter.patch('/AssignUsername', authController.AssignUsername);
+
+userRouter.patch('/AssignPassword', authController.AssignPassword);
 
 userRouter.post('/login', authController.login);
 
