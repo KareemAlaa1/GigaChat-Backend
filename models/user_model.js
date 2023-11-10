@@ -202,6 +202,37 @@ userSchema.methods.createPasswordResetToken = function () {
 
   return resetToken;
 };
+userSchema.methods.createConfirmCode = function () {
+  let code = crypto.randomBytes(4).readUInt32BE(0);
+  code = code.toString().padStart(8, '0');
+
+  // we always save our sensitive data in encrypted form
+  this.confirmEmailCode = crypto
+    .createHash('sha256')
+    .update(code)
+    .digest('hex');
+
+  console.log({ code }, this.passwordResetToken);
+
+  this.confirmEmailExpires = Date.now() + 10 * 60 * 1000; //ten minute from now
+
+  return code;
+};
+userSchema.methods.correctConfirmCode = async function (
+  candidateCode,
+  userConfirmCode,
+) {
+  if (!candidateCode || !userConfirmCode) return false;
+  candidateCode = crypto
+    .createHash('sha256')
+    .update(candidateCode)
+    .digest('hex');
+
+  if (candidateCode === userConfirmCode) {
+    return Date.now() < this.confirmEmailExpires;
+  }
+  return false;
+};
 
 const User = mongoose.model('User', userSchema);
 
