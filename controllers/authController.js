@@ -140,3 +140,86 @@ exports.protect = catchAsync(async (req, res, next) => {
   req.user = currentUser; // will be usefull later
   next();
 });
+
+exports.confirmEmail = catchAsync(async (req, res, next) => {
+  const { confirmEmailCode, email } = req.body;
+  if (!email || !confirmEmailCode) {
+    return next(new AppError('email and confirmEmailCode required', 400));
+  }
+  //const user = await User.findOne({ email,_bypassMiddleware:true }); //NOT WORKING YET to prevent the inacitve filter
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new AppError('There is no user with email this address.', 404));
+  }
+
+  if (!user.confirmEmailCode) {
+    return next(
+      new AppError('There is no new confirmEmail request recieved .', 404),
+    );
+  }
+
+  const waitConfirm = await user.correctConfirmCode(
+    confirmEmailCode,
+    user.confirmEmailCode,
+  );
+  if (!waitConfirm) {
+    return next(new AppError('The Code is Invalid or Expired ', 401));
+  }
+  user.confirmEmailExpires = undefined;
+  user.confirmEmailCode = undefined;
+  const generatedUsername = await generateUserName(user.nickname);
+  user.username = generatedUsername;
+  await user.save();
+  const token = signToken(user._id);
+  res.status(201).json({
+    token,
+    status: 'success',
+    data: {
+      user,
+      message: 'Confirm done successfully',
+    },
+  });
+});
+
+exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) {
+    return next(new AppError('email and confirmEmailCode required', 400));
+  }
+  console.log(email);
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new AppError('There is no user with email this address.', 404));
+  }
+
+  // 2) Generate random code
+  const confirmCode = user.createConfirmCode();
+  await user.save({ validateBeforeSave: false });
+
+  const message = `Your confirm Code is ${confirmCode}`;
+
+  try {
+    await sendEmail({
+      email: req.body.email,
+      subject: 'Your Confirm Code (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        email: req.body.email,
+        message: 'Code sent to the email the user provided',
+      },
+    });
+  } catch (err) {
+    user.confirmEmailCode = undefined;
+    user.confirmEmailExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
+    );
+  }
+});
