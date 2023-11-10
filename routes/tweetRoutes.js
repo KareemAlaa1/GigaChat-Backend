@@ -5,9 +5,9 @@ const authController = require('../controllers/authController');
 const tweetRouter = express.Router();
 
 tweetRouter.post('/', authController.protect, tweetController.addTweet);
-tweetRouter.get(':tweetId', authController.protect, tweetController.getTweet);
+tweetRouter.get('/:tweetId', authController.protect, tweetController.getTweet);
 tweetRouter.delete(
-  ':tweetId',
+  '/:tweetId',
   authController.protect,
   tweetController.deleteTweet,
 );
