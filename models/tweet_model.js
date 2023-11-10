@@ -1,8 +1,8 @@
-const { mongoose, Schema } = require('mongoose');
+const mongoose = require('mongoose');
 
-const tweetSchema = new Schema({
-  user_id: {
-    type: Schema.Types.ObjectId,
+const tweetSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'A tweet must have an owner'],
   },
@@ -17,7 +17,7 @@ const tweetSchema = new Schema({
   media: [
     // array of pairs {link,type}
     {
-      link: {
+      data: {
         type: String,
         required: [true, 'A media must have a link'],
       },
@@ -34,25 +34,25 @@ const tweetSchema = new Schema({
     type: Number,
     default: 0,
   },
-  replies_list: [
+  repliesList: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tweet',
     },
   ],
-  likers_list: [
+  likersList: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
   ],
-  retweet_list: [
+  retweetList: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tweet',
     },
   ],
-  quote_retweet_list: [
+  quoteRetweetList: [
     // for future updates
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -66,15 +66,26 @@ const tweetSchema = new Schema({
       values: ['tweet', 'quote', 'reply'],
       message: 'tweet type is either: tweet  quote, reply',
     },
+    validate: {
+      validator: function (val) {
+        if (val !== 'tweet' && this.referredTweetId === undefined) return false;
+      },
+      message: 'Tweet of type qoute or reply must have referred tweet',
+    },
   },
   referredTweetId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tweet',
   },
-  creation_time: {
+
+  createdAt: {
     type: Date,
     default: Date.now(),
     required: true,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
   },
 });
 

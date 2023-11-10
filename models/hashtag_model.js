@@ -1,6 +1,6 @@
-const { mongoose, Schema } = require('mongoose');
+const mongoose = require('mongoose');
 
-const hashtagSchema = new Schema({
+const hashtagSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'A hashtag must have a title'],

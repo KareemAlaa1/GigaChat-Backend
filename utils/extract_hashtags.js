@@ -5,10 +5,9 @@ const extractHashtags = async (tweet) => {
   const tweetId = tweet.id;
   const tweetDescription = tweet.description;
   const words = tweetDescription.split(' ');
-  const hashtagWords = words.filter((word) => /^#/.test(word));
+  const hashtagWords = words.filter((word, index, self) => /^#/.test(word) && self.indexOf(word) === index);
   await hashtagWords.forEach(async (hashtagWord) => {
     const hashtag = await Hashtag.findOne({ title: hashtagWord });
-    console.log(hashtag);
     // Check for this hashtage if exists in database
     // if exists update its data and save
     if (hashtag) {
@@ -25,3 +24,5 @@ const extractHashtags = async (tweet) => {
     }
   });
 };
+
+module.exports = extractHashtags;
