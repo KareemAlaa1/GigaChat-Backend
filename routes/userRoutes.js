@@ -6,7 +6,11 @@ const router = express.Router();
 
 router.all('/signup', authController.signUp);
 router.post('/login', authController.login);
-router.patch('/updateMe', authController.protect, userController.updateMe);
-router.delete('/deleteMe', authController.protect, userController.deleteMe);
+
+//  Micro endPoints router
+router.post('/checkBirthDate', userController.checkBirthDate);
+router.post('/checkAvailableUsername', userController.checkAvailableUsername);
+router.post('/checkAvailableEmail', userController.checkAvailableEmail);
+router.post('/checkExistedEmail', userController.checkExistedEmail);
 
 module.exports = router;
