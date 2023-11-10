@@ -223,3 +223,112 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
     );
   }
 });
+
+exports.AssignUsername = catchAsync(async (req, res, next) => {
+  const { username } = req.body;
+  if (!username) {
+    return next(new AppError(' Username is required', 400));
+  }
+  // Verification token
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+    // after splite take the second element
+  }
+
+  if (!token) {
+    return next(
+      new AppError(
+        'You have not confirmed your email Please confirm to get access.',
+        401,
+      ),
+    );
+  }
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
+    );
+  }
+  // Check if the user name is the same as the old one
+  if (username !== currentUser.username) {
+    // Check if the new username is unique
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return next(new AppError('The username is already taken.', 400));
+    }
+  }
+
+  // Assign UserName
+  currentUser.username = username;
+  await currentUser.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'username updated successfully',
+    },
+  });
+});
+
+exports.AssignPassword = catchAsync(async (req, res, next) => {
+  const { password } = req.body;
+  if (!password) {
+    return next(new AppError(' password is required', 400));
+  }
+  // Check the password size
+  if (password.length < 8) {
+    return next(new AppError('the password should be 8 litters or more.', 401));
+  }
+  // Verification token
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+    // after splite take the second element
+  }
+
+  if (!token) {
+    return next(
+      new AppError(
+        'You have not confirmed your email Please confirm to get access.',
+        401,
+      ),
+    );
+  }
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
+    );
+  }
+
+  // Assign password
+  currentUser.password = password;
+
+  // Activate the User
+  currentUser.active = true;
+  await currentUser.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      currentUser,
+    },
+  });
+});
