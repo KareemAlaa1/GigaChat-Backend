@@ -2,11 +2,12 @@ const mongoose = require('mongoose');
 const Tweet = require('../models/tweet_model');
 const User = require('../models/user_model');
 const catchAsync = require('../utils/catchAsync');
-const APIFeatures = require('../utils/api_features');
+const {
+  selectNeededInfoForUser,
+  selectNeededInfoForTweets,
+} = require('../utils/api_features');
 
-/**TODO:
- * 1 . add auth
- * */
+/*helper function to get all tweet of  following users */
 allTweetsOfFollowingUsers = (followingUsers) => {
   const allTweets = [];
   followingUsers.forEach((followingUser) => {
@@ -17,27 +18,9 @@ allTweetsOfFollowingUsers = (followingUsers) => {
   return allTweets;
 };
 
-selectNeededInfoForUser = async (tweet, req) => {
-  req.query.type = 'array';
-  req.query.fields = '_id,username,nickname,bio,profileImage,followingUsers,followersUsers';
-  const apiFeatures = new APIFeatures(
-    [tweet.tweetOwner],
-    req.query,
-  ).limitFields();
-  tweet.tweetOwner = await apiFeatures.query;
-};
-
-selectNeededInfoForTweets = async (tweets, req) => {
-  req.query.type = 'array';
-  req.query.fields =
-    '_id,description,media,type,referredTweetId,createdAt,tweetOwner';
-  const apiFeatures = new APIFeatures(tweets, req.query)
-    .sort()
-    .paginate()
-    .limitFields();
-  return await apiFeatures.query;
-};
-
+/**TODO:
+ * 1 . add auth
+ * */
 exports.getFollowingTweets = catchAsync(
   async (
     req,
