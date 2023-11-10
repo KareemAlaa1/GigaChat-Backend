@@ -11,6 +11,21 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+const generateUserName = async (nickname) => {
+  // Generate a unique username based on the nickname
+  const baseUsername = nickname.toLowerCase();
+  const generatedUsername = uniqueSlug(baseUsername);
+
+  // Check the uniqueness of the generated username
+  const isUsernameTaken = await User.exists({ username: generatedUsername });
+  // if some shit happen
+  const finalUsername = isUsernameTaken
+    ? `${generatedUsername}-${Math.floor(Math.random() * 1000)}`
+    : generatedUsername;
+
+  return finalUsername;
+};
+
 exports.signUp = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
     email: req.body.email,
