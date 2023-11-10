@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
+const uniqueSlug = require('unique-slug');
 const { promisify } = require('util'); //util.promisify
 const AppError = require('../utils/appError');
 const User = require('../models/user_model');
 const catchAsync = require('../utils/catchAsync');
+const sendEmail = require('../utils/email');
 
 const signToken = (id) =>
   jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -11,22 +13,43 @@ const signToken = (id) =>
 
 exports.signUp = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
-    username: req.body.username,
     email: req.body.email,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    phone: req.body.phone,
+    nickname: req.body.nickname,
+    birthDate: req.body.birthDate,
     joinedAt: Date.now(),
   });
-  const token = signToken(newUser._id);
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  // 2) Generate random code
+  const confirmCode = newUser.createConfirmCode();
+  await newUser.save({ validateBeforeSave: false });
+
+  const message = `Your confirm Code is ${confirmCode}`;
+
+  try {
+    await sendEmail({
+      email: req.body.email,
+      subject: 'Your Confirm Code (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        email: req.body.email,
+        message: 'Code sent to the email the user provide',
+      },
+    });
+  } catch (err) {
+    newUser.confirmEmailCode = undefined;
+    newUser.confirmEmailExpires = undefined;
+    await newUser.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
+    );
+  }
 });
+
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -80,7 +103,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   // 3) Check if user still exists
   // if the user deleted we no more need to send data
   const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
+  if (!currentUser || !currentUser.active) {
     return next(
       new AppError(
         'The user belonging to this token does no longer exist.',
