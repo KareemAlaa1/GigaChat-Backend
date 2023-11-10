@@ -30,6 +30,3 @@ userRouter.delete('/profile/banner', authController.protect, UserController.dele
 module.exports = userRouter; 
 
 
-const router = express.Router();
-
-
