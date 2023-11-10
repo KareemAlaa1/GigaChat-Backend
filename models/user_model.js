@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const userSchema = new Schema({
   username: {
     type: String,
-    required: true,
     unique: true,
   },
   email: {
@@ -20,20 +19,8 @@ const userSchema = new Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
     minlength: 8,
     select: false,
-  },
-  passwordConfirm: {
-    type: String,
-    required: [true, 'Please confirm your password'],
-    validate: {
-      // This only works on CREATE and SAVE!!!
-      validator: function (el) {
-        return el === this.password;
-      },
-      message: 'Passwords are not the same!',
-    },
   },
   bio: {
     type: String,
@@ -53,7 +40,7 @@ const userSchema = new Schema({
       validator: (value) => typeof value === 'number',
       message: 'phone must be numbers',
     },
-    unique: true,
+    default: '00000000000',
   },
   nickname: {
     type: String,
@@ -128,10 +115,11 @@ const userSchema = new Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  confirmEmailCode: String,
+  confirmEmailExpires: Date,
   active: {
     type: Boolean,
-    default: true,
-    select: false,
+    default: false,
   },
 });
 // Document MiddleWare
@@ -155,12 +143,22 @@ userSchema.pre('save', function (next) {
 });
 // Query MiddleWare
 
-userSchema.pre(/^find/, function (next) {
-  // /^find/ reguler expression
-  // we use normal function to access the this keyword
-  this.find({ active: { $ne: false } });
-  next();
-});
+// NOT WORKING
+// userSchema.pre(/^find/, function (next) {
+//   // /^find/ reguler expression
+//   // we use normal function to access the this keyword
+//   // bypass to allow specific query to still select the inactive user
+//   if (!this.getQuery()._bypassMiddleware) {
+//     this.find({ active: { $ne: false } });
+//   }
+//   next();
+// });
+// i will put the following insteed untill i find sol.
+
+// userSchema.pre('findById', function (next) {
+//   this.find({ active: { $ne: false } });
+//   next();
+// });
 
 // Instance Methods
 
