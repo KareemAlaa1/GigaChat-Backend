@@ -28,8 +28,6 @@ const generateUserName = async (nickname) => {
 
 exports.signUp = catchAsync(async (req, res, next) => {
 
-  console.log(req.body);
-
   const newUser = await User.create({
     email: req.body.email,
     nickname: req.body.nickname,
@@ -40,8 +38,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
   const confirmCode = newUser.createConfirmCode();
   await newUser.save({ validateBeforeSave: false });
  
-  console.log(req.body);
- 
+
   const message = `Your confirm Code is ${confirmCode}`;
 
   try {
@@ -51,8 +48,6 @@ exports.signUp = catchAsync(async (req, res, next) => {
       message,
     });
 
-    console.log(newUser);
-
     res.status(200).json({
       status: 'success',
       data: {
@@ -60,6 +55,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
         message: 'Code sent to the email the user provide',
       },
     });
+    
   } catch (err) {
     newUser.confirmEmailCode = undefined;
     newUser.confirmEmailExpires = undefined;
