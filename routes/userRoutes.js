@@ -19,13 +19,13 @@ userRouter.get('/profile/:username', UserController.getProfile);
 
 userRouter.post('/profile', UserController.updateProfile);
 
-userRouter.post('/profile/image', [upload.single('profile_image'), authController.protect], UserController.updateProfileImage);
+userRouter.post('/profile/image', [authController.protect, upload.single('profile_image')], UserController.updateProfileImage);
 
-userRouter.post('/profile/banner', upload.single('profile_banner'),UserController.updateProfileBanner);
+userRouter.post('/profile/banner', [authController.protect, upload.single('profile_banner')],UserController.updateProfileBanner);
 
-userRouter.delete('/profile/image', UserController.deleteProfileImage);
+userRouter.delete('/profile/image', authController.protect,UserController.deleteProfileImage);
 
-userRouter.delete('/profile/banner', UserController.deleteProfileBanner);
+userRouter.delete('/profile/banner', authController.protect, UserController.deleteProfileBanner);
 
 module.exports = userRouter; 
 

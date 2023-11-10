@@ -80,8 +80,7 @@ const UserController = {
       if (req.query.location) updatedProfileData.location = req.query.location;
       if (req.query.website) updatedProfileData.website = req.query.website;
       if (req.query.nickname) updatedProfileData.nickname = req.query.nickname;
-      if (req.query.birthDate)
-        updatedProfileData.birthDate = req.query.birthDate;
+      if (req.query.birthDate) updatedProfileData.birthDate = req.query.birthDate;
 
       if (Object.keys(updatedProfileData).length === 0)
         return res.status(400).send('Bad Request');
@@ -119,7 +118,7 @@ const UserController = {
       });
 
       const user = await User.findByIdAndUpdate(
-        req.body._id,
+        req.user._id,
         { profileImage: url },
         { new: true },
       ).select('profileImage');
@@ -154,7 +153,7 @@ const UserController = {
       });
 
       const user = await User.findByIdAndUpdate(
-        req.body._id,
+        req.user._id,
         { profileBanner: url },
         { new: true },
       ).select('profileBanner');
@@ -175,10 +174,9 @@ const UserController = {
 
   deleteProfileImage: async (req, res) => {
     try {
-      if (!req.body._id) return res.status(400).send('Bad Request');
 
       const user = await User.findByIdAndUpdate(
-        req.body._id,
+        req.user._id,
         { profileImage: DEFAULT_IMAGE_URL },
         { new: true },
       ).select('profileImage');
@@ -199,10 +197,9 @@ const UserController = {
 
   deleteProfileBanner: async (req, res) => {
     try {
-      if (!req.body._id) return res.status(400).send('Bad Request');
 
       const user = await User.findByIdAndUpdate(
-        req.body._id,
+        req.user._id,
         { profileBanner: DEFAULT_IMAGE_URL },
         { new: true },
       ).select('profileBanner');
