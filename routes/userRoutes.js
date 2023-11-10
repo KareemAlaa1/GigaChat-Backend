@@ -5,18 +5,16 @@ const UserController = require('../controllers/userController');
 const authController = require('../controllers/authController');
 const { upload } = require('../utils/firebase');
 
-
-
 //  Micro endPoints router
-userRouter.post('/checkBirthDate', userController.checkBirthDate);
+userRouter.post('/checkBirthDate', UserController.checkBirthDate); // stage 1
 
-userRouter.post('/checkAvailableUsername', userController.checkAvailableUsername);
+userRouter.post('/checkAvailableUsername', UserController.checkAvailableUsername);
 
-userRouter.post('/checkAvailableEmail', userController.checkAvailableEmail);
+userRouter.post('/checkAvailableEmail', UserController.checkAvailableEmail); // stage 1
 
-userRouter.post('/checkExistedEmail', userController.checkExistedEmail);
+userRouter.post('/checkExistedEmail', UserController.checkExistedEmail);
 
-userRouter.all('/signup', authController.signUp);
+userRouter.post('/signup', authController.signUp); // stage 1
 
 userRouter.post('/confirmEmail', authController.confirmEmail);
 
@@ -27,10 +25,6 @@ userRouter.patch('/AssignUsername', authController.AssignUsername);
 userRouter.patch('/AssignPassword', authController.AssignPassword);
 
 userRouter.post('/login', authController.login);
-
-userRouter.patch('/updateMe', authController.protect, UserController.updateUsernameOrEmail);
-
-userRouter.delete('/deleteMe', authController.protect, UserController.deleteUser);
 
 userRouter.get('/profile/:username', UserController.getProfile);
 
