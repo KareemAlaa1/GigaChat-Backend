@@ -1,5 +1,5 @@
 {
-  "name": "GigaChat",
+  "name": "gigachat",
   "version": "1.0.0",
   "description": "cloning X -> twitter previously",
   "main": "app.js",

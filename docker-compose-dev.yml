@@ -1,0 +1,10 @@
+version: '3'
+services:
+  Gigachat:
+    build:
+      context: .
+    env_file:
+      - /config/dev.env
+    target: Development
+    ports:
+      - "${PORT}:${PORT}"
