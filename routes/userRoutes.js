@@ -5,6 +5,10 @@ const authController = require('../controllers/authController');
 const router = express.Router();
 
 router.all('/signup', authController.signUp);
+router.post('/confirmEmail', authController.confirmEmail);
+router.post('/resendConfirmEmail', authController.resendConfirmEmail);
+router.patch('/AssignUsername', authController.AssignUsername);
+router.patch('/AssignPassword', authController.AssignPassword);
 router.post('/login', authController.login);
 
 //  Micro endPoints router
