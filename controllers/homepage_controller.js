@@ -2,12 +2,42 @@ const mongoose = require('mongoose');
 const Tweet = require('../models/tweet_model');
 const User = require('../models/user_model');
 const catchAsync = require('../utils/catchAsync');
+const APIFeatures = require('../utils/api_features');
 
 /**TODO:
- * 1 . add pagination
- * 2 . add sort
- * 3 . add auth
+ * 1 . add auth
  * */
+allTweetsOfFollowingUsers = (followingUsers) => {
+  const allTweets = [];
+  followingUsers.forEach((followingUser) => {
+    followingUser.tweetList.forEach((tweet) => {
+      allTweets.push({ ...tweet, tweetOwner: followingUser });
+    });
+  });
+  return allTweets;
+};
+
+selectNeededInfoForUser = async (tweet, req) => {
+  req.query.type = 'array';
+  req.query.fields = '_id,username,nickname,bio,profileImage,followingUsers,followersUsers';
+  const apiFeatures = new APIFeatures(
+    [tweet.tweetOwner],
+    req.query,
+  ).limitFields();
+  tweet.tweetOwner = await apiFeatures.query;
+};
+
+selectNeededInfoForTweets = async (tweets, req) => {
+  req.query.type = 'array';
+  req.query.fields =
+    '_id,description,media,type,referredTweetId,createdAt,tweetOwner';
+  const apiFeatures = new APIFeatures(tweets, req.query)
+    .sort()
+    .paginate()
+    .limitFields();
+  return await apiFeatures.query;
+};
+
 exports.getFollowingTweets = catchAsync(
   async (
     req,
@@ -17,6 +47,7 @@ exports.getFollowingTweets = catchAsync(
     },
   ) => {
     const user = await User.findById('654abf68d532cc9d284b6f90')
+      .lean()
       .populate({
         path: 'followingUsers',
         populate: {
@@ -25,11 +56,23 @@ exports.getFollowingTweets = catchAsync(
         },
       })
       .exec();
-    const tweets = [];
     const { followingUsers } = user;
-    followingUsers.forEach((followingUser) =>
-      tweets.push(...followingUser.tweetList),
+    // construct allTweets array containnig all tweets which each tweet element contain its user
+    const allTweets = allTweetsOfFollowingUsers(followingUsers);
+
+    // filter deleted tweets and anu not tweet type
+    var tweets = allTweets.filter(
+      (tweet) => tweet.isDeleted !== true && tweet.type !== 'reply',
     );
-    res.status(200).send(tweets);
+
+    // itterate on each tweet owner to extract useful info for tweetOwner
+    tweets = await Promise.all(
+      tweets.map(async (tweet) => {
+        await selectNeededInfoForUser(tweet, req);
+        return tweet;
+      }),
+    );
+    // itterate on each tweet owner to extract useful info for tweet and send it
+    res.status(200).send(await selectNeededInfoForTweets(tweets, req));
   },
 );

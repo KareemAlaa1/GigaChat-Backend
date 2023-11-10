@@ -67,6 +67,10 @@ const tweetSchema = new Schema({
       message: 'tweet type is either: tweet  quote, reply',
     },
   },
+  referredTweetId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tweet',
+  },
   creation_time: {
     type: Date,
     default: Date.now(),
