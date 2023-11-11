@@ -27,11 +27,13 @@ const generateUserName = async (nickname) => {
 };
 
 exports.signUp = catchAsync(async (req, res, next) => {
+  const generatedUsername = await generateUserName(req.body.nickname);
   const newUser = await User.create({
     email: req.body.email,
     nickname: req.body.nickname,
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
+    username: generatedUsername,
   });
   // 2) Generate random code
   const confirmCode = newUser.createConfirmCode();
@@ -167,8 +169,7 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
   }
   user.confirmEmailExpires = undefined;
   user.confirmEmailCode = undefined;
-  const generatedUsername = await generateUserName(user.nickname);
-  user.username = generatedUsername;
+
   await user.save();
   const token = signToken(user._id);
   res.status(201).json({
