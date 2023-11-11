@@ -22,6 +22,8 @@ app.use((req, res, next) => {
 });
 
 
+
+
 // Handling  Wrong Route Req.
 //Routs
 
@@ -29,6 +31,10 @@ app.use('/api/user', userRouter);
 app.use('/api/homepage', HomepageRouter);
 app.use('/api/trends',HashtagRouter);
 app.use('/api/tweets', tweetRouter);
+
+app.use('/',(req,res)=>{res.send('<h1>Sheshtawy was here!</h1>')})
+
+
 
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {

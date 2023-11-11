@@ -1,6 +1,6 @@
-FROM NODE:18 as Base
+FROM node:18 as base
 
-FROM Base as Development
+FROM base as development
 
 WORKDIR /app
 
@@ -10,5 +10,5 @@ RUN npm install
 
 COPY . .
 
-CMD [ "npm,run,start:dev" ]
+CMD [ "npm","run","start:dev" ]
 
