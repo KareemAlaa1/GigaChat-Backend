@@ -29,7 +29,9 @@ exports.getFollowingTweets = catchAsync(
       res.send(400).send(e);
     },
   ) => {
-    const user = await User.findById('654abf68d532cc9d284b6f90')
+    //TODO: will be changed after auth 
+    req.user = user;
+    const user = await User.findById('654eed855b0fe11cd47fc7eb')
       .lean()
       .populate({
         path: 'followingUsers',
