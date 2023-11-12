@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const catchAsync = require('../utils/catchAsync');
+const User = require('../models/user_model');
 const Hashtag = require('../models/hashtag_model');
 const {
   selectNeededInfoForUser,
@@ -44,6 +45,8 @@ exports.getHastagTweets = catchAsync(
         },
       })
       .exec();
+      //TODO: Remove after adding auth
+    req.user = await User.findById('654eed855b0fe11cd47fc7eb'); 
     if (!hashtag) {
       res.status(404).send('HashTag not found');
     } else {
