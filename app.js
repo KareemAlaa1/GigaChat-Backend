@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors');
 require('./db/mongoose');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -11,6 +12,9 @@ const HashtagRouter = require('./routes/hashtag_router');
 const app = express();
 
 // MIDDLEWARES
+
+app.use(cors());
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -21,15 +25,12 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
-
 // Handling  Wrong Route Req.
 //Routs
 
 app.use('/api/user', userRouter);
 app.use('/api/homepage', HomepageRouter);
-app.use('/api/trends',HashtagRouter);
+app.use('/api/trends', HashtagRouter);
 app.use('/api/tweets', tweetRouter);
 
 app.use('/',(req,res)=>{res.send('<h1>Sheshtawy was here!</h1>')})
