@@ -17,17 +17,19 @@ selectNeededInfoForUser = async (tweet, req) => {
   req.query.type = 'array';
   req.query.fields =
     '_id,username,nickname,bio,profileImage,followingUsers,followersUsers';
-  const apiFeatures = new APIFeatures(
-    [tweet.tweetOwner],
-    req.query,
-  ).limitFields();
+  const users =
+    tweet.retweeter !== undefined
+      ? [tweet.tweetOwner, tweet.retweeter]
+      : [tweet.tweetOwner];
+  const apiFeatures = new APIFeatures(users, req.query).limitFields();
   tweet.tweetOwner = await apiFeatures.query[0];
+  tweet.retweeter = await apiFeatures.query[1];
 };
 
 selectNeededInfoForTweets = async (tweets, req) => {
   req.query.type = 'array';
   req.query.fields =
-    '_id,description,media,type,referredTweetId,likersList,repliesList,retweetList,likesNum,repliesNum,repostsNum,isLiked,views,createdAt,tweetOwner';
+    '_id,description,media,type,referredTweetId,likersList,repliesList,retweetList,likesNum,repliesNum,repostsNum,isLiked,views,createdAt,tweetOwner,retweeter';
   const apiFeatures = new APIFeatures(tweets, req.query)
     .sort()
     .paginate()

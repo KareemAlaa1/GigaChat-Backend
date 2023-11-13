@@ -12,7 +12,18 @@ allTweetsOfFollowingUsers = (followingUsers) => {
   const allTweets = [];
   followingUsers.forEach((followingUser) => {
     followingUser.tweetList.forEach((tweet) => {
-      allTweets.push({ ...tweet, tweetOwner: followingUser });
+      //check if tweetOnwer is the following user or not to check if it's a tweet or retweet
+      if (tweet.userId._id.toString() == followingUser._id.toString()) {
+        tweet.type = 'tweet';
+        allTweets.push({ ...tweet, tweetOwner: followingUser });
+      } else {
+        tweet.type = 'retweet';
+        allTweets.push({
+          ...tweet,
+          tweetOwner: tweet.userId,
+          retweeter: followingUser,
+        });
+      }
     });
   });
   return allTweets;
@@ -29,8 +40,7 @@ exports.getFollowingTweets = catchAsync(
       res.send(400).send(e);
     },
   ) => {
-    //TODO: will be changed after auth 
-    req.user = user;
+    //TODO: will be changed after auth
     const user = await User.findById('654eed855b0fe11cd47fc7eb')
       .lean()
       .populate({
@@ -38,9 +48,14 @@ exports.getFollowingTweets = catchAsync(
         populate: {
           path: 'tweetList',
           model: 'Tweet',
+          populate: {
+            path: 'userId',
+            model: 'User',
+          },
         },
       })
       .exec();
+    req.user = user;
     const { followingUsers } = user;
     // construct allTweets array containnig all tweets which each tweet element contain its user
     const allTweets = allTweetsOfFollowingUsers(followingUsers);
