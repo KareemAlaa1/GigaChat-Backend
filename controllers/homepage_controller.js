@@ -29,19 +29,17 @@ allTweetsOfFollowingUsers = (followingUsers) => {
   return allTweets;
 };
 
-/**TODO:
- * 1 . add auth
- * */
+
 exports.getFollowingTweets = catchAsync(
   async (
     req,
     res,
     next = (e) => {
-      res.send(400).send(e);
+      res.send(500).send(e);
     },
   ) => {
-    //TODO: will be changed after auth
-    const user = await User.findById('654eed855b0fe11cd47fc7eb')
+    
+    const user = await User.findById(req.user._id)
       .lean()
       .populate({
         path: 'followingUsers',
@@ -57,22 +55,25 @@ exports.getFollowingTweets = catchAsync(
       .exec();
     req.user = user;
     const { followingUsers } = user;
+
     // construct allTweets array containnig all tweets which each tweet element contain its user
     const allTweets = allTweetsOfFollowingUsers(followingUsers);
 
-    // filter deleted tweets and anu not tweet type
+    // filter deleted tweets and replies
     var tweets = allTweets.filter(
       (tweet) => tweet.isDeleted !== true && tweet.type !== 'reply',
     );
 
-    // itterate on each tweet owner to extract useful info for tweetOwner
+    // extract useful info for tweetOwner and following user if they are not the same
+    // in case tweetOnwer wasn't the following user this means the following user retweet this tweet
     tweets = await Promise.all(
       tweets.map(async (tweet) => {
         await selectNeededInfoForUser(tweet, req);
         return tweet;
       }),
     );
-    // itterate on each tweet owner to extract useful info for tweet and send it
+
+    // extract useful info for each tweet and send it
     res.status(200).send(await selectNeededInfoForTweets(tweets, req));
   },
 );
