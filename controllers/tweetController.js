@@ -131,14 +131,16 @@ const TweetController = {
         'likersList userId',
       );
       if (tweet === null) {
-        res.status(404).json({
+        res.status(404);
+        res.json({
           status: 'Fail',
           message: 'Can not Find This Tweet',
         });
       } else {
         const user = await getUserDatabyId(tweet.userId);
         if (user === null) {
-          res.status(404).json({
+          res.status(404);
+          res.json({
             status: 'Fail',
             message: 'Can not Find This Tweet',
           });
@@ -166,19 +168,33 @@ const TweetController = {
               },
             },
           ]);
-          console.log(likersList);
-          res.status(200).json({
-            status: 'Likers List Get Success',
-            data: {
-              likersList,
-            },
+          let data = [];
+          likersList.map((el) => {
+            data.push({
+              id: el._id,
+              username: el.username,
+              nickname: el.nickname,
+              bio: el.bio,
+              profile_image: el.profileImage,
+              followers_num: el.followersUsers,
+              following_num: el.followingUsers,
+            });
+          });
+
+          // console.log(data);
+          res.status(200);
+          res.json({
+            status: 'Success',
+            message: 'Tweet Likers Get Success',
+            data,
           });
           return 1;
         }
       }
     } catch (err) {
       console.log(err);
-      res.status(400).json({
+      res.status(400);
+      res.json({
         status: 'bad request',
         message: err,
       });
