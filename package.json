@@ -7,7 +7,8 @@
     "start:dev": "nodemon server.js",
     "start:prod": "env-cmd -f ./config/prod.env NODE_ENV=production nodemon server.js",
     "debug": "ndb server.js",
-    "start:test": "env-cmd -f ./config/test.env jest --watchAll"
+    "start:test": "env-cmd -f ./config/test.env jest --watchAll",
+    "test": "jest"
   },
   "jest": {
     "testEnvironment": "node",
