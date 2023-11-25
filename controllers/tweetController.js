@@ -60,12 +60,23 @@ const TweetController = {
           });
         } else {
           tweet.tweet_owner = user;
+          const like = await User.findOne({
+            _id: req.user._id,
+            likedTweets: { $in: [tweet.id] },
+          });
+          if (like) {
+            tweet.isLiked = true;
+          } else {
+            tweet.isLiked = false;
+          }
+          delete tweet.userId;
+          tweet.media.forEach((el) => {
+            delete el._id;
+          });
           res.status(200);
           res.json({
             status: 'Tweet Get Success',
-            data: {
-              tweet,
-            },
+            data: tweet,
           });
         }
       }
