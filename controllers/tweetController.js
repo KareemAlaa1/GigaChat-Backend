@@ -15,22 +15,28 @@ const TweetController = {
     try {
       // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
       req.body.userId = req.user._id;
-      const newTweet = await Tweet.create(req.body);
-      let retTweet = {};
-      retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
-      retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
-      await User.findByIdAndUpdate(req.body.userId, {
-        $push: { tweetList: retTweet.id },
-      });
+      if (req.body.media == undefined && req.body.description == undefined) {
+        res.status(400).json({
+          status: 'bad request',
+          message: err,
+        });
+      } else {
+        const newTweet = await Tweet.create(req.body);
+        let retTweet = {};
+        retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
+        retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
+        await User.findByIdAndUpdate(req.body.userId, {
+          $push: { tweetList: { id: retTweet.id, type: req.body.type } },
+        });
 
-      res.status(201).json({
-        status: 'Tweet Add Success',
-        data: {
-          tweet: retTweet,
-        },
-      });
-
-      extractHashtags(newTweet);
+        res.status(201).json({
+          status: 'Tweet Add Success',
+          data: {
+            tweet: retTweet,
+          },
+        });
+        if (req.body.description) extractHashtags(newTweet);
+      }
     } catch (err) {
       res.status(400).json({
         status: 'bad request',
