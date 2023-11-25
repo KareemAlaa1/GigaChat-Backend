@@ -32,7 +32,7 @@ exports.getHastagTweets = catchAsync(
     req,
     res,
     next = (e) => {
-      res.send(400).send(e);
+      res.send(404).send(new Error('Hashtag is not found'));
     },
   ) => {
     const hashtagTitle = '#' + req.params.trend;
@@ -57,7 +57,7 @@ exports.getHastagTweets = catchAsync(
         (tweet) => tweet.isDeleted !== true && tweet.type !== 'reply',
       );
 
-    // extract useful info for tweetOwner
+      // extract useful info for tweetOwner
       hashtag.tweet_list = await Promise.all(
         hashtag.tweet_list.map(async (tweet) => {
           tweet = { ...tweet, tweetOwner: tweet.userId };
