@@ -23,4 +23,10 @@ tweetRouter.patch(
   tweetController.retweetTweet,
 );
 
+tweetRouter.get(
+  '/replies/:tweetId',
+  authController.protect,
+  tweetController.getTweetReplies,
+);
+
 module.exports = tweetRouter;
