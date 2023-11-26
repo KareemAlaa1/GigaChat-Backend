@@ -75,6 +75,31 @@ const TweetController = {
           } else {
             tweet.isLiked = false;
           }
+
+          const retweet = await User.aggregate([
+            {
+              $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id),
+                tweetList: {
+                  $elemMatch: {
+                    id: tweet.id,
+                    type: 'retweet',
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+              },
+            },
+          ]);
+          console.log(retweet);
+          if (retweet.length > 0) {
+            tweet.isRetweeted = true;
+          } else {
+            tweet.isRetweeted = false;
+          }
           delete tweet.userId;
           tweet.media.forEach((el) => {
             delete el._id;
