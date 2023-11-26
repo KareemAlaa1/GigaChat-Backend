@@ -1,13 +1,6 @@
 const mongoose = require('mongoose');
 const catchAsync = require('../utils/catchAsync');
-const User = require('../models/user_model');
-const AppError = require('../utils/appError');
 const Hashtag = require('../models/hashtag_model');
-const {
-  selectNeededInfoForUser,
-  selectNeededInfoForTweets,
-  APIFeatures,
-} = require('../utils/api_features');
 
 exports.getAllHashtages = catchAsync(
   async (
@@ -17,13 +10,22 @@ exports.getAllHashtages = catchAsync(
       res.send(400).send(e);
     },
   ) => {
-    req.query.sort = '-count';
-    req.query.fields = 'title count';
-    const apiFeatures = new APIFeatures(Hashtag.find(), req.query)
-      .sort()
-      .limitFields()
-      .paginate();
-    res.status(200).send(await apiFeatures.query);
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    const hashtags = await Hashtag.aggregate()
+      .sort('-count')
+      .project('title count')
+      .skip(skip)
+      .limit(limit);
+
+    if (!hashtags)
+      res.status(404).json({
+        message: 'No Hashtags Found',
+      });
+
+    res.status(200).send(hashtags);
   },
 );
 
@@ -32,42 +34,110 @@ exports.getHastagTweets = catchAsync(
     req,
     res,
     next = (e) => {
-      res.send(404).send(new Error('Hashtag is not found'));
+      res.send(400).send(e);
     },
   ) => {
     const hashtagTitle = '#' + req.params.trend;
 
-    const hashtag = await Hashtag.findOne({ title: hashtagTitle })
-      .lean()
-      .populate({
-        path: 'tweet_list',
-        populate: {
-          path: 'userId',
-          model: 'User',
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    const found = await Hashtag.findOne({ title: hashtagTitle });
+    if (!found)
+      res.status(404).json({
+        message: 'HashTag Not Found',
+      });
+    if (
+      found.tweet_list === undefined ||
+      found.tweet_list === null ||
+      found.tweet_list.length == 0
+    )
+      res.status(404).json({
+        message: 'No Tweets Found For This Hashtag',
+      });
+    console.log(skip + limit);
+    console.log(found.tweet_list.length);
+
+    if (skip + limit > found.tweet_list.length)
+      res.status(400).json({
+        message:
+          'Invalid page and count value num of tweets is ' +
+          found.tweet_list.length,
+      });
+
+    const hashtag = await Hashtag.aggregate([
+      { $match: { title: hashtagTitle } },
+    ])
+      .lookup({
+        from: 'tweets',
+        localField: 'tweet_list',
+        foreignField: '_id',
+        as: 'tweet_list',
+      })
+      .unwind('$tweet_list')
+      .addFields({
+        'tweet_list.likesNum': {
+          $size: '$tweet_list.likersList',
+        },
+        'tweet_list.repliesNum': {
+          $size: '$tweet_list.repliesList',
+        },
+        'tweet_list.repostsNum': {
+          $size: '$tweet_list.retweetList',
         },
       })
-      .exec();
+      .match({
+        'tweet_list.isDeleted': false,
+        $or: [{ 'tweet_list.type': 'tweet' }, { 'tweet_list.type': 'retweet' }],
+      })
+      .lookup({
+        from: 'users',
+        localField: 'tweet_list.userId',
+        foreignField: '_id',
+        as: 'tweet_list.tweet_owner',
+      })
+      .unwind('$tweet_list.tweet_owner')
+      .addFields({
+        'tweet_list.isFollowed': {
+          $in: ['$req.user._id', '$tweet_list.tweet_owner.followersUsers'],
+        },
+        'tweet_list.isLiked': {
+          $in: ['$req.user._id', '$tweet_list.likersList'],
+        },
+      })
+      .group({
+        _id: '$_id',
+        title: { $first: '$title' },
+        count: { $first: '$count' },
+        tweet_list: { $push: '$tweet_list' },
+      })
+      .project({
+        tweet_list: {
+          _id: 1,
+          description: 1,
+          media: 1,
+          referredTweetId: 1,
+          createdAt: 1,
+          likesNum: 1,
+          repliesNum: 1,
+          repostsNum: 1,
+          tweet_owner: {
+            _id: 1,
+            username: 1,
+            nickname: 1,
+            bio: 1,
+            profile_image: 1,
+            followers_num: 1,
+            following_num: 1,
+          },
+        },
+        'tweet_list.isFollowed': 1,
+        'tweet_list.isLiked': 1,
+      })
+      .skip(skip)
+      .limit(limit);
 
-    if (!hashtag) {
-      // new AppError('HashTag not found',404)
-      res.status(404).send({ status: 'fail', message: 'HashTag not found' });
-    } else {
-      // filter deleted tweets and anu not tweet type
-      hashtag.tweet_list = hashtag.tweet_list.filter(
-        (tweet) => tweet.isDeleted !== true && tweet.type !== 'reply',
-      );
-
-      // extract useful info for tweetOwner
-      hashtag.tweet_list = await Promise.all(
-        hashtag.tweet_list.map(async (tweet) => {
-          tweet = { ...tweet, tweetOwner: tweet.userId };
-          await selectNeededInfoForUser(tweet, req);
-          return tweet;
-        }),
-      );
-
-      // extract useful info for each tweet and send it
-      res.status(200).send(await selectNeededInfoForTweets(hashtag.tweet_list, req));
-    }
+    res.send(hashtag[0].tweet_list);
   },
 );
