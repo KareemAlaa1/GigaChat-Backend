@@ -67,6 +67,12 @@ exports.getFollowingTweets = catchAsync(
         'tweetList.tweetDetails.likesNum': {
           $size: '$tweetList.tweetDetails.likersList',
         },
+        'tweetList.tweetDetails.repliesNum': {
+          $size: '$tweetList.tweetDetails.repliesList',
+        },
+        'tweetList.tweetDetails.repostsNum': {
+          $size: '$tweetList.tweetDetails.retweetList',
+        },
       })
       .lookup({
         from: 'users',
@@ -90,10 +96,6 @@ exports.getFollowingTweets = catchAsync(
         'tweetList.isLiked': {
           $in: ['$_id', '$tweetList.tweetDetails.likersList'],
         },
-      })
-      .group({
-        _id: '$_id',
-        tweetList: { $push: '$tweetList' },
       })
       .unwind('tweetList')
       .sort({
@@ -139,4 +141,3 @@ exports.getFollowingTweets = catchAsync(
     res.send(user[0].tweetList);
   },
 );
-//        '     ',
