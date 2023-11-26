@@ -83,7 +83,7 @@ const userSchema = new mongoose.Schema({
   ],
   tweetList: [
     {
-      id: {
+      tweetId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tweet',
       },

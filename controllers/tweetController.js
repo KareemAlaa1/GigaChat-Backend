@@ -26,7 +26,7 @@ const TweetController = {
         retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
         retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
         await User.findByIdAndUpdate(req.body.userId, {
-          $push: { tweetList: { id: retTweet.id, type: req.body.type } },
+          $push: { tweetList: { tweetId: retTweet.id, type: req.body.type } },
         });
 
         res.status(201).json({
@@ -67,7 +67,7 @@ const TweetController = {
             $push: { retweetList: req.user._id },
           });
           await User.findByIdAndUpdate(req.user._id, {
-            $push: { tweetList: { id: tweet.id, type: 'retweet' } },
+            $push: { tweetList: { tweetId: tweet.id, type: 'retweet' } },
           });
           res.status(204);
           res.json({
@@ -122,7 +122,7 @@ const TweetController = {
                 _id: new mongoose.Types.ObjectId(req.user._id),
                 tweetList: {
                   $elemMatch: {
-                    id: tweet.id,
+                    tweetId: tweet.id,
                     type: 'retweet',
                   },
                 },
@@ -191,7 +191,7 @@ const TweetController = {
             await User.updateMany(
               { _id: { $in: users.retweetList } },
               {
-                $pull: { tweetList: { id: req.params.tweetId } },
+                $pull: { tweetList: { tweetId: req.params.tweetId } },
               },
             );
 
@@ -203,7 +203,7 @@ const TweetController = {
             );
 
             await User.findByIdAndUpdate(req.body.userId, {
-              $pull: { tweetList: { id: req.params.tweetId } },
+              $pull: { tweetList: { tweetId: req.params.tweetId } },
             });
 
             res.status(204).json({
@@ -231,7 +231,7 @@ const TweetController = {
       const tweet = await Tweet.findById(req.params.tweetId).select(
         'likersList userId',
       );
-      if (tweet === null) {
+      if (tweet === null || tweet.isDeleted) {
         res.status(404);
         res.json({
           status: 'Fail',
@@ -246,7 +246,7 @@ const TweetController = {
             message: 'Can not Find This Tweet',
           });
         } else {
-          const likersList = await User.aggregate([
+          const data = await User.aggregate([
             {
               $match: {
                 _id: { $in: tweet.likersList },
@@ -254,33 +254,21 @@ const TweetController = {
             },
             {
               $project: {
-                _id: 1,
+                id: '$_id',
                 username: 1,
                 nickname: 1,
                 bio: 1,
-                profileImage: 1,
-                followersUsers: {
+                profile_image: '$profileImage',
+                followers_num: {
                   $size: '$followersUsers',
                 },
-                followingUsers: {
+                following_num: {
                   $size: '$followingUsers',
                 },
                 isDeleted: 1,
               },
             },
           ]);
-          let data = [];
-          likersList.map((el) => {
-            data.push({
-              id: el._id,
-              username: el.username,
-              nickname: el.nickname,
-              bio: el.bio,
-              profile_image: el.profileImage,
-              followers_num: el.followersUsers,
-              following_num: el.followingUsers,
-            });
-          });
 
           // console.log(data);
           res.status(200);
@@ -348,9 +336,20 @@ const TweetController = {
                 repliesNum: { $size: '$repliesList' },
                 repostsNum: { $size: '$retweetList' },
                 likesNum: { $size: '$likersList' },
+                likersList: 1,
+                retweetList: 1,
               },
             },
-
+            {
+              $addFields: {
+                isLiked: {
+                  $in: [req.user._id, '$likersList'],
+                },
+                isRetweeted: {
+                  $in: [req.user._id, '$retweetList'],
+                },
+              },
+            },
             {
               $lookup: {
                 from: 'users',
@@ -391,29 +390,6 @@ const TweetController = {
               ? repliesList[0].totalCount[0].count
               : 0;
 
-          let { likedTweets, tweetList } = await User.findById(
-            req.user._id,
-          ).select('likedTweets tweetList');
-          tweetList = tweetList.map((el) => {
-            return el.id.toString() + el.type;
-          });
-          console.log(likedTweets);
-          for (const el of data) {
-            const tweet_owner = el.tweet_owner[0];
-            delete el.tweet_owner;
-            delete el.userId;
-            el.tweet_owner = tweet_owner;
-            if (likedTweets.includes(el.id)) {
-              el.isLiked = true;
-            } else {
-              el.isLiked = false;
-            }
-            if (tweetList.includes(el.id.toString() + 'retweet')) {
-              el.isRetweeted = true;
-            } else {
-              el.isRetweeted = false;
-            }
-          }
           res.status(200);
           res.json({
             status: 'Success',
