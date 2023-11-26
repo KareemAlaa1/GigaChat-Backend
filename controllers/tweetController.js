@@ -45,6 +45,46 @@ const TweetController = {
     }
   },
 
+  retweetTweet: async (req, res) => {
+    try {
+      const tweet = await getTweetDatabyId(req.params.tweetId);
+      if (tweet === null) {
+        res.status(404);
+        res.json({
+          status: 'Fail',
+          message: 'Can not Find This Tweet',
+        });
+      } else {
+        const user = await getUserDatabyId(tweet.userId);
+        if (user === null) {
+          res.status(404);
+          res.json({
+            status: 'Fail',
+            message: 'Can not Find This Tweet Owner',
+          });
+        } else {
+          await Tweet.findByIdAndUpdate(tweet.id, {
+            $push: { retweetList: req.user._id },
+          });
+          await User.findByIdAndUpdate(req.user._id, {
+            $push: { tweetList: { id: tweet.id, type: 'retweet' } },
+          });
+          res.status(204);
+          res.json({
+            status: 'Retweet Success',
+          });
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(400);
+      res.json({
+        status: 'bad request',
+        message: err,
+      });
+    }
+  },
+
   getTweet: async (req, res) => {
     try {
       // const tweet = await getTweetDatabyId(req.params.tweetId);
