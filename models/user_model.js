@@ -83,8 +83,17 @@ const userSchema = new mongoose.Schema({
   ],
   tweetList: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
+      tweetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tweet',
+      },
+      type: {
+        type: String,
+        enum: {
+          values: ['tweet', 'retweet', 'reply'],
+          message: 'type must be tweet or retweet or reply',
+        },
+      },
     },
   ],
   notificationList: [
@@ -237,4 +246,3 @@ userSchema.methods.correctConfirmCode = async function (
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
-

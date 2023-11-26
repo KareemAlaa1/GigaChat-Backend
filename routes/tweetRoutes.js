@@ -17,4 +17,16 @@ tweetRouter.get(
   tweetController.getTweetLikers,
 );
 
+tweetRouter.patch(
+  '/retweet/:tweetId',
+  authController.protect,
+  tweetController.retweetTweet,
+);
+
+tweetRouter.get(
+  '/replies/:tweetId',
+  authController.protect,
+  tweetController.getTweetReplies,
+);
+
 module.exports = tweetRouter;
