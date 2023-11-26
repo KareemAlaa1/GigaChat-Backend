@@ -144,9 +144,28 @@ const TweetController = {
             updatedTweet.isDeleted = true;
             await Tweet.findByIdAndUpdate(req.params.tweetId, updatedTweet);
 
+            const users = await Tweet.findById(req.params.tweetId).select(
+              'retweetList likersList',
+            );
+
+            await User.updateMany(
+              { _id: { $in: users.retweetList } },
+              {
+                $pull: { tweetList: { id: req.params.tweetId } },
+              },
+            );
+
+            await User.updateMany(
+              { _id: { $in: users.likersList } },
+              {
+                $pull: { likedTweets: req.params.tweetId },
+              },
+            );
+
             await User.findByIdAndUpdate(req.body.userId, {
-              $pull: { tweetList: req.params.tweetId },
+              $pull: { tweetList: { id: req.params.tweetId } },
             });
+
             res.status(204).json({
               status: 'Tweet Delete Success',
             });
