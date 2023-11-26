@@ -20,9 +20,11 @@ exports.getFollowingTweets = catchAsync(
       res.send(500).send(e);
     },
   ) => {
-    const user = await User.aggregate({
-      $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
-    })
+    const user = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+      },
+    ])
       .lookup({
         from: 'users',
         localField: 'followingUsers',
