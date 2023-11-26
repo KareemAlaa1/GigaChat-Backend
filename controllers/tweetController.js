@@ -301,6 +301,137 @@ const TweetController = {
       });
     }
   },
+
+  getTweetReplies: async (req, res) => {
+    try {
+      const tweet = await Tweet.findById(req.params.tweetId).select(
+        'likersList userId isDeleted',
+      );
+      if (tweet === null || tweet.isDeleted) {
+        res.status(404);
+        res.json({
+          status: 'Fail',
+          message: 'Can not Find This Tweet',
+        });
+      } else {
+        const user = await getUserDatabyId(tweet.userId);
+        if (user === null) {
+          res.status(404);
+          res.json({
+            status: 'Fail',
+            message: 'Can not Find This Tweet',
+          });
+        } else {
+          const size = parseInt(req.body.count, 10) || 10;
+
+          const skip = ((req.body.page || 1) - 1) * size;
+          const repliesList = await Tweet.aggregate([
+            {
+              $match: {
+                type: 'reply',
+                referredTweetId: new mongoose.Types.ObjectId(
+                  req.params.tweetId,
+                ),
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                referredTweetId: 1,
+                description: 1,
+                id: '$_id',
+                userId: 1,
+                media: 1,
+                type: 1,
+                creation_time: '$createdAt',
+                viewsNum: '$views',
+                repliesNum: { $size: '$repliesList' },
+                repostsNum: { $size: '$retweetList' },
+                likesNum: { $size: '$likersList' },
+              },
+            },
+
+            {
+              $lookup: {
+                from: 'users',
+                let: { userId: '$userId' }, // Define a variable to store the value of the userId field
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ['$_id', '$$userId'] }, // Match documents where _id equals the userId variable
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      id: '$_id',
+                      username: 1,
+                      nickname: 1,
+                      bio: 1,
+                      profile_image: '$profileImage',
+                      followers_num: { $size: '$followersUsers' },
+                      following_num: { $size: '$followingUsers' },
+                    },
+                  },
+                ],
+                as: 'tweet_owner',
+              },
+            },
+            {
+              $facet: {
+                paginatedResults: [{ $skip: skip }, { $limit: size }],
+                totalCount: [{ $group: { _id: null, count: { $sum: 1 } } }],
+              },
+            },
+          ]);
+          console.log(repliesList);
+          const data = repliesList[0].paginatedResults;
+          const totalCount =
+            repliesList[0].totalCount.length > 0
+              ? repliesList[0].totalCount[0].count
+              : 0;
+
+          let { likedTweets, tweetList } = await User.findById(
+            req.user._id,
+          ).select('likedTweets tweetList');
+          tweetList = tweetList.map((el) => {
+            return el.id.toString() + el.type;
+          });
+          console.log(likedTweets);
+          for (const el of data) {
+            const tweet_owner = el.tweet_owner[0];
+            delete el.tweet_owner;
+            delete el.userId;
+            el.tweet_owner = tweet_owner;
+            if (likedTweets.includes(el.id)) {
+              el.isLiked = true;
+            } else {
+              el.isLiked = false;
+            }
+            if (tweetList.includes(el.id.toString() + 'retweet')) {
+              el.isRetweeted = true;
+            } else {
+              el.isRetweeted = false;
+            }
+          }
+          res.status(200);
+          res.json({
+            status: 'Success',
+            message: 'Tweet Likers Get Success',
+            data,
+          });
+          return 1;
+        }
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(400);
+      res.json({
+        status: 'bad request',
+        message: err,
+      });
+    }
+  },
 };
 
 module.exports = TweetController;
