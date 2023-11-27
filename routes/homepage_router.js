@@ -1,7 +1,8 @@
 const express = require('express');
 const HomepageController = require('../controllers/homepage_controller');
+const { protect } = require('../controllers/auth_controller');
 const router = new express.Router();
 
-router.get('/following', HomepageController.getFollowingTweets);
+router.get('/following', protect, HomepageController.getFollowingTweets);
 
 module.exports = router;

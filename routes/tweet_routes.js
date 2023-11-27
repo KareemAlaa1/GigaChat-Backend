@@ -1,6 +1,6 @@
 const express = require('express');
-const tweetController = require('../controllers/tweetController');
-const authController = require('../controllers/authController');
+const tweetController = require('../controllers/tweet_controller');
+const authController = require('../controllers/auth_controller');
 
 const tweetRouter = express.Router();
 
@@ -15,6 +15,18 @@ tweetRouter.get(
   '/likers/:tweetId',
   authController.protect,
   tweetController.getTweetLikers,
+);
+
+tweetRouter.patch(
+  '/retweet/:tweetId',
+  authController.protect,
+  tweetController.retweetTweet,
+);
+
+tweetRouter.get(
+  '/replies/:tweetId',
+  authController.protect,
+  tweetController.getTweetReplies,
 );
 
 module.exports = tweetRouter;
