@@ -20,6 +20,10 @@ exports.getFollowingTweets = catchAsync(
       res.send(500).send(e);
     },
   ) => {
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
+    const skip = (page - 1) * limit;
+
     const user = await User.aggregate([
       {
         $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
@@ -98,6 +102,9 @@ exports.getFollowingTweets = catchAsync(
         'tweetList.isLiked': {
           $in: ['$_id', '$tweetList.tweetDetails.likersList'],
         },
+        'tweetList.isRtweeted': {
+          $in: ['$_id', '$tweetList.tweetDetails.retweetList'],
+        },
       })
       .unwind('tweetList')
       .sort({
@@ -139,7 +146,10 @@ exports.getFollowingTweets = catchAsync(
         },
         'tweetList.isFollowed': 1,
         'tweetList.isLiked': 1,
-      });
-    res.send(user[0].tweetList);
+        'tweetList.isRtweeted': 1,
+      })
+      .skip(skip)
+      .limit(limit);
+    res.status(200).send(user[0]);
   },
 );
