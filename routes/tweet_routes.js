@@ -1,6 +1,6 @@
 const express = require('express');
-const tweetController = require('../controllers/tweetController');
-const authController = require('../controllers/authController');
+const tweetController = require('../controllers/tweet_controller');
+const authController = require('../controllers/auth_controller');
 
 const tweetRouter = express.Router();
 
