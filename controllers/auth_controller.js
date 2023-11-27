@@ -6,10 +6,12 @@ const User = require('../models/user_model');
 const catchAsync = require('../utils/catch_async');
 const sendEmail = require('../utils/email');
 
-exports.signToken = (id) =>
+const signToken = (id) =>
   jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
+
+module.exports = signToken;
 
 const generateUserName = async (nickname) => {
   // Generate a unique username based on the nickname
