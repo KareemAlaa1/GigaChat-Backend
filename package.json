@@ -7,8 +7,14 @@
     "start:dev": "nodemon server.js",
     "start:prod": "env-cmd -f ./config/prod.env NODE_ENV=production nodemon server.js",
     "debug": "ndb server.js",
-    "start:test": "env-cmd -f ./config/test.env jest --watchAll",
-    "test": "jest"
+    "start:test": "jest --watchAll"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "start:prod": "NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js",
+    "test": "jest",
+    "collectCoverage": true
   },
   "author": "BackEnd Team",
   "license": "ISC",
