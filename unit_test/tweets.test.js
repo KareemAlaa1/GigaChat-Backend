@@ -1,10 +1,10 @@
-const tweetController = require('../controllers/tweetController');
+const tweetController = require('../controllers/tweet_controller');
 const Tweet = require('../models/tweet_model');
 jest.mock('../models/tweet_model');
 const User = require('../models/user_model');
 jest.mock('../models/user_model');
-const tweetHelper = require('../controllers/tweetHelper');
-jest.mock('../controllers/tweetHelper');
+const tweetHelper = require('../controllers/tweet_helper');
+jest.mock('../controllers/tweet_helper');
 
 const req = {};
 

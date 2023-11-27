@@ -6,9 +6,11 @@ const User = require('../models/user_model');
 const authController = require('../controllers/auth_controller');
 const app = require('../app');
 const fs = require('fs');
+
 const DEFAULT_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
-const userData = {
+
+  const userData = {
   username: "karreeem_",
   email: "kareemalaa555@gmail.com",
   bio: "we are dead",
@@ -255,10 +257,12 @@ describe("DELETE /api/user/profile/image", () => {
   let consoleErrorSpy;
 
   beforeAll(() => {
+    // Spy on console.error before running any test in this describe block
     consoleErrorSpy = jest.spyOn(console, 'error');
   });
 
   afterAll(() => {
+    // Restore the original console.error implementation after all tests
     consoleErrorSpy.mockRestore();
   });
 
@@ -290,6 +294,7 @@ describe("DELETE /api/user/profile/image", () => {
       error: 'Internal Server Error',
     });
 
+    // Restore the original console.error implementation
     console.error.mockRestore();
   });
 });
@@ -299,10 +304,12 @@ describe("DELETE /api/user/profile/banner", () => {
   let consoleErrorSpy;
 
   beforeAll(() => {
+    // Spy on console.error before running any test in this describe block
     consoleErrorSpy = jest.spyOn(console, 'error');
   });
 
   afterAll(() => {
+    // Restore the original console.error implementation after all tests
     consoleErrorSpy.mockRestore();
   });
 
@@ -334,6 +341,7 @@ describe("DELETE /api/user/profile/banner", () => {
       error: 'Internal Server Error',
     });
 
+    // Restore the original console.error implementation
     console.error.mockRestore();
   });
 });

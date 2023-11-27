@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/user_model');
-const catchAsync = require('../utils/catchAsync');
+const catchAsync = require('../utils/catch_async');
 
 /**
  * [1] : get user by id
