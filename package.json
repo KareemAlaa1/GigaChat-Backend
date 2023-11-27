@@ -10,6 +10,17 @@
     "start:test": "env-cmd -f ./config/test.env jest --watchAll",
     "test": "jest"
   },
+  "jest": {
+    "testEnvironment": "node",
+    "start:prod": "NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js",
+    "test": "jest",
+    "collectCoverage": true,
+    "coverageReporters": [
+      "text",
+      "html"
+    ]
+  },
   "author": "BackEnd Team",
   "license": "ISC",
   "dependencies": {
