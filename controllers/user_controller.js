@@ -124,7 +124,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     // get the sent data from the request body
-    const { bio, location, website, nickname, birth_date } = req.body;
+    const { bio, location, website, nickname, birth_date } = req.query;
 
     if (!bio && !location && !website && !nickname && !birth_date) {
       return res.status(400).send({ error: 'Bad Request' });
