@@ -94,17 +94,17 @@ describe("GET /api/user/profile", () => {
     expect(response.body.error).toBe('user not found');
   });
 
-  // it('responds with 500 and error message when an internal server error occurs', async () => {
+  it('responds with 500 and error message when an internal server error occurs', async () => {
 
-  //   jest.spyOn(User, 'findOne').mockImplementationOnce(() => {
-  //     throw new Error('Simulated error');
-  //   });
+    jest.spyOn(User, 'findOne').mockImplementationOnce(() => {
+      throw new Error('Simulated error');
+    });
 
-  //   const response = await request(app).get('/api/user/profile/testuser');
+    const response = await request(app).get('/api/user/profile/testuser');
 
-  //   expect(response.status).toBe(500);
-  //   expect(response.body.error).toBe('Internal Server Error');
-  // });
+    expect(response.status).toBe(500);
+    expect(response.body.error).toBe('Internal Server Error');
+  });
 });
 
 describe("patch /api/user/profile", () => {
@@ -255,12 +255,10 @@ describe("DELETE /api/user/profile/image", () => {
   let consoleErrorSpy;
 
   beforeAll(() => {
-    // Spy on console.error before running any test in this describe block
     consoleErrorSpy = jest.spyOn(console, 'error');
   });
 
   afterAll(() => {
-    // Restore the original console.error implementation after all tests
     consoleErrorSpy.mockRestore();
   });
 
@@ -292,7 +290,6 @@ describe("DELETE /api/user/profile/image", () => {
       error: 'Internal Server Error',
     });
 
-    // Restore the original console.error implementation
     console.error.mockRestore();
   });
 });
@@ -302,12 +299,10 @@ describe("DELETE /api/user/profile/banner", () => {
   let consoleErrorSpy;
 
   beforeAll(() => {
-    // Spy on console.error before running any test in this describe block
     consoleErrorSpy = jest.spyOn(console, 'error');
   });
 
   afterAll(() => {
-    // Restore the original console.error implementation after all tests
     consoleErrorSpy.mockRestore();
   });
 
@@ -339,7 +334,6 @@ describe("DELETE /api/user/profile/banner", () => {
       error: 'Internal Server Error',
     });
 
-    // Restore the original console.error implementation
     console.error.mockRestore();
   });
 });
