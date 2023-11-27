@@ -48,7 +48,7 @@ const tweetSchema = new mongoose.Schema({
   retweetList: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
+      ref: 'User',
     },
   ],
   quoteRetweetList: [
