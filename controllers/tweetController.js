@@ -16,9 +16,10 @@ const TweetController = {
       // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
       req.body.userId = req.user._id;
       if (req.body.media == undefined && req.body.description == undefined) {
-        res.status(400).json({
+        res.status(400);
+        res.json({
           status: 'bad request',
-          message: err,
+          message: 'no media and no description',
         });
       } else {
         const newTweet = await Tweet.create(req.body);
@@ -28,17 +29,17 @@ const TweetController = {
         await User.findByIdAndUpdate(req.body.userId, {
           $push: { tweetList: { tweetId: retTweet.id, type: req.body.type } },
         });
-
-        res.status(201).json({
+        const data = retTweet;
+        res.status(201);
+        res.json({
           status: 'Tweet Add Success',
-          data: {
-            tweet: retTweet,
-          },
+          data,
         });
         if (req.body.description) extractHashtags(newTweet);
       }
     } catch (err) {
-      res.status(400).json({
+      res.status(400);
+      res.json({
         status: 'bad request',
         message: err,
       });
@@ -293,7 +294,7 @@ const TweetController = {
   getTweetReplies: async (req, res) => {
     try {
       const tweet = await Tweet.findById(req.params.tweetId).select(
-        'likersList userId isDeleted',
+        'userId isDeleted',
       );
       if (tweet === null || tweet.isDeleted) {
         res.status(404);
@@ -351,6 +352,12 @@ const TweetController = {
               },
             },
             {
+              $project: {
+                likersList: 0,
+                retweetList: 0,
+              },
+            },
+            {
               $lookup: {
                 from: 'users',
                 let: { userId: '$userId' }, // Define a variable to store the value of the userId field
@@ -393,7 +400,7 @@ const TweetController = {
           res.status(200);
           res.json({
             status: 'Success',
-            message: 'Tweet Likers Get Success',
+            message: 'Tweet Replies Get Success',
             data,
           });
           return 1;
