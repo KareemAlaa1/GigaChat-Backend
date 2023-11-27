@@ -7,7 +7,7 @@ const {
   getUserDatabyId,
   getTweetDatabyId,
   getRequiredTweetDatafromTweetObject,
-} = require('./tweetHelper');
+} = require('./tweet_helper');
 
 // handling hashtags and media
 const TweetController = {

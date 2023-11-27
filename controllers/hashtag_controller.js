@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const catchAsync = require('../utils/catchAsync');
+const catchAsync = require('../utils/catch_async');
 const User = require('../models/user_model');
-const AppError = require('../utils/appError');
+const AppError = require('../utils/app_error');
 const Hashtag = require('../models/hashtag_model');
 const {
   selectNeededInfoForUser,

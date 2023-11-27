@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Tweet = require('../models/tweet_model');
 const User = require('../models/user_model');
-const catchAsync = require('../utils/catchAsync');
+const catchAsync = require('../utils/catch_async');
 const {
   selectNeededInfoForUser,
   selectNeededInfoForTweets,
