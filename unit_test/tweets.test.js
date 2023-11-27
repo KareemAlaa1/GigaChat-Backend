@@ -79,22 +79,22 @@ describe('GET Tweet Likers by Tweet Id', () => {
 
       User.aggregate.mockResolvedValue([
         {
-          _id: '544s5ds',
+          id: '544s5ds',
           username: 'saasa',
           nickname: 'dskdd',
           bio: 'sdasasa',
-          profileImage: 'dsdsds',
-          followersUsers: 26,
-          followingUsers: 20,
+          profile_image: 'dsdsds',
+          followers_num: 26,
+          following_num: 20,
         },
         {
-          _id: '544s5ds',
+          id: '544s5ds',
           username: 'saasa',
           nickname: 'dskdd',
           bio: 'sdasasa',
-          profileImage: 'dsdsds',
-          followersUsers: 26,
-          followingUsers: 20,
+          profile_image: 'dsdsds',
+          followers_num: 26,
+          following_num: 20,
         },
       ]);
 
