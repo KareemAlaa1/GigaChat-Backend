@@ -11,8 +11,6 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
-module.exports = signToken;
-
 const generateUserName = async (nickname) => {
   // Generate a unique username based on the nickname
   const baseUsername = nickname.toLowerCase();
