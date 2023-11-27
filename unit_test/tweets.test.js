@@ -1,5 +1,4 @@
 const tweetController = require('../controllers/tweet_controller');
-const tweetController = require('../controllers/tweet_controller');
 const Tweet = require('../models/tweet_model');
 jest.mock('../models/tweet_model');
 const User = require('../models/user_model');
@@ -8,8 +7,6 @@ const tweetHelper = require('../controllers/tweet_helper');
 jest.mock('../controllers/tweet_helper');
 const extract_hashtags = require('../utils/extract_hashtags');
 jest.mock('../utils/extract_hashtags');
-const tweetHelper = require('../controllers/tweet_helper');
-jest.mock('../controllers/tweet_helper');
 
 const req = {};
 
