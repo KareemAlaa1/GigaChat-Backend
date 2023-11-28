@@ -116,7 +116,7 @@ exports.getProfile = async (req, res) => {
     return res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
-    console.error(error);
+    console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -141,7 +141,7 @@ exports.updateProfile = async (req, res) => {
     return res.status(204).end();
   } catch (error) {
     // Handle and log errors
-    console.error(error);
+    console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -173,7 +173,7 @@ exports.updateProfileImage = async (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
-    console.error(error);
+    console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -204,7 +204,7 @@ exports.updateProfileBanner = async (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
-    console.error(error);
+    console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -224,7 +224,7 @@ exports.deleteProfileImage = async (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
-    console.error(error);
+    console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -244,7 +244,7 @@ exports.deleteProfileBanner = async (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
-    console.error(error);
+    console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };

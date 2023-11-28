@@ -1,9 +1,9 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { expect } = require('@jest/globals');
 const User = require('../models/user_model');
-const authController = require('../controllers/auth_controller');
 const app = require('../app');
 const fs = require('fs');
 
@@ -49,7 +49,9 @@ beforeAll(async () => {
     await mongoose.connect(mongoServer.getUri());
     testUser = await createUser(userData);
 
-    token = authController.signToken(testUser._id.toString());
+    token = jwt.sign({ id: testUser._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
 
   } catch (error) {
     console.error('Error during setup:', error);
@@ -124,7 +126,7 @@ describe("patch /api/user/profile", () => {
 
     const response = await request(app).patch('/api/user/profile')
       .set('authorization', `Bearer ${token}`)
-      .send(sentData);
+      .query(sentData);
 
     const checkChangedUser = await User.findById(testUser._id);
 
@@ -141,7 +143,7 @@ describe("patch /api/user/profile", () => {
 
     const response = await request(app).patch('/api/user/profile')
       .set('authorization', `Bearer ${token}`)
-      .send({});
+      .query({});
 
     expect(response.statusCode).toBe(400);
     expect(response.body.error).toBe('Bad Request');
@@ -155,7 +157,7 @@ describe("patch /api/user/profile", () => {
 
     const response = await request(app).patch('/api/user/profile')
     .set('authorization', `Bearer ${token}`)
-    .send(sentData);
+    .query(sentData);
 
     expect(response.status).toBe(500);
     expect(response.body.error).toBe('Internal Server Error');
