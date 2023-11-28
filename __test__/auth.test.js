@@ -39,6 +39,7 @@ describe('auth', () => {
     await mongoose.disconnect();
   });
 
+  //###################### confirmEmail ######################
   describe('POST /api/user/confirmEmail', () => {
     it('responds with 201 and a token when email confirmation is successful', async () => {
       let newUser = {
@@ -96,6 +97,7 @@ describe('auth', () => {
     });
   });
 
+  //###################### signup ######################
   describe('POST /api/signup', () => {
     it('should return 200 and success message when valid data is provided', async () => {
       const response = await request(app).post('/api/user/signup').send({
@@ -210,6 +212,8 @@ describe('auth', () => {
     });
   });
 
+
+  //###################### AssignPassword ######################
   describe('POST /api/user/AssignPassword', () => {
     let user;
     let token;
