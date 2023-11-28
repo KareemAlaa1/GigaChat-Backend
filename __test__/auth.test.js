@@ -481,4 +481,56 @@ describe('auth', () => {
       );
     });
   });
+
+  describe('POST /api/user/resendConfirmEmail', () => {
+    it('responds with 200 and a success message when email confirmation code is resent successfully', async () => {
+      const response = await request(app)
+        .post('/api/user/resendConfirmEmail')
+        .send({
+          email: testUserData.email,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+      expect(response.body.data.email).toBe(testUserData.email);
+      expect(response.body.data.message).toBe(
+        'Code sent to the email the user provided',
+      );
+    });
+
+    it('responds with 400 when email is missing', async () => {
+      const response = await request(app)
+        .post('/api/user/resendConfirmEmail')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('email and confirmEmailCode required');
+    });
+
+    it('responds with 400 when email format is invalid', async () => {
+      const response = await request(app)
+        .post('/api/user/resendConfirmEmail')
+        .send({
+          email: 'invalid-email',
+        });
+      console.log(response.body);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid email format');
+    });
+
+    it('responds with 404 when there is no inactive user with the provided email', async () => {
+      const response = await request(app)
+        .post('/api/user/resendConfirmEmail')
+        .send({
+          email: 'nonexistent@example.com',
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe(
+        'There is no inactive user with  this email address.',
+      );
+    });
+
+    // Add more test cases as needed to cover different scenarios
+  });
 });
