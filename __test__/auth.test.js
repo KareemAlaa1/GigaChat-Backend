@@ -806,5 +806,7 @@ describe('auth', () => {
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Invalid email format');
     });
+
   });
+
 });
