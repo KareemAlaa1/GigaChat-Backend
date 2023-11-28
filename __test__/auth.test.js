@@ -533,4 +533,117 @@ describe('auth', () => {
 
     // Add more test cases as needed to cover different scenarios
   });
+
+  describe('PATCH /api/user/AssignUsername', () => {
+    let user;
+    let token;
+
+    beforeEach(async () => {
+      // Create a user and generate a token for authentication
+      user = new User({
+        username: 'oldusername',
+        email: 'test@abc.com',
+        password: 'password',
+      });
+      await user.save();
+
+      // Generate a token for the user
+      console.log(user);
+      token = signToken(user._id).toString();
+    });
+
+    afterEach(async () => {
+      // Remove the user from the database
+      await user.deleteOne();
+    });
+
+    it('should return 200 and success message when valid data is provided', async () => {
+      const response = await request(app)
+        .patch('/api/user/AssignUsername')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          username: 'newusername',
+        });
+      console.log(response.body);
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+      expect(response.body.data.message).toBe('username updated successfully');
+
+      // Check if the username was updated in the database
+      const updatedUser = await User.findById(user._id);
+      expect(updatedUser.username).toBe('newusername');
+    });
+
+    it('should return 400 when username is missing', async () => {
+      const response = await request(app)
+        .patch('/api/user/AssignUsername')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe(' Username is required');
+    });
+
+    it('should return 401 when token is missing', async () => {
+      const response = await request(app)
+        .patch('/api/user/AssignUsername')
+        .send({
+          username: 'newusername',
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe(
+        'You have not confirmed your email Please confirm to get access.',
+      );
+    });
+
+    it('should return 500 when the token is invalid', async () => {
+      const response = await request(app)
+        .patch('/api/user/AssignUsername')
+        .set('Authorization', 'Bearer invalidtoken')
+        .send({
+          username: 'newusername',
+        });
+      console.log('inv', response.body);
+      expect(response.status).toBe(500);
+      expect(response.body.message).toBe('jwt malformed');
+    });
+
+    it('should return 400 when the new username is already taken', async () => {
+      const existingUser = new User({
+        username: 'existingusername',
+        email: 'another@example.com',
+      });
+      await existingUser.save();
+
+      const response = await request(app)
+        .patch('/api/user/AssignUsername')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          username: 'existingusername',
+        });
+      console.log(response.body);
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('The username is already taken.');
+
+      await existingUser.deleteOne();
+    });
+
+    it('should return 200 when the new username is the same as the old one', async () => {
+      const response = await request(app)
+        .patch('/api/user/AssignUsername')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          username: 'oldusername',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+      expect(response.body.data.message).toBe('username updated successfully');
+
+      // Check if the username was updated in the database
+      const updatedUser = await User.findById(user._id);
+      expect(updatedUser.username).toBe('oldusername');
+    });
+  });
 });
