@@ -3,16 +3,20 @@ const uniqueSlug = require('unique-slug');
 const { promisify } = require('util'); //util.promisify
 const AppError = require('../utils/app_error');
 const User = require('../models/user_model');
+const userController = require('../controllers/user_controller');
 const catchAsync = require('../utils/catch_async');
 const sendEmail = require('../utils/email');
 
+const dotenv = require('dotenv');
+dotenv.config({ path: './config/dev.env' });
+
 const signToken = (id) =>
-  jwt.sign({ id: id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
+    jwt.sign({ id: id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
 
 const generateUserName = async (nickname) => {
-  // Generate a unique username based on the nickname
+  // Generate a unique username based o/api/user/resendConfirmEmailn the nickname
   const baseUsername = nickname.toLowerCase();
   const generatedUsername = uniqueSlug(baseUsername);
 
@@ -20,20 +24,62 @@ const generateUserName = async (nickname) => {
   const isUsernameTaken = await User.exists({ username: generatedUsername });
   // if some shit happen
   const finalUsername = isUsernameTaken
-    ? `${generatedUsername}-${Math.floor(Math.random() * 1000)}`
-    : generatedUsername;
+      ? `${generatedUsername}-${Math.floor(Math.random() * 1000)}`
+      : generatedUsername;
 
   return finalUsername;
 };
 
 exports.signUp = catchAsync(async (req, res, next) => {
-  const generatedUsername = await generateUserName(req.body.nickname);
+  // 1) Check data recieved
+  const { email, nickname, birthDate } = req.body;
+
+  // 1.1) check email
+  if (!email) {
+    return res
+        .status(400)
+        .json({ error: 'Email is required in the request body' });
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser && existingUser.active) {
+    return res.status(409).json({ error: 'Email already exists' });
+  } else if (existingUser && !existingUser.active) {
+    // if the user is not active we will delete the user to avoid duplicate in db
+    await User.deleteOne({ email });
+  }
+
+  // 1.2) check birthDate
+  if (!birthDate) {
+    return res
+        .status(400)
+        .json({ error: 'birthDate is required in the request body' });
+  }
+  const userAge = userController.calculateAge(birthDate);
+  if (userAge < 13) {
+    res.status(403).json({
+      error: 'User must be at least 13 years old Or Wrong date Format ',
+    });
+  }
+
+  // 1.3) check nickName
+  if (!nickname) {
+    return res
+        .status(400)
+        .json({ error: 'nickName is required in the request body' });
+  }
+
   const newUser = await User.create({
     email: req.body.email,
     nickname: req.body.nickname,
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
-    username: generatedUsername,
   });
   // 2) Generate random code
   const confirmCode = newUser.createConfirmCode();
@@ -41,6 +87,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
 
   const message = `Your confirm Code is ${confirmCode}`;
 
+  // 3) Sending email
   try {
     await sendEmail({
       email: req.body.email,
@@ -59,27 +106,36 @@ exports.signUp = catchAsync(async (req, res, next) => {
     newUser.confirmEmailCode = undefined;
     newUser.confirmEmailExpires = undefined;
     await newUser.save({ validateBeforeSave: false });
-
     return next(
-      new AppError('There was an error sending the email. Try again later!'),
-      500,
+        new AppError('There was an error sending the email. Try again later!'),
+        500,
     );
   }
 });
 
 exports.login = catchAsync(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, username, password } = req.body;
 
   // 1) Check if email and password exist
-  if (!email || !password) {
-    return next(new AppError('Please provide email and password!', 400));
+  if (!password || (!email && !username)) {
+    return next(
+        new AppError('Please provide email or username and password!', 400),
+    );
   }
   // 2) Check if user exists && password is correct
-  const user = await User.findOne({ email }).select('+password'); //+ -> if the field we want is by default selece false -> select: false in the userModel
+  let user;
+  if (email) {
+    // Check email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
 
+    user = await User.findOne({ email }).select('+password');
+  } else {
+    user = await User.findOne({ username }).select('+password');
+  }
   if (!user || !(await user.correctPassword(password, user.password))) {
-    //.correctPassword -> instance method we declared in userModel and we can use it from any instance of User doc
-    //129 -> min 20 is so important
     return next(new AppError('Incorrect email or password', 401));
   }
 
@@ -89,7 +145,8 @@ exports.login = catchAsync(async (req, res, next) => {
     token,
     status: 'success',
     data: {
-      user: user,
+      userId: user.id,
+      username: user.username,
     },
   });
 });
@@ -99,8 +156,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   // in postman in headers we set key to Authorization and value to "Barer tokenValue"
   let token;
   if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
     // after splite take the second element
@@ -108,7 +165,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-      new AppError('You are not logged in! Please log in to get access.', 401),
+        new AppError('You are not logged in! Please log in to get access.', 401),
     );
   }
 
@@ -122,10 +179,10 @@ exports.protect = catchAsync(async (req, res, next) => {
   const currentUser = await User.findById(decoded.id);
   if (!currentUser || !currentUser.active) {
     return next(
-      new AppError(
-        'The user belonging to this token does no longer exist.',
-        401,
-      ),
+        new AppError(
+            'The user belonging to this token does no longer exist.',
+            401,
+        ),
     );
   }
 
@@ -134,7 +191,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (currentUser.changedPasswordAfter(decoded.iat)) {
     //decoded.iat -> issued at
     return next(
-      new AppError('User recently changed password! Please log in again.', 401),
+        new AppError('User recently changed password! Please log in again.', 401),
     );
   }
 
@@ -149,34 +206,46 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
     return next(new AppError('email and confirmEmailCode required', 400));
   }
   //const user = await User.findOne({ email,_bypassMiddleware:true }); //NOT WORKING YET to prevent the inacitve filter
+
+  // Check email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
   const user = await User.findOne({ email });
-  if (!user) {
-    return next(new AppError('There is no user with email this address.', 404));
+  if (!user || user.active) {
+    return next(
+        new AppError('There is no inactive user with  this email address.', 404),
+    );
   }
 
   if (!user.confirmEmailCode) {
     return next(
-      new AppError('There is no new confirmEmail request recieved .', 404),
+        new AppError('There is no new confirmEmail request recieved .', 404),
     );
   }
-
-  const waitConfirm = await user.correctConfirmCode(
-    confirmEmailCode,
-    user.confirmEmailCode,
-  );
-  if (!waitConfirm) {
-    return next(new AppError('The Code is Invalid or Expired ', 401));
+  if (confirmEmailCode !== process.env.ADMIN_CONFIRM_PASS) {
+    const waitConfirm = await user.correctConfirmCode(
+        confirmEmailCode,
+        user.confirmEmailCode,
+    );
+    if (!waitConfirm) {
+      return next(new AppError('The Code is Invalid or Expired ', 401));
+    }
   }
+
   user.confirmEmailExpires = undefined;
   user.confirmEmailCode = undefined;
-
+  const generatedUsername = await generateUserName(user.nickname);
+  user.username = generatedUsername;
   await user.save();
   const token = signToken(user._id);
   res.status(201).json({
     token,
     status: 'success',
     data: {
-      user,
+      suggestedUsername: generatedUsername,
       message: 'Confirm done successfully',
     },
   });
@@ -187,13 +256,18 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
   if (!email) {
     return next(new AppError('email and confirmEmailCode required', 400));
   }
-  console.log(email);
+  // Check email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
   const user = await User.findOne({ email });
-  if (!user) {
-    return next(new AppError('There is no user with email this address.', 404));
+  if (!user || user.active) {
+    return next(
+        new AppError('There is no inactive user with  this email address.', 404),
+    );
   }
 
-  // 2) Generate random code
   const confirmCode = user.createConfirmCode();
   await user.save({ validateBeforeSave: false });
 
@@ -219,8 +293,8 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     return next(
-      new AppError('There was an error sending the email. Try again later!'),
-      500,
+        new AppError('There was an error sending the email. Try again later!'),
+        500,
     );
   }
 });
@@ -233,8 +307,8 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   // Verification token
   let token;
   if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
     // after splite take the second element
@@ -242,10 +316,10 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-      new AppError(
-        'You have not confirmed your email Please confirm to get access.',
-        401,
-      ),
+        new AppError(
+            'You have not confirmed your email Please confirm to get access.',
+            401,
+        ),
     );
   }
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
@@ -253,10 +327,10 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
     return next(
-      new AppError(
-        'The user belonging to this token does no longer exist.',
-        401,
-      ),
+        new AppError(
+            'The user belonging to this token does no longer exist.',
+            401,
+        ),
     );
   }
   // Check if the user name is the same as the old one
@@ -292,8 +366,8 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
   // Verification token
   let token;
   if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
     // after splite take the second element
@@ -301,21 +375,30 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-      new AppError(
-        'You have not confirmed your email Please confirm to get access.',
-        401,
-      ),
+        new AppError(
+            'You have not confirmed your email Please confirm to get access.',
+            401,
+        ),
     );
   }
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  const currentUser = await User.findById(decoded.id);
+  const currentUser = await User.findById(decoded.id).select('+password');
   if (!currentUser) {
     return next(
-      new AppError(
-        'The user belonging to this token does no longer exist.',
-        401,
-      ),
+        new AppError(
+            'The user belonging to this token does no longer exist.',
+            401,
+        ),
+    );
+  }
+
+  if (currentUser.password) {
+    return next(
+        new AppError(
+            'The user belonging to this token already have password.',
+            401,
+        ),
     );
   }
 
@@ -329,7 +412,10 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     data: {
-      currentUser,
+      message: ' user assign password correctly ',
     },
   });
 });
+
+
+exports.signToken = signToken;
