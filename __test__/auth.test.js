@@ -646,4 +646,41 @@ describe('auth', () => {
       expect(updatedUser.username).toBe('oldusername');
     });
   });
+
+  describe('POST /api/user/checkBirthDate', () => {
+    it('should return 200 and message when user age is above 13', async () => {
+      const response = await request(app)
+        .post('/api/user/checkBirthDate')
+        .send({
+          birthDate: '1990-01-01',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('User is above 13 years old.');
+    });
+
+    it('should return 403 when user age is below 13', async () => {
+      const response = await request(app)
+        .post('/api/user/checkBirthDate')
+        .send({
+          birthDate: '2012-01-01',
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe(
+        'User must be at least 13 years old Or Wrong date Format ',
+      );
+    });
+
+    it('should return 400 when birthDate is missing', async () => {
+      const response = await request(app)
+        .post('/api/user/checkBirthDate')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe(
+        'birthDate is required in the request body',
+      );
+    });
+  });
 });
