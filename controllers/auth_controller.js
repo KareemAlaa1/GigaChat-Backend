@@ -11,9 +11,9 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './config/dev.env' });
 
 const signToken = (id) =>
-    jwt.sign({ id: id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+  jwt.sign({ id: id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
 
 const generateUserName = async (nickname) => {
   // Generate a unique username based o/api/user/resendConfirmEmailn the nickname
@@ -24,8 +24,8 @@ const generateUserName = async (nickname) => {
   const isUsernameTaken = await User.exists({ username: generatedUsername });
   // if some shit happen
   const finalUsername = isUsernameTaken
-      ? `${generatedUsername}-${Math.floor(Math.random() * 1000)}`
-      : generatedUsername;
+    ? `${generatedUsername}-${Math.floor(Math.random() * 1000)}`
+    : generatedUsername;
 
   return finalUsername;
 };
@@ -37,11 +37,10 @@ exports.signUp = catchAsync(async (req, res, next) => {
   // 1.1) check email
   if (!email) {
     return res
-        .status(400)
-        .json({ error: 'Email is required in the request body' });
+      .status(400)
+      .json({ error: 'Email is required in the request body' });
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Invalid email format' });
@@ -58,8 +57,8 @@ exports.signUp = catchAsync(async (req, res, next) => {
   // 1.2) check birthDate
   if (!birthDate) {
     return res
-        .status(400)
-        .json({ error: 'birthDate is required in the request body' });
+      .status(400)
+      .json({ error: 'birthDate is required in the request body' });
   }
   const userAge = userController.calculateAge(birthDate);
   if (userAge < 13) {
@@ -71,8 +70,8 @@ exports.signUp = catchAsync(async (req, res, next) => {
   // 1.3) check nickName
   if (!nickname) {
     return res
-        .status(400)
-        .json({ error: 'nickName is required in the request body' });
+      .status(400)
+      .json({ error: 'nickName is required in the request body' });
   }
 
   const newUser = await User.create({
@@ -107,8 +106,8 @@ exports.signUp = catchAsync(async (req, res, next) => {
     newUser.confirmEmailExpires = undefined;
     await newUser.save({ validateBeforeSave: false });
     return next(
-        new AppError('There was an error sending the email. Try again later!'),
-        500,
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
     );
   }
 });
@@ -119,7 +118,7 @@ exports.login = catchAsync(async (req, res, next) => {
   // 1) Check if email and password exist
   if (!password || (!email && !username)) {
     return next(
-        new AppError('Please provide email or username and password!', 400),
+      new AppError('Please provide email or username and password!', 400),
     );
   }
   // 2) Check if user exists && password is correct
@@ -156,8 +155,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   // in postman in headers we set key to Authorization and value to "Barer tokenValue"
   let token;
   if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
     // after splite take the second element
@@ -165,7 +164,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-        new AppError('You are not logged in! Please log in to get access.', 401),
+      new AppError('You are not logged in! Please log in to get access.', 401),
     );
   }
 
@@ -179,10 +178,10 @@ exports.protect = catchAsync(async (req, res, next) => {
   const currentUser = await User.findById(decoded.id);
   if (!currentUser || !currentUser.active) {
     return next(
-        new AppError(
-            'The user belonging to this token does no longer exist.',
-            401,
-        ),
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
     );
   }
 
@@ -191,7 +190,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (currentUser.changedPasswordAfter(decoded.iat)) {
     //decoded.iat -> issued at
     return next(
-        new AppError('User recently changed password! Please log in again.', 401),
+      new AppError('User recently changed password! Please log in again.', 401),
     );
   }
 
@@ -216,19 +215,19 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email });
   if (!user || user.active) {
     return next(
-        new AppError('There is no inactive user with  this email address.', 404),
+      new AppError('There is no inactive user with  this email address.', 404),
     );
   }
 
   if (!user.confirmEmailCode) {
     return next(
-        new AppError('There is no new confirmEmail request recieved .', 404),
+      new AppError('There is no new confirmEmail request recieved .', 404),
     );
   }
   if (confirmEmailCode !== process.env.ADMIN_CONFIRM_PASS) {
     const waitConfirm = await user.correctConfirmCode(
-        confirmEmailCode,
-        user.confirmEmailCode,
+      confirmEmailCode,
+      user.confirmEmailCode,
     );
     if (!waitConfirm) {
       return next(new AppError('The Code is Invalid or Expired ', 401));
@@ -264,7 +263,7 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email });
   if (!user || user.active) {
     return next(
-        new AppError('There is no inactive user with  this email address.', 404),
+      new AppError('There is no inactive user with  this email address.', 404),
     );
   }
 
@@ -293,8 +292,8 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     return next(
-        new AppError('There was an error sending the email. Try again later!'),
-        500,
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
     );
   }
 });
@@ -307,8 +306,8 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   // Verification token
   let token;
   if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
     // after splite take the second element
@@ -316,10 +315,10 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-        new AppError(
-            'You have not confirmed your email Please confirm to get access.',
-            401,
-        ),
+      new AppError(
+        'You have not confirmed your email Please confirm to get access.',
+        401,
+      ),
     );
   }
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
@@ -327,10 +326,10 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
     return next(
-        new AppError(
-            'The user belonging to this token does no longer exist.',
-            401,
-        ),
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
     );
   }
   // Check if the user name is the same as the old one
@@ -366,8 +365,8 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
   // Verification token
   let token;
   if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
     // after splite take the second element
@@ -375,10 +374,10 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-        new AppError(
-            'You have not confirmed your email Please confirm to get access.',
-            401,
-        ),
+      new AppError(
+        'You have not confirmed your email Please confirm to get access.',
+        401,
+      ),
     );
   }
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
@@ -386,19 +385,19 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
   const currentUser = await User.findById(decoded.id).select('+password');
   if (!currentUser) {
     return next(
-        new AppError(
-            'The user belonging to this token does no longer exist.',
-            401,
-        ),
+      new AppError(
+        'The user belonging to this token does no longer exist.',
+        401,
+      ),
     );
   }
 
   if (currentUser.password) {
     return next(
-        new AppError(
-            'The user belonging to this token already have password.',
-            401,
-        ),
+      new AppError(
+        'The user belonging to this token already have password.',
+        401,
+      ),
     );
   }
 
@@ -416,6 +415,5 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
     },
   });
 });
-
 
 exports.signToken = signToken;
