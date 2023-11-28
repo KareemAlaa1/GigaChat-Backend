@@ -338,5 +338,57 @@ describe('auth', () => {
             });
         });
 
+        //###################### Check Username ######################
+        describe('POST /api/user/checkAvailableUsername', () => {
+            let user;
+            beforeEach(async () => {
+                // Create a user and generate a token for authentication
+                user = new User({
+                    username: 'existing_user',
+                    email: 'test@abc.com',
+                    password: 'password',
+                });
+                await   user.save();
+
+            });
+
+            afterEach(async () => {
+                // Remove the user from the database
+                await user.deleteOne();
+            });
+
+            it('should return 200 and message when username is available', async () => {
+                const response = await request(app)
+                    .post('/api/user/checkAvailableUsername')
+                    .send({
+                        username: 'new_user',
+                    });
+
+                expect(response.status).toBe(200);
+                expect(response.body.message).toBe('Username is available');
+            });
+
+            it('should return 409 when username already exists', async () => {
+                // Assuming you have a pre-existing user with the username 'existing_user'
+                const response = await request(app)
+                    .post('/api/user/checkAvailableUsername')
+                    .send({
+                        username: 'existing_user',
+                    });
+
+                expect(response.status).toBe(409);
+                expect(response.body.error).toBe('Username already exists');
+            });
+
+            it('should return 400 when username is missing', async () => {
+                const response = await request(app)
+                    .post('/api/user/checkAvailableUsername')
+                    .send({});
+
+                expect(response.status).toBe(400);
+                expect(response.body.error).toBe('Username is required in the request body');
+            });
+        });
+
     });
 });
