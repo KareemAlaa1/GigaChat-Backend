@@ -229,6 +229,114 @@ describe('auth', () => {
         });
 
 
-        // Add more test cases as needed to cover different scenarios
+        describe('POST /api/user/AssignPassword', () => {
+            let user;
+            let token;
+
+            beforeEach(async () => {
+                // Create a user and generate a token for authentication
+                user = new User({
+                    username: 'oldusername',
+                    email: 'test@abc.com',
+                });
+                await user.save();
+
+                // Generate a token for the user
+                console.log(user);
+                token = signToken(user._id).toString();
+            });
+
+            afterEach(async () => {
+                // Remove the user from the database
+                await user.deleteOne();
+            });
+
+
+            it('should return 200 and success message when valid data is provided', async () => {
+                const response = await request(app)
+                    .patch('/api/user/AssignPassword')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        password: 'password123',
+                    });
+                expect(response.status).toBe(200);
+                expect(response.body.status).toBe('success');
+                expect(response.body.data.message).toBe(' user assign password correctly ');
+
+                // Check if the password was updated and the user is active in the database
+                // const updatedUser = await User.findById(user._id);
+                // expect(updatedUser.password).toBe('password123');
+                // expect(updatedUser.active).toBe(true);
+            });
+
+            it('should return 400 when password is missing', async () => {
+                const response = await request(app)
+                    .patch('/api/user/AssignPassword')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({});
+
+                expect(response.status).toBe(400);
+                expect(response.body.message).toBe(' password is required');
+            });
+
+            it('should return 401 when password length is less than 8', async () => {
+                const response = await request(app)
+                    .patch('/api/user/AssignPassword')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        password: 'pass',
+                    });
+
+                expect(response.status).toBe(401);
+                expect(response.body.message).toBe(
+                    'the password should be 8 litters or more.'
+                );
+            });
+
+            it('should return 401 when token is missing', async () => {
+                const response = await request(app)
+                    .patch('/api/user/AssignPassword')
+                    .send({
+                        password: 'password123',
+                    });
+
+                expect(response.status).toBe(401);
+                expect(response.body.message).toBe(
+                    'You have not confirmed your email Please confirm to get access.'
+                );
+            });
+
+            it('should return 500 when the token is invalid', async () => {
+                const response = await request(app)
+                    .patch('/api/user/AssignPassword')
+                    .set('Authorization', 'Bearer invalidtoken')
+                    .send({
+                        password: 'password123',
+                    });
+
+                expect(response.status).toBe(500);
+                expect(response.body.message).toBe(
+                    'jwt malformed'
+                );
+            });
+
+            it('should return 401 when the user already has a password', async () => {
+                user.password = 'oldpassword';
+                await user.save();
+
+                const response = await request(app)
+                    .patch('/api/user/AssignPassword')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        password: 'password123',
+                    });
+
+                expect(response.status).toBe(401);
+                expect(response.body.message).toBe(
+                    'The user belonging to this token already have password.'
+                );
+            });
+        });
+
     });
 });
