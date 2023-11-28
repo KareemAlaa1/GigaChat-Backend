@@ -8,14 +8,16 @@ const sendErrorDev = (err, res) => {
   });
 };
 
-
 // GlobalErrorHandler
 module.exports = (err, req, res, next) => {
   // usual lines we talk about
-  err.statusCode = err.statusCode || 500;// internal program error
+  err.statusCode = err.statusCode || 500; // internal program error
   err.status = err.status || 'error';
 
-  if (process.env.NODE_ENV === 'development') {
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.NODE_ENV === 'test'
+  ) {
     sendErrorDev(err, res);
   } else if (process.env.NODE_ENV === 'production') {
     //TODO latter

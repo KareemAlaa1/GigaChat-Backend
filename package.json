@@ -9,13 +9,7 @@
     "debug": "ndb server.js",
     "start:test": "jest --watchAll"
   },
-  "jest": {
-    "testEnvironment": "node",
-    "start:prod": "NODE_ENV=production nodemon server.js",
-    "debug": "ndb server.js",
-    "test": "jest",
-    "collectCoverage": true
-  },
+
   "author": "BackEnd Team",
   "license": "ISC",
   "dependencies": {
