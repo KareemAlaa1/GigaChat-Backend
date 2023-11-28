@@ -7,11 +7,11 @@ exports.getAllHashtages = catchAsync(
     req,
     res,
     next = (e) => {
-      res.send(400).send(e);
+      res.status(400).send(e);
     },
   ) => {
     const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 100;
+    const limit = req.query.count * 1 || 1;
     const skip = (page - 1) * limit;
 
     const hashtags = await Hashtag.aggregate()
@@ -19,13 +19,14 @@ exports.getAllHashtages = catchAsync(
       .project('title count')
       .skip(skip)
       .limit(limit);
+    console.log(hashtags);
 
     if (!hashtags)
       res.status(404).json({
         message: 'No Hashtags Found',
       });
 
-    res.status(200).send(hashtags);
+    res.status(200).send({ status: 'success', data: hashtags });
   },
 );
 
@@ -34,19 +35,21 @@ exports.getHastagTweets = catchAsync(
     req,
     res,
     next = (e) => {
-      res.send(400).send(e);
+      res.status(400).send(e);
     },
   ) => {
     const hashtagTitle = '#' + req.params.trend;
 
     const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 100;
+    const limit = req.query.count * 1 || 1;
     const skip = (page - 1) * limit;
 
     const found = await Hashtag.findOne({ title: hashtagTitle });
+
     if (!found)
       res.status(404).json({
-        message: 'HashTag Not Found',
+        status: 'fail',
+        message: 'Hashtag Not Found',
       });
     if (
       found.tweet_list === undefined ||
@@ -54,16 +57,14 @@ exports.getHastagTweets = catchAsync(
       found.tweet_list.length == 0
     )
       res.status(404).json({
+        status: 'fail',
         message: 'No Tweets Found For This Hashtag',
       });
-    console.log(skip + limit);
-    console.log(found.tweet_list.length);
 
     if (skip + limit > found.tweet_list.length)
       res.status(400).json({
-        message:
-          'Invalid page and count value num of tweets is ' +
-          found.tweet_list.length,
+        status: 'fail',
+        message: 'Invalid page and count value',
       });
 
     const hashtag = await Hashtag.aggregate([
@@ -138,6 +139,6 @@ exports.getHastagTweets = catchAsync(
       .skip(skip)
       .limit(limit);
 
-    res.send(hashtag[0].tweet_list);
+    res.send({ status: 'success', data: hashtag[0].tweet_list }).status(200);
   },
 );
