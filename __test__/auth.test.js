@@ -740,4 +740,67 @@ describe('auth', () => {
       );
     });
   });
+
+  //###################### checkAvailableEmail ######################
+  describe('POST /api/user/checkAvailableEmail', () => {
+    let user;
+    beforeEach(async () => {
+      // Create a user and generate a token for authentication
+      user = new User({
+        username: 'test_username',
+        email: 'existing_user@example.com',
+        password: 'password',
+        active: true,
+      });
+      await user.save();
+    });
+
+    afterEach(async () => {
+      // Remove the user from the database
+      await user.deleteOne();
+    });
+
+    it('should return 200 and message when email is available', async () => {
+      const response = await request(app)
+        .post('/api/user/checkAvailableEmail')
+        .send({
+          email: 'new_user@example.com',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Email is available');
+    });
+
+    it('should return 409 when email already exists', async () => {
+      // Assuming you have a pre-existing user with the email 'existing_user@example.com'
+      const response = await request(app)
+        .post('/api/user/checkAvailableEmail')
+        .send({
+          email: 'existing_user@example.com',
+        });
+      console.log(response.body, 'xxsysys');
+      expect(response.status).toBe(409);
+      expect(response.body.error).toBe('Email already exists');
+    });
+
+    it('should return 400 when email is missing', async () => {
+      const response = await request(app)
+        .post('/api/user/checkAvailableEmail')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Email is required in the request body');
+    });
+
+    it('should return 400 when email has an invalid format', async () => {
+      const response = await request(app)
+        .post('/api/user/checkAvailableEmail')
+        .send({
+          email: 'invalid_email',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid email format');
+    });
+  });
 });
