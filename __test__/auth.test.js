@@ -435,6 +435,7 @@ describe('auth', () => {
     });
   });
 
+  //###################### login ######################
   describe('POST /api/user/login', () => {
     // Set up the testing environment
 
@@ -482,6 +483,7 @@ describe('auth', () => {
     });
   });
 
+  //###################### resendConfirmEmail ######################
   describe('POST /api/user/resendConfirmEmail', () => {
     it('responds with 200 and a success message when email confirmation code is resent successfully', async () => {
       const response = await request(app)
@@ -534,6 +536,7 @@ describe('auth', () => {
     // Add more test cases as needed to cover different scenarios
   });
 
+  //###################### AssignUsername ######################
   describe('PATCH /api/user/AssignUsername', () => {
     let user;
     let token;
@@ -647,6 +650,7 @@ describe('auth', () => {
     });
   });
 
+  //###################### Check Birthdate ######################
   describe('POST /api/user/checkBirthDate', () => {
     it('should return 200 and message when user age is above 13', async () => {
       const response = await request(app)
@@ -680,6 +684,59 @@ describe('auth', () => {
       expect(response.status).toBe(400);
       expect(response.body.error).toBe(
         'birthDate is required in the request body',
+      );
+    });
+  });
+
+  //###################### checkAvailableUsername ######################
+  describe('POST /api/user/checkAvailableUsername', () => {
+    let user;
+    beforeEach(async () => {
+      // Create a user and generate a token for authentication
+      user = new User({
+        username: 'existing_user',
+        email: 'test@abc.com',
+        password: 'password',
+      });
+      await user.save();
+    });
+
+    afterEach(async () => {
+      // Remove the user from the database
+      await user.deleteOne();
+    });
+
+    it('should return 200 and message when username is available', async () => {
+      const response = await request(app)
+        .post('/api/user/checkAvailableUsername')
+        .send({
+          username: 'new_user',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Username is available');
+    });
+
+    it('should return 409 when username already exists', async () => {
+      // Assuming you have a pre-existing user with the username 'existing_user'
+      const response = await request(app)
+        .post('/api/user/checkAvailableUsername')
+        .send({
+          username: 'existing_user',
+        });
+
+      expect(response.status).toBe(409);
+      expect(response.body.error).toBe('Username already exists');
+    });
+
+    it('should return 400 when username is missing', async () => {
+      const response = await request(app)
+        .post('/api/user/checkAvailableUsername')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe(
+        'Username is required in the request body',
       );
     });
   });
