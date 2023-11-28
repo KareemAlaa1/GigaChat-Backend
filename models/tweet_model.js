@@ -8,7 +8,6 @@ const tweetSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'A tweet must have a description'],
     maxlength: [
       280,
       'the description must have less or equal then 280 characters',
@@ -49,7 +48,7 @@ const tweetSchema = new mongoose.Schema({
   retweetList: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
+      ref: 'User',
     },
   ],
   quoteRetweetList: [

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const catchAsync = require('../utils/catchAsync');
+const catchAsync = require('../utils/catch_async');
 const Hashtag = require('../models/hashtag_model');
 
 exports.getAllHashtages = catchAsync(
