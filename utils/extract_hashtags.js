@@ -4,8 +4,11 @@ const Hashtag = require('../models/hashtag_model');
 const extractHashtags = async (tweet) => {
   const tweetId = tweet.id;
   const tweetDescription = tweet.description;
+  if (tweetDescription === undefined || tweetDescription === '') return;
   const words = tweetDescription.split(' ');
-  const hashtagWords = words.filter((word, index, self) => /^#/.test(word) && self.indexOf(word) === index);
+  const hashtagWords = words.filter(
+    (word, index, self) => /^#/.test(word) && self.indexOf(word) === index,
+  );
   await hashtagWords.forEach(async (hashtagWord) => {
     const hashtag = await Hashtag.findOne({ title: hashtagWord });
     // Check for this hashtage if exists in database
