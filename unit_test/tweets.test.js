@@ -1,563 +1,803 @@
-const tweetController = require('../controllers/tweet_controller');
-const Tweet = require('../models/tweet_model');
-jest.mock('../models/tweet_model');
+const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 const User = require('../models/user_model');
-jest.mock('../models/user_model');
-const tweetHelper = require('../controllers/tweet_helper');
-jest.mock('../controllers/tweet_helper');
-const extract_hashtags = require('../utils/extract_hashtags');
-jest.mock('../utils/extract_hashtags');
+const homepageController = require('../controllers/homepage_controller');
+const app = require('../app');
+const Tweet = require('../models/tweet_model');
+const { default: expect } = require('expect');
+const { stringify } = require('json5');
 
-const req = {};
+const user0 = {
+  username: 'sara',
+  email: 'sara@gmail.com',
+  bio: 'we are dead',
+  birthDate: '6-4-2002',
+  password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
+  bannerImage:
+    'https://pbs.twimg.com/profile_banners/1326868125124603904/1665947156/1500x500',
+  profileImage:
+    'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+  phone: '01147119716',
+  nickname: 'Kareem Alaa',
+  website: 'www.wearedead.com',
+  followersUsers: [],
+  followingUsers: [],
+  location: 'cairo',
+  joinedAt: '12-9-2020',
+  active: true,
+  isDeleted: false,
+};
 
-const res = {};
+const user1 = {
+  username: 'karreeem_',
+  email: 'kareemalaa555@gmail.com',
+  bio: 'we are dead',
+  birthDate: '6-4-2002',
+  password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
+  bannerImage:
+    'https://pbs.twimg.com/profile_banners/1326868125124603904/1665947156/1500x500',
+  profileImage:
+    'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+  phone: '01147119716',
+  nickname: 'Kareem Alaa',
+  website: 'www.wearedead.com',
+  followersUsers: [],
+  followingUsers: [],
+  tweetList: [],
+  location: 'cairo',
+  joinedAt: '12-9-2020',
+  active: true,
+  isDeleted: false,
+};
 
-describe('GET Tweet Likers by Tweet Id', () => {
-  describe('given invalid tweet id or valid id but the tweet is deleted', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3ccbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {};
-      const userData = {};
-      Tweet.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(null),
-      });
-      await tweetController.getTweetLikers(req, res);
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Fail',
-        message: 'Can not Find This Tweet',
-      });
-    });
-  });
+const deletedUser = {
+  username: 'karreeem222',
+  email: 'kareemalaad555@gmail.com',
+  bio: 'we are dead',
+  birthDate: '6-4-2002',
+  password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
+  bannerImage:
+    'https://pbs.twimg.com/profile_banners/1326868125124603904/1665947156/1500x500',
+  profileImage:
+    'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+  phone: '01147119716',
+  nickname: 'Kareem Alaa',
+  website: 'www.wearedead.com',
+  followersUsers: [],
+  followingUsers: [],
+  tweetList: [],
+  location: 'cairo',
+  joinedAt: '12-9-2020',
+  active: true,
+  isDeleted: true,
+};
 
-  describe('given valid tweet id and invalid user id or valid id but the user is deleted', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        userId: '65493dfd0e3d2798726f8f5b',
-        likersList: ['654c3c2fcbe5edfa32058ce4', '654c3c2fcbe5edfa32058ce4'],
-      };
-      const userData = {};
-      Tweet.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(tweetData),
-      });
-      tweetHelper.getUserDatabyId.mockResolvedValue(null);
+const validTweet = {
+  description: 'test add tweet 1 2 3 4 test',
+  media: [
+    {
+      data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+      type: 'jpg',
+      _id: '654c193b688f342c88a547e9',
+    },
+  ],
+  type: 'tweet',
+};
 
-      await tweetController.getTweetLikers(req, res);
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Fail',
-        message: 'Can not Find This Tweet',
-      });
-    });
-  });
+const validReply = {
+  description: 'test add reply 1 2 3 4 test',
+  media: [
+    {
+      data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+      type: 'jpg',
+      _id: '654c193b688f342c88a547e9',
+    },
+  ],
+  type: 'reply',
+};
 
-  describe('given valid tweet id and valid user id', () => {
-    test('should respond with a status code 200', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        userId: '65493dfd0e3d2798726f8f5b',
-        likersList: ['654c3c2fcbe5edfa32058ce4', '654c3c2fcbe5edfa32058ce4'],
-      };
-      const userData = {};
-      Tweet.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(tweetData),
-      });
-      tweetHelper.getUserDatabyId.mockResolvedValue('454545');
+const inValidReply = {
+  description: 'test add reply 1 2 3 4 test',
+  media: [
+    {
+      data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+      type: 'jpg',
+      _id: '654c193b688f342c88a547e9',
+    },
+  ],
+  type: 'reply',
+};
 
-      User.aggregate.mockResolvedValue([
-        {
-          id: '544s5ds',
-          username: 'saasa',
-          nickname: 'dskdd',
-          bio: 'sdasasa',
-          profile_image: 'dsdsds',
-          followers_num: 26,
-          following_num: 20,
-        },
-        {
-          id: '544s5ds',
-          username: 'saasa',
-          nickname: 'dskdd',
-          bio: 'sdasasa',
-          profile_image: 'dsdsds',
-          followers_num: 26,
-          following_num: 20,
-        },
-      ]);
+const inValidTweet = {
+  type: 'tweet',
+};
 
-      await tweetController.getTweetLikers(req, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Success',
-        message: 'Tweet Likers Get Success',
-        data: [
-          {
-            id: '544s5ds',
-            username: 'saasa',
-            nickname: 'dskdd',
-            bio: 'sdasasa',
-            profile_image: 'dsdsds',
-            followers_num: 26,
-            following_num: 20,
-          },
-          {
-            id: '544s5ds',
-            username: 'saasa',
-            nickname: 'dskdd',
-            bio: 'sdasasa',
-            profile_image: 'dsdsds',
-            followers_num: 26,
-            following_num: 20,
-          },
-        ],
-      });
-    });
-  });
+let token;
+let testUser0;
+let testUser1;
+let deletedTestUser1;
+
+async function createUser(userData) {
+  let user = await new User(userData);
+  return await user.save();
+}
+
+async function createTweet(tweetData) {
+  let tweet = await new Tweet(tweetData);
+  return await tweet.save();
+}
+
+async function deleteUser(userData) {
+  await User.deleteOne(userData);
+}
+
+async function deleteTweet(tweetData) {
+  await Tweet.deleteOne(tweetData);
+}
+
+beforeAll(async () => {
+  try {
+    const mongoServer = await MongoMemoryServer.create();
+    await mongoose.connect(mongoServer.getUri());
+  } catch (error) {
+    console.error('Error during setup:', error);
+  }
 });
 
-describe('GET Tweet by Tweet Id', () => {
-  describe('given invalid tweet id or valid id but the tweet is deleted', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3ccbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {};
-      const userData = {};
-
-      tweetHelper.getTweetDatabyId.mockResolvedValue(null);
-
-      await tweetController.getTweet(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Fail',
-        message: 'Can not Find This Tweet',
-      });
-    });
-  });
-
-  describe('given valid tweet id and invalid user id or valid id but the user is deleted', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        userId: '65493dfd0e3d2798726f8f5b',
-        referredTweetId: '654c34d7a2df40f7f59b020d',
-        description: 'last tweet last',
-        viewsNum: 120,
-        likesNum: 43,
-        repliesNum: 3,
-        repostsNum: 2,
-        media: {},
-        type: 'tweet',
-        creation_time: '2023-11-09T01:55:43.798+00:00',
-      };
-      const userData = {};
-      tweetHelper.getTweetDatabyId.mockResolvedValue(tweetData);
-      tweetHelper.getUserDatabyId.mockResolvedValue(null);
-
-      await tweetController.getTweet(req, res);
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Fail',
-        message: 'Can not Find This Tweet Owner',
-      });
-    });
-  });
-
-  describe('given valid tweet id and valid user id', () => {
-    test('should respond with a status code 200', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      req.user = '65493dfd0e3d2798726f8f5b';
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      User.findOne = jest.fn(() => {
-        return null;
-      });
-      const tweetData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        userId: '65493dfd0e3d2798726f8f5b',
-        referredTweetId: '654c34d7a2df40f7f59b020d',
-        description: 'last tweet last',
-        viewsNum: 120,
-        likesNum: 43,
-        repliesNum: 3,
-        repostsNum: 2,
-        media: [],
-        type: 'tweet',
-        creation_time: '2023-11-09T01:55:43.798+00:00',
-      };
-      const userData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        username: 'karreeem',
-        nickname: 'Kareem Alaa',
-        bio: 'lesgooo',
-        profile_image:
-          'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-        followers_num: 26,
-        following_num: 51,
-      };
-      tweetHelper.getTweetDatabyId.mockResolvedValue(tweetData);
-      tweetHelper.getUserDatabyId.mockResolvedValue(userData);
-      tweetData.tweet_owner = userData;
-      await tweetController.getTweet(req, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Tweet Get Success',
-        data: tweetData,
-      });
-    });
-  });
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoose.connection.close();
 });
 
-describe('GET Tweet Replies by Tweet Id', () => {
-  describe('given invalid tweet id or valid id but the tweet is deleted', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3ccbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {};
-      const userData = {};
+describe('Post /api/tweets/', () => {
+  it('responds with 201 when user exists with valid tweet', async () => {
+    testUser0 = await createUser(user0);
 
-      Tweet.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(null),
-      });
-
-      await tweetController.getTweetReplies(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Fail',
-        message: 'Can not Find This Tweet',
-      });
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
     });
-  });
+    const response = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
 
-  describe('given valid tweet id and invalid user id or valid id but the user is deleted', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        userId: '65493dfd0e3d2798726f8f5b',
-        likersList: ['654c3c2fcbe5edfa32058ce4', '654c3c2fcbe5edfa32058ce4'],
-      };
-      const userData = {};
-      Tweet.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(tweetData),
-      });
-      tweetHelper.getUserDatabyId.mockResolvedValue(null);
+    const addedTweet = (await Tweet.find())[0];
+    addedTweet.media[0]._id = addedTweet.media[0]._id.toString();
+    const temp = response._body.data.creation_time;
+    delete response._body.data.creation_time;
+    response._body.data.creation_time = stringify(temp);
 
-      await tweetController.getTweetReplies(req, res);
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Fail',
-        message: 'Can not Find This Tweet',
-      });
-    });
-  });
-
-  describe('given valid tweet id and valid user id', () => {
-    test('should respond with a status code 200', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      req.body = {
-        count: 2,
-        page: 1,
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {
-        id: '654c3c2fcbe5edfa32058ce4',
-        userId: '65493dfd0e3d2798726f8f5b',
-      };
-      const userData = {};
-      Tweet.findById.mockReturnValue({
-        select: jest.fn().mockResolvedValue(tweetData),
-      });
-      tweetHelper.getUserDatabyId.mockResolvedValue('454545');
-
-      Tweet.aggregate.mockResolvedValue([
-        {
-          paginatedResults: [
-            {
-              userId: '65608e9d4fd4d82a7970d82b',
-              description: 'tweet 1 about not dynamic programming',
-              media: [
-                {
-                  data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-                  type: 'jpg',
-                },
-              ],
-              type: 'tweet',
-              id: '6562c830ad1774eb296f87bc',
-              creation_time: '2023-11-26T04:12:53.933Z',
-              viewsNum: 0,
-              repliesNum: 0,
-              repostsNum: 1,
-              likesNum: 0,
-              isLiked: false,
-              isRetweeted: true,
-              tweet_owner: [
-                {
-                  username: 'karreeem2',
-                  nickname: 'kareem alaa 2',
-                  bio: 'Im the real batmal',
-                  id: '65608e9d4fd4d82a7970d82b',
-                  followers_num: 1,
-                  following_num: 1,
-                },
-              ],
-            },
-            {
-              userId: '65608e9d4fd4d82a7970d82b',
-              description: 'tweet 2 about not dynamic programming',
-              media: [
-                {
-                  data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-                  type: 'jpg',
-                },
-              ],
-              type: 'tweet',
-              id: '6562c830ad7274ee296f87bc',
-              creation_time: '2023-11-26T04:12:53.933Z',
-              viewsNum: 0,
-              repliesNum: 0,
-              repostsNum: 1,
-              likesNum: 0,
-              isLiked: false,
-              isRetweeted: true,
-              tweet_owner: [
-                {
-                  username: 'karreeem2',
-                  nickname: 'kareem alaa 2',
-                  bio: 'Im the real batmal',
-                  id: '65608e9d4fd4d82a7970d82b',
-                  followers_num: 1,
-                  following_num: 1,
-                },
-              ],
-            },
-          ],
-          totalCount: [1, 2],
-        },
-      ]);
-
-      await tweetController.getTweetReplies(req, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Success',
-        message: 'Tweet Replies Get Success',
-        data: [
-          {
-            userId: '65608e9d4fd4d82a7970d82b',
-            description: 'tweet 1 about not dynamic programming',
-            media: [
-              {
-                data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-                type: 'jpg',
-              },
-            ],
-            type: 'tweet',
-            id: '6562c830ad1774eb296f87bc',
-            creation_time: '2023-11-26T04:12:53.933Z',
-            viewsNum: 0,
-            repliesNum: 0,
-            repostsNum: 1,
-            likesNum: 0,
-            isLiked: false,
-            isRetweeted: true,
-            tweet_owner: [
-              {
-                username: 'karreeem2',
-                nickname: 'kareem alaa 2',
-                bio: 'Im the real batmal',
-                id: '65608e9d4fd4d82a7970d82b',
-                followers_num: 1,
-                following_num: 1,
-              },
-            ],
-          },
-          {
-            userId: '65608e9d4fd4d82a7970d82b',
-            description: 'tweet 2 about not dynamic programming',
-            media: [
-              {
-                data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-                type: 'jpg',
-              },
-            ],
-            type: 'tweet',
-            id: '6562c830ad7274ee296f87bc',
-            creation_time: '2023-11-26T04:12:53.933Z',
-            viewsNum: 0,
-            repliesNum: 0,
-            repostsNum: 1,
-            likesNum: 0,
-            isLiked: false,
-            isRetweeted: true,
-            tweet_owner: [
-              {
-                username: 'karreeem2',
-                nickname: 'kareem alaa 2',
-                bio: 'Im the real batmal',
-                id: '65608e9d4fd4d82a7970d82b',
-                followers_num: 1,
-                following_num: 1,
-              },
-            ],
-          },
-        ],
-      });
-    });
-  });
-});
-
-describe('Add Tweet', () => {
-  describe('given tweet without media and description', () => {
-    test('should respond with a status code 404', async () => {
-      req.params = {
-        tweetId: '654c3ccbe5edfa32058ce4',
-      };
-      req.body = {
-        type: 'tweet',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-      const tweetData = {};
-      const userData = {};
-
-      await tweetController.addTweet(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'bad request',
-        message: 'no media and no description',
-      });
-    });
-  });
-
-  describe('given valid tweet data', () => {
-    test('should respond with a status code 201', async () => {
-      req.params = {
-        tweetId: '654c3c2fcbe5edfa32058ce4',
-      };
-      req.body = {
-        description: 'reply 1 on reply 2 about not dynamic programming',
+    expect(response.status).toBe(201);
+    expect(response._body).toEqual({
+      status: 'Tweet Add Success',
+      data: {
+        id: addedTweet._id.toString(),
+        userId: addedTweet.userId.toString(),
+        description: addedTweet.description,
+        viewsNum: addedTweet.views,
+        likesNum: addedTweet.likersList.length,
+        repliesNum: addedTweet.repliesList.length,
+        repostsNum: addedTweet.retweetList.length,
         media: [
           {
-            data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-            type: 'jpg',
+            data: addedTweet.media[0].data,
+            type: addedTweet.media[0].type,
+            _id: addedTweet.media[0]._id.toString(),
           },
         ],
-        type: 'tweet',
-      };
-      res.status = jest.fn((x) => x);
-      res.json = jest.fn((x) => x);
-
-      const userData = {
-        id: '65608e9d4fd4d82a7970d82b',
-        username: 'karreeem2',
-        nickname: 'kareem alaa 2',
-        bio: 'Im the real batmal',
-        followers_num: 1,
-        following_num: 1,
-      };
-
-      Tweet.create.mockResolvedValue({
-        _doc: {
-          _id: '656491bf08a885a38d5c034f',
-          userId: '65608e9d4fd4d82a7970d82b',
-          description: 'reply 1 on reply 2 about not dynamic programming',
-          views: 0,
-          likersList: [],
-          repliesList: [],
-          quoteRetweetList: [],
-          media: [
-            {
-              data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-              type: 'jpg',
-              _id: '656491bf08a885a38d5c0350',
-            },
-          ],
-          type: 'tweet',
-          createdAt: '2023-11-24T12:32:31.896Z',
+        type: addedTweet.type,
+        creation_time: stringify(addedTweet.createdAt),
+        tweet_owner: {
+          id: testUser0._id.toString(),
+          username: testUser0.username,
+          nickname: testUser0.nickname,
+          bio: testUser0.bio,
+          profile_image: testUser0.profileImage,
+          followers_num: testUser0.followersUsers.length,
+          following_num: testUser0.followingUsers.length,
         },
-      });
-      tweetHelper.getUserDatabyId.mockResolvedValue(userData);
-      tweetHelper.getRequiredTweetDatafromTweetObject.mockResolvedValue({
-        id: '656491bf08a885a38d5c034f',
-        userId: '65608e9d4fd4d82a7970d82b',
-        description: 'reply 1 on reply 2 about not dynamic programming',
-        viewsNum: 0,
-        likesNum: 0,
-        repliesNum: 0,
-        repostsNum: 0,
-        media: [
-          {
-            data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-            type: 'jpg',
-            _id: '656491bf08a885a38d5c0350',
-          },
-        ],
-        type: 'tweet',
-        creation_time: '2023-11-24T12:32:31.896Z',
-      });
-      User.findByIdAndUpdate.mockImplementation(() => {});
-      extract_hashtags.mockResolvedValue(null);
-      await tweetController.addTweet(req, res);
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'Tweet Add Success',
-        data: {
-          id: '656491bf08a885a38d5c034f',
-          userId: '65608e9d4fd4d82a7970d82b',
-          description: 'reply 1 on reply 2 about not dynamic programming',
-          viewsNum: 0,
-          likesNum: 0,
-          repliesNum: 0,
-          repostsNum: 0,
-          media: [
-            {
-              data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
-              type: 'jpg',
-              _id: '656491bf08a885a38d5c0350',
-            },
-          ],
-          type: 'tweet',
-          creation_time: '2023-11-24T12:32:31.896Z',
-          tweet_owner: userData,
-        },
-      });
+      },
     });
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    const response = await request(app).post('/api/tweets/').send(validTweet);
+    const addedTweet = (await Tweet.find())[0];
+    expect(response.status).toBe(401);
+    expect(addedTweet).toBe(undefined);
+  });
+
+  it('responds with 400 when invalid tweet no media and no description', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(inValidTweet);
+    const addedTweet = (await Tweet.find())[0];
+
+    expect(response.status).toBe(400);
+    expect(response._body).toEqual({
+      status: 'bad request',
+      message: 'no media and no description',
+    });
+    expect(addedTweet).toBe(undefined);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 500 when send invalid value for database', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        description: 'test',
+        type: 'twet',
+      });
+    const addedTweet = (await Tweet.find())[0];
+
+    expect(response.status).toBe(500);
+    expect(addedTweet).toBe(undefined);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 500 when internal server error happens', async () => {
+    jest
+      .spyOn(mongoose.model('Tweet'), 'create')
+      .mockImplementationOnce(
+        async () => new Error('Simulated error during save'),
+      );
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+    const addedTweet = (await Tweet.find())[0];
+
+    expect(response.status).toBe(500);
+    expect(addedTweet).toBe(undefined);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
+describe('Patch /api/tweets/retweet/:tweetId', () => {
+  it('responds with 204 when user exists and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .patch(`/api/tweets/retweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(204);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .patch(`/api/tweets/retweet/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+    const response2 = await request(app)
+      .patch(`/api/tweets/retweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).patch(
+      `/api/tweets/retweet/${addedTweet._id}`,
+    );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists but deleted and tweet exists', async () => {
+    deletedTestUser1 = await createUser(deletedUser);
+    token = jwt.sign(
+      { id: deletedTestUser1._id.toString() },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      },
+    );
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .patch(`/api/tweets/retweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
+describe('Get /api/tweets/:tweetId', () => {
+  it('responds with 200 when user exists and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    // console.log(response2._body);
+    expect(response2.status).toBe(200);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+    const response2 = await request(app)
+      .get(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user doesnt exist or deleted and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+
+    const updatedUser = {};
+    updatedUser.isDeleted = true;
+    await User.findByIdAndUpdate(testUser0._id, updatedUser);
+    const response2 = await request(app)
+      .get(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).get(`/api/tweets/${addedTweet._id}`);
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
+describe('Get /api/tweets/likers/:tweetId', () => {
+  it('responds with 200 when user exists and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/likers/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(200);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/likers/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+
+    const response2 = await request(app)
+      .get(`/api/tweets/likers/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).get(
+      `/api/tweets/likers/${addedTweet._id}`,
+    );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
+describe('Get /api/tweets/replies/:tweetId', () => {
+  it('responds with 200 when user exists and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/replies/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(200);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/replies/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+
+    const response2 = await request(app)
+      .get(`/api/tweets/replies/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).get(
+      `/api/tweets/replies/${addedTweet._id}`,
+    );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
+describe('Delete /api/tweets/:tweetId', () => {
+  it('responds with 204 when user exists and tweet exists and user is the owner of the tweet', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .delete(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    // console.log(response2._body);
+    expect(response2.status).toBe(204);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user exists and tweet exists and user is not the owner of the tweet', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    testUser1 = await createUser(user1);
+
+    token = jwt.sign({ id: testUser1._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .delete(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+    const response2 = await request(app)
+      .delete(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .delete(`/api/tweets/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).delete(
+      `/api/tweets/${addedTweet._id}`,
+    );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
   });
 });
