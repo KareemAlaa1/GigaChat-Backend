@@ -28,5 +28,15 @@ let testUser;
 
 
 describe('auth', () => {
+    beforeAll(async () => {
+        const mongoServer = await MongoMemoryServer.create();
+        await mongoose.connect(mongoServer.getUri());
+        testUser = await createUser(testUserData);
+    });
 
+    // Clean up after testing
+    afterAll(async () => {
+        await deleteUser(testUser);
+        await mongoose.disconnect();
+    });
 });
