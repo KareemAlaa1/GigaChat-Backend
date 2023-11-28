@@ -105,6 +105,130 @@ describe('auth', () => {
             );
         });
 
+
+        describe('POST /api/signup', () => {
+            it('should return 200 and success message when valid data is provided', async () => {
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        email: 'test@example.com',
+                        nickname: 'testuser',
+                        birthDate: '1990-01-01',
+                    });
+                console.log(response.body);
+                expect(response.status).toBe(200);
+                expect(response.body.status).toBe('success');
+                expect(response.body.data.email).toBe('test@example.com');
+                expect(response.body.data.message).toBe('Code sent to the email the user provide');
+
+                await User.deleteOne({email:"test@example.com"});
+            });
+
+            it('should return 400 when email is missing', async () => {
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        nickname: 'testuser',
+                        birthDate: '1990-01-01',
+                    });
+
+                expect(response.status).toBe(400);
+                expect(response.body.error).toBe('Email is required in the request body');
+            });
+
+            it('should return 400 when email format is invalid', async () => {
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        email: 'invalid-email',
+                        nickname: 'testuser',
+                        birthDate: '1990-01-01',
+                    });
+
+                expect(response.status).toBe(400);
+                expect(response.body.error).toBe('Invalid email format');
+            });
+
+            it('should return 409 when email already exists and is active', async () => {
+                const existingUser = new User({
+                    email: 'existing@example.com',
+                    nickname: 'existinguser',
+                    birthDate: '1990-01-01',
+                    active: true,
+                });
+                try {
+                    await existingUser.save();
+                }
+                catch (e)
+                {
+                    console.log(e,'shetse');
+                }
+                console.log('hi');
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        email: 'existing@example.com',
+                        nickname: 'testuser',
+                        birthDate: '1990-01-01',
+                    });
+                console.log(response.body);
+                expect(response.status).toBe(409);
+                expect(response.body.error).toBe('Email already exists');
+                await  User.deleteOne({ email: 'existing@example.com' });
+            });
+
+            it('should return 200 when email already exists but is inactive', async () => {
+                const existingUser = new User({
+                    email: 'existing@example.com',
+                    nickname: 'existinguser',
+                    birthDate: '1990-01-01',
+                    active: false,
+                });
+                await existingUser.save();
+
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        email: 'existing@example.com',
+                        nickname: 'testuser',
+                        birthDate: '1990-01-01',
+                    });
+
+                expect(response.status).toBe(200);
+                expect(response.body.status).toBe('success');
+                expect(response.body.data.email).toBe('existing@example.com');
+                expect(response.body.data.message).toBe('Code sent to the email the user provide');
+
+                await User.deleteOne({ email: 'existing@example.com' });
+            });
+
+            it('should return 400 when birthDate is missing', async () => {
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        email: 'test@example.com',
+                        nickname: 'testuser',
+                    });
+
+                expect(response.status).toBe(400);
+                expect(response.body.error).toBe('birthDate is required in the request body');
+            });
+
+            it('should return 403 when user is below 13 years old', async () => {
+                const response = await request(app)
+                    .post('/api/user/signup')
+                    .send({
+                        email: 'test@example.com',
+                        nickname: 'testuser',
+                        birthDate: '2021-01-01',
+                    });
+
+                expect(response.status).toBe(403);
+                expect(response.body.error).toBe('User must be at least 13 years old Or Wrong date Format ');
+            });
+        });
+
+
         // Add more test cases as needed to cover different scenarios
     });
 });
