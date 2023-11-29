@@ -34,8 +34,6 @@ app.use('/api/homepage', HomepageRouter);
 app.use('/api/trends', HashtagRouter);
 app.use('/api/tweets', tweetRouter);
 
-
-
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
   //create ourError obj and send it
