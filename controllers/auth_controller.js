@@ -147,18 +147,20 @@ exports.login = catchAsync(async (req, res, next) => {
     token,
     status: 'success',
     data: {
-      username: user.username,
-      nickname: user.nickname,
-      _id: user._id.toString(),
-      bio: user.bio,
-      profileImage: user.profileImage,
-      bannerImage: user.bannerImage,
-      location: user.location,
-      website: user.website,
-      birthDate: user.birthDate,
-      joinedAt: user.joinedAt,
-      followings_num: user.followersUsers.length,
-      followers_num: user.followingUsers.length,
+      user: {
+        username: user.username,
+        nickname: user.nickname,
+        _id: user._id.toString(),
+        bio: user.bio,
+        profileImage: user.profileImage,
+        bannerImage: user.bannerImage,
+        location: user.location,
+        website: user.website,
+        birthDate: user.birthDate,
+        joinedAt: user.joinedAt,
+        followings_num: user.followersUsers.length,
+        followers_num: user.followingUsers.length,
+      }
     },
   });
 });

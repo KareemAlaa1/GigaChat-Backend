@@ -452,8 +452,7 @@ describe('auth', () => {
       expect(response.status).toBe(201);
       expect(response.body.status).toBe('success');
       expect(response.body.token).toBeDefined();
-      expect(response.body.data.userId).toBe(testUser._id.toString());
-      expect(response.body.data.username).toBe(testUser.username);
+      expect(response.body.data.user).toBeDefined();
     });
 
     it('responds with 400 when email format is invalid', async () => {

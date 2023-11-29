@@ -150,24 +150,6 @@ userSchema.pre('save', function (next) {
   this.passwordChangedAt = Date.now() - 1000; // video 136 min:16 -> why he minus 1 sec
   next();
 });
-// Query MiddleWare
-
-// NOT WORKING
-// userSchema.pre(/^find/, function (next) {
-//   // /^find/ reguler expression
-//   // we use normal function to access the this keyword
-//   // bypass to allow specific query to still select the inactive user
-//   if (!this.getQuery()._bypassMiddleware) {
-//     this.find({ active: { $ne: false } });
-//   }
-//   next();
-// });
-// i will put the following insteed untill i find sol.
-
-// userSchema.pre('findById', function (next) {
-//   this.find({ active: { $ne: false } });
-//   next();
-// });
 
 // Instance Methods
 
