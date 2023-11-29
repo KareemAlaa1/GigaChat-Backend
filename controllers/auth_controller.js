@@ -8,6 +8,7 @@ const catchAsync = require('../utils/catch_async');
 const sendEmail = require('../utils/email');
 
 const dotenv = require('dotenv');
+const { querystring } = require('@firebase/util');
 dotenv.config({ path: './config/dev.env' });
 
 const signToken = (id) =>
@@ -121,6 +122,7 @@ exports.login = catchAsync(async (req, res, next) => {
       new AppError('Please provide email or username and password!', 400),
     );
   }
+
   // 2) Check if user exists && password is correct
   let user;
   if (email) {
@@ -130,9 +132,10 @@ exports.login = catchAsync(async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    user = await User.findOne({ email }).select('+password');
+    const queryString = '+password username email bio birthDate bannerImage profileImage nickname location website joinedAt followersUsers followingUsers';
+    user = await User.findOne({ email }).select(queryString);
   } else {
-    user = await User.findOne({ username }).select('+password');
+    user = await User.findOne({ username }).select(queryString);
   }
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
@@ -144,8 +147,18 @@ exports.login = catchAsync(async (req, res, next) => {
     token,
     status: 'success',
     data: {
-      userId: user.id,
       username: user.username,
+      nickname: user.nickname,
+      _id: user._id.toString(),
+      bio: user.bio,
+      profileImage: user.profileImage,
+      bannerImage: user.bannerImage,
+      location: user.location,
+      website: user.website,
+      birthDate: user.birthDate,
+      joinedAt: user.joinedAt,
+      followings_num: user.followersUsers.length,
+      followers_num: user.followingUsers.length,
     },
   });
 });

@@ -12,7 +12,7 @@ userRouter.post('/checkAvailableUsername', userController.checkAvailableUsername
 
 userRouter.post('/checkAvailableEmail', userController.checkAvailableEmail); // stage 1
 
-userRouter.post('/ExistedEmailORusername', userController.ExistedEmailORusername);
+userRouter.post('/existedEmailORusername', userController.existedEmailORusername);
 
 userRouter.post('/signup', authController.signUp); // stage 1
 
