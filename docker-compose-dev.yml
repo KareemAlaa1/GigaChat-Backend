@@ -7,7 +7,7 @@ services:
       context: .
       target: development
     env_file:
-      - /config/dev.env
+      - config/dev.env
     ports:
       - 80:3000
  
