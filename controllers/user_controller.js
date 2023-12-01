@@ -154,6 +154,35 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+exports.getcurrUserProfile = async (req, res) => {
+  try {
+    const currUser = req.user;
+
+    const result = {};
+    result.status = 'success';
+    result.user = {
+      username: currUser.username,
+      nickname: currUser.nickname,
+      _id: currUser._id,
+      bio: currUser.bio,
+      profile_image: currUser.profileImage,
+      banner_image: currUser.bannerImage,
+      location: currUser.location,
+      website: currUser.website,
+      birth_date: currUser.birthDate,
+      joined_date: currUser.joinedAt,
+      followings_num: currUser.followersUsers.length,
+      followers_num: currUser.followingUsers.length,
+    };
+
+    return res.status(200).send(result);
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
 exports.updateProfile = async (req, res) => {
   try {
     // get the sent data from the request body
