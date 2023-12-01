@@ -56,24 +56,8 @@ exports.addMedia = async (req, res) => {
     }
 }
 
-exports.deleteMedia = async (req, res) => {
-
-    try {
-        const { url } = req.body;
-
-        if(!url) return res.status(400).send({error: "Bad request"});
-
-        const media = await Media.findOneAndDelete({url: url});
-
-        if(!media) return res.status(404).send({error: "The file doesn't exist"});
-        
-        const file = bucket.file(media.cloudStrogePath);
-        
-        file.delete();
-
-        return res.status(200).send({ status: 'File deleted successfully' });
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+exports.deleteMedia = async (url) => {
+    const media = await Media.findOneAndDelete({ url: url });
+    const file = bucket.file(media.cloudStrogePath);
+    file.delete();
 }

@@ -1,5 +1,7 @@
 const express = require('express');
 const User = require('../models/user_model');
+const Media = require('../models/media_model');
+const { deleteMedia } = require('../controllers/media_controller');
 const { bucket, uuidv4 } = require('../utils/firebase');
 const catchAsync = require('../utils/catch_async');
 
@@ -48,8 +50,8 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
 
   if (!email) {
     return res
-        .status(400)
-        .json({ error: 'Email is required in the request body' });
+      .status(400)
+      .json({ error: 'Email is required in the request body' });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
@@ -66,30 +68,30 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   res.status(200).json({ message: 'Email is available' });
 }),
 
-exports.existedEmailORusername= catchAsync(async (req, res, next) => {
-  const { email, username } = req.body;
+  exports.existedEmailORusername = catchAsync(async (req, res, next) => {
+    const { email, username } = req.body;
 
-  if (!email && !username) {
-    return res
+    if (!email && !username) {
+      return res
         .status(400)
         .json({ error: 'Email or username is required in the request body' });
-  }
-
-  if (email) {
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser && existingUser.active) {
-      return res.status(200).json({ message: 'Email is existed' });
     }
-  } else {
-    const existingUser = await User.findOne({ username });
 
-    if (existingUser && existingUser.active) {
-      return res.status(200).json({ message: 'username is existed' });
+    if (email) {
+      const existingUser = await User.findOne({ email });
+
+      if (existingUser && existingUser.active) {
+        return res.status(200).json({ message: 'Email is existed' });
+      }
+    } else {
+      const existingUser = await User.findOne({ username });
+
+      if (existingUser && existingUser.active) {
+        return res.status(200).json({ message: 'username is existed' });
+      }
     }
-  }
-  res.status(404).json({ error: 'Email or username  not existed' });
-})
+    res.status(404).json({ error: 'Email or username  not existed' });
+  })
 
 
 exports.getProfile = async (req, res) => {
@@ -157,68 +159,52 @@ exports.updateProfile = async (req, res) => {
 exports.updateProfileImage = async (req, res) => {
   try {
 
-    if (!req.file) return res.status(400).send({ error: 'Bad Request' });
+    const { profile_image } = req.query;
 
-    const fileName = `${uuidv4()}-${req.file.originalname}`;
-    const file = bucket.file(fileName);
+    if (!profile_image) return res.status(400).send({ error: "Bad request" });
 
-    await file.createWriteStream().end(req.file.buffer);
+    const media = await Media.findOne({ url: profile_image });
 
-    // Get the download URL with a token
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '12-3-9999', // Set the expiration date to infinity :D
-    });
+    if (!media) return res.status(404).send({ error: "The file doesn't exist" });
 
-    req.user.profileImage = url;
+    req.user.profileImage = profile_image;
 
     await req.user.save();
 
-    const result = {
-      status: 'image uploaded successfully',
-      image_profile_url: url,
-    };
-    res.status(200).send(result);
+    return res.status(204);
   } catch (error) {
-    // Handle and log errors
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+
 };
 
 exports.updateProfileBanner = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).send({ error: 'Bad Request' });
+    const { banner_image } = req.query;
 
-    const fileName = `${uuidv4()}-${req.file.originalname}`;
-    const file = bucket.file(fileName);
+    if (!banner_image) return res.status(400).send({ error: "Bad request" });
 
-    await file.createWriteStream().end(req.file.buffer);
+    const media = await Media.findOne({ url: banner_image });
 
-    // Get the download URL with a token
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '12-31-9999', // Set the expiration date to infinity :D
-    });
+    if (!media) return res.status(404).send({ error: "The file doesn't exist" });
 
-    req.user.profileBanner = url;
+    req.user.bannerImage = banner_image;
 
     await req.user.save();
 
-    const result = {
-      status: 'image uploaded successfully',
-      image_profile_url: url,
-    };
-    res.status(200).send(result);
+    return res.status(204);
   } catch (error) {
-    // Handle and log errors
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+
 };
 
 exports.deleteProfileImage = async (req, res) => {
   try {
+
+    await deleteMedia(req.user.profileImage);
 
     req.user.profileImage = DEFAULT_IMAGE_URL;
 
@@ -240,7 +226,9 @@ exports.deleteProfileImage = async (req, res) => {
 exports.deleteProfileBanner = async (req, res) => {
   try {
 
-    req.user.profileBanner = DEFAULT_IMAGE_URL;
+    await deleteMedia(req.user.bannerImage);
+
+    req.user.bannerImage = DEFAULT_IMAGE_URL;
 
     await req.user.save();
 
