@@ -68,7 +68,7 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   res.status(200).json({ message: 'Email is available' });
 }),
 
-  exports.existedEmailORusername = catchAsync(async (req, res, next) => {
+exports.existedEmailORusername = catchAsync(async (req, res, next) => {
     const { email, username } = req.body;
 
     if (!email && !username) {
@@ -166,7 +166,7 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-exports.getcurrUserProfile = async (req, res) => {
+exports.getCurrUserProfile = async (req, res) => {
   try {
     const currUser = req.user;
 

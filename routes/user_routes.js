@@ -28,7 +28,7 @@ userRouter.post('/login', authController.login);
 
 userRouter.get('/profile/:username', authController.protect ,userController.getProfile);
 
-userRouter.get('/profile', authController.protect ,userController.getcurrUserProfile);
+userRouter.get('/profile', authController.protect ,userController.getCurrUserProfile);
 
 userRouter.patch('/profile', authController.protect, userController.updateProfile);
 
