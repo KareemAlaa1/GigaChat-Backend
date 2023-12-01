@@ -48,7 +48,7 @@ exports.getUserTweets = async (req, res) => {
             referredTweetId: 1,
             description: 1,
             likesNum: { $size: '$tweetList.tweet.likersList' },
-            repliesNum: 1,
+            repliesNum: '$tweetList.tweet.repliesCount',
             repostsNum: { $size: '$tweetList.tweet.retweetList' },
             media: 1,
             type: '$tweetList.type',
