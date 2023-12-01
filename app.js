@@ -10,6 +10,8 @@ const userProfileRouter = require('./routes/user_profile_router');
 const tweetRouter = require('./routes/tweet_routes');
 const homepageRouter = require('./routes/homepage_router');
 const hashtagRouter = require('./routes/hashtag_router');
+const mediaRouter = require('./routes/media_routes');
+
 const app = express();
 
 // MIDDLEWARES
@@ -34,6 +36,7 @@ app.use('/api/homepage', homepageRouter);
 app.use('/api/trends', hashtagRouter);
 app.use('/api/tweets', tweetRouter);
 app.use('/api/:username', userProfileRouter);
+app.use('/api/media', mediaRouter);
 
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
