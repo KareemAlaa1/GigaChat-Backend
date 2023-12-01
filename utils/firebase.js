@@ -24,6 +24,7 @@ const bucket = storage.bucket();
 
 const upload = multer({
   storage: multer.memoryStorage(),
+    limits: { files: 4 }, // Limit to a maximum of 4 files
 });
 
 module.exports = { bucket, upload, uuidv4 };

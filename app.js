@@ -9,6 +9,7 @@ const userRouter = require('./routes/user_routes');
 const tweetRouter = require('./routes/tweet_routes');
 const HomepageRouter = require('./routes/homepage_router');
 const HashtagRouter = require('./routes/hashtag_router');
+const mediaRouter = require('./routes/media_routes');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/user', userRouter);
 app.use('/api/homepage', HomepageRouter);
 app.use('/api/trends', HashtagRouter);
 app.use('/api/tweets', tweetRouter);
+app.use('/api/media', mediaRouter);
 
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
