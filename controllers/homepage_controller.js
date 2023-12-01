@@ -73,9 +73,8 @@ exports.getFollowingTweets = catchAsync(
         'tweetList.tweetDetails.likesNum': {
           $size: '$tweetList.tweetDetails.likersList',
         },
-        'tweetList.tweetDetails.repliesNum': {
-          $size: '$tweetList.tweetDetails.repliesList',
-        },
+        'tweetList.tweetDetails.repliesNum':
+          '$tweetList.tweetDetails.repliesCount',
         'tweetList.tweetDetails.repostsNum': {
           $size: '$tweetList.tweetDetails.retweetList',
         },

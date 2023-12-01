@@ -178,7 +178,7 @@ describe('Post /api/tweets/', () => {
         description: addedTweet.description,
         viewsNum: addedTweet.views,
         likesNum: addedTweet.likersList.length,
-        repliesNum: addedTweet.repliesList.length,
+        repliesNum: addedTweet.repliesCount,
         repostsNum: addedTweet.retweetList.length,
         media: [
           {

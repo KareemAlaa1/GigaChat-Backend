@@ -81,9 +81,7 @@ exports.getHastagTweets = catchAsync(
         'tweet_list.likesNum': {
           $size: '$tweet_list.likersList',
         },
-        'tweet_list.repliesNum': {
-          $size: '$tweet_list.repliesList',
-        },
+        'tweet_list.repliesNum': '$tweet_list.repliesCount',
         'tweet_list.repostsNum': {
           $size: '$tweet_list.retweetList',
         },
