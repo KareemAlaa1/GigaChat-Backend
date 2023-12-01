@@ -124,7 +124,8 @@ exports.getProfile = async (req, res) => {
 
     const isWantedUserBlocked = currUser.blockingUsers.includes(wantedUser._id);
     const isWantedUserMuted = currUser.mutedUsers.includes(wantedUser._id);
-    
+    const isCurruser = wantedUser.id === currUser._id.toString();
+
     const result = {};
     result.status = 'success';
     result.user = {
@@ -144,6 +145,7 @@ exports.getProfile = async (req, res) => {
       is_wanted_user_muted: isWantedUserMuted,
       is_curr_user_blocked: wantedUser.isCurrUserBlocked,
       is_wanted_user_followed: wantedUser.isWantedUserFollowed,
+      is_curr_user: isCurruser
     };
 
     return res.status(200).send(result);
