@@ -97,30 +97,94 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
 exports.getProfile = async (req, res) => {
   try {
     const { username } = req.params;
+    const currUser = req.user;
+
     if (!username) return res.status(400).send({ error: 'Bad Request' });
 
-    const user = await User.
-      findOne({ username: username, active: true, isDeleted: false }).
-      select('username nickname _id bio profileImage bannerImage location website birthDate joinedAt followingUsers followersUsers');
+    const aggregateResult = await User.aggregate([
+      { $match: { username: username, active: true, isDeleted: false } },
+      {
+        $project: {
+          username: 1,
+          nickname: 1,
+          _id: 1,
+          bio: 1,
+          profileImage: 1,
+          bannerImage: 1,
+          location: 1,
+          website: 1,
+          birthDate: 1,
+          joinedAt: 1,
+          blockingUsers: 1,
+          mutedUsers: 1,
+          followings_num: { $size: '$followingUsers' },
+          followers_num: { $size: '$followersUsers' },
+          isCurrUserBlocked: {
+            $in: [ currUser._id.toString(), '$blockingUsers']
+          },
+          isWantedUserFollowed: {
+            $in: [ currUser._id.toString(), '$followersUsers']
+          },
+        }
+      }
+    ]);
+    const wantedUser = aggregateResult[0];
 
+    if (!wantedUser) return res.status(404).send({ error: 'user not found' });
 
-    if (!user) return res.status(404).send({ error: 'user not found' });
+    const isWantedUserBlocked = currUser.blockingUsers.includes(wantedUser._id);
+    const isWantedUserMuted = currUser.mutedUsers.includes(wantedUser._id);
+    const isCurruser = wantedUser.id === currUser._id.toString();
 
     const result = {};
     result.status = 'success';
     result.user = {
-      username: user.username,
-      nickname: user.nickname,
-      _id: user._id.toString(),
-      bio: user.bio,
-      profile_image: user.profileImage,
-      banner_image: user.bannerImage,
-      location: user.location,
-      website: user.website,
-      birth_date: user.birthDate,
-      joined_date: user.joinedAt,
-      followings_num: user.followersUsers.length,
-      followers_num: user.followingUsers.length,
+      username: wantedUser.username,
+      nickname: wantedUser.nickname,
+      _id: wantedUser._id,
+      bio: wantedUser.bio,
+      profile_image: wantedUser.profileImage,
+      banner_image: wantedUser.bannerImage,
+      location: wantedUser.location,
+      website: wantedUser.website,
+      birth_date: wantedUser.birthDate,
+      joined_date: wantedUser.joinedAt,
+      followings_num: wantedUser.followings_num,
+      followers_num: wantedUser.followers_num,
+      is_wanted_user_blocked: isWantedUserBlocked,
+      is_wanted_user_muted: isWantedUserMuted,
+      is_curr_user_blocked: wantedUser.isCurrUserBlocked,
+      is_wanted_user_followed: wantedUser.isWantedUserFollowed,
+      is_curr_user: isCurruser
+    };
+
+    return res.status(200).send(result);
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getcurrUserProfile = async (req, res) => {
+  try {
+    const currUser = req.user;
+
+    const result = {};
+    result.status = 'success';
+    result.user = {
+      username: currUser.username,
+      nickname: currUser.nickname,
+      _id: currUser._id,
+      bio: currUser.bio,
+      profile_image: currUser.profileImage,
+      banner_image: currUser.bannerImage,
+      location: currUser.location,
+      website: currUser.website,
+      birth_date: currUser.birthDate,
+      joined_date: currUser.joinedAt,
+      followings_num: currUser.followersUsers.length,
+      followers_num: currUser.followingUsers.length,
     };
 
     return res.status(200).send(result);
@@ -173,6 +237,7 @@ exports.updateProfileImage = async (req, res) => {
 
     return res.status(204);
   } catch (error) {
+    // Handle and log errors
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
@@ -195,6 +260,7 @@ exports.updateProfileBanner = async (req, res) => {
 
     return res.status(204);
   } catch (error) {
+    // Handle and log errors
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
