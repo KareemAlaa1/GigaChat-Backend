@@ -6,10 +6,10 @@ const cors = require('cors');
 const AppError = require('./utils/app_error');
 const globalErrorHandler = require('./controllers/error_controller');
 const userRouter = require('./routes/user_routes');
+const userProfileRouter = require('./routes/user_profile_router');
 const tweetRouter = require('./routes/tweet_routes');
-const HomepageRouter = require('./routes/homepage_router');
-const HashtagRouter = require('./routes/hashtag_router');
-
+const homepageRouter = require('./routes/homepage_router');
+const hashtagRouter = require('./routes/hashtag_router');
 const app = express();
 
 // MIDDLEWARES
@@ -30,9 +30,10 @@ app.use((req, res, next) => {
 //Routs
 
 app.use('/api/user', userRouter);
-app.use('/api/homepage', HomepageRouter);
-app.use('/api/trends', HashtagRouter);
+app.use('/api/homepage', homepageRouter);
+app.use('/api/trends', hashtagRouter);
 app.use('/api/tweets', tweetRouter);
+app.use('/api/:username', userProfileRouter);
 
 // Handling  Wrong Route Req.
 app.all('*', (req, res, next) => {
