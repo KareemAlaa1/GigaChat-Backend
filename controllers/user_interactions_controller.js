@@ -1,7 +1,7 @@
 const express = require('express');
 const User = require('../models/user_model');
+const Tweet = require('../models/tweet_model');
 const mongoose = require('mongoose');
-
 
 exports.follow = async (req, res) => {
     try {
@@ -45,12 +45,12 @@ exports.unfollow = async (req, res) => {
         if (!followedUser) return res.status(404).send({ error: "user not found" });
 
         if (!followedUser.followersUsers.includes(currUser._id))
-            return res.status(400).send({ error: "Bad request, User is not followed followed" });
+            return res.status(400).send({ error: "Bad request, User is not followed" });
         if (!currUser.followingUsers.includes(followedUser._id))
-            return res.status(400).send({ error: "Bad request, User is not followed followed" });
+            return res.status(400).send({ error: "Bad request, User is not followed" });
 
-        followedUser.followersUsers = followedUser.followersUsers.filter(_id => _id !== currUser._id);
-        currUser.followersUsers = currUser.followersUsers.filter(_id => _id !== followedUser._id);
+        followedUser.followersUsers = followedUser.followersUsers.filter(_id => _id.toString() !== currUser._id.toString());
+        currUser.followersUsers = currUser.followersUsers.filter(_id => _id.toString() !== followedUser._id.toString());
 
         await followedUser.save();
         await currUser.save();
@@ -66,6 +66,27 @@ exports.unfollow = async (req, res) => {
 exports.like = async (req, res) => {
     try {
 
+        const tweetId = req.params.tweetId;
+        const currUser = req.user;
+
+        if (!tweetId) return res.status(400).send({ error: "Bad request, send ID" });
+
+        const likedTweet = await Tweet.findById(tweetId);
+
+        if (!likedTweet) return res.status(404).send({ error: "tweet not found" });
+
+        if (likedTweet.likersList.includes(currUser._id))
+            return res.status(400).send({ error: "Bad request, User already like this tweet" });
+        if (currUser.likedTweets.includes(likedTweet._id))
+            return res.status(400).send({ error: "Bad request, User already like this tweet" });
+
+        likedTweet.likersList.push(currUser._id);
+        currUser.likedTweets.push(likedTweet._id);
+
+        await likedTweet.save();
+        await currUser.save();
+
+        return res.status(204).end();
     } catch (error) {
         // Handle and log errors
         console.error(error.message);
@@ -76,6 +97,27 @@ exports.like = async (req, res) => {
 exports.unlike = async (req, res) => {
     try {
 
+        const tweetId = req.params.tweetId;
+        const currUser = req.user;
+
+        if (!tweetId) return res.status(400).send({ error: "Bad request, send ID" });
+
+        const likedTweet = await Tweet.findById(tweetId);
+
+        if (!likedTweet) return res.status(404).send({ error: "tweet not found" });
+
+        if (!likedTweet.likersList.includes(currUser._id))
+            return res.status(400).send({ error: "Bad request, User already doesn't like this tweet1" });
+        if (!currUser.likedTweets.includes(likedTweet._id))
+            return res.status(400).send({ error: "Bad request, User already doesn't like this tweet2" });
+
+        likedTweet.likersList = likedTweet.likersList.filter(_id => _id.toString() !== currUser._id.toString());
+        currUser.likedTweets = currUser.likedTweets.filter(_id => _id.toString() !== likedTweet._id.toString());
+
+        await likedTweet.save();
+        await currUser.save();
+
+        return res.status(204).end();
     } catch (error) {
         // Handle and log errors
         console.error(error.message);
@@ -85,7 +127,7 @@ exports.unlike = async (req, res) => {
 
 exports.getFollowers = async (req, res) => {
     try {
-
+        
     } catch (error) {
         // Handle and log errors
         console.error(error.message);
