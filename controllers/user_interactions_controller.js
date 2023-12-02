@@ -127,7 +127,45 @@ exports.unlike = async (req, res) => {
 
 exports.getFollowers = async (req, res) => {
     try {
-        
+        const username = req.params.username;
+        const currUser = req.user;
+        if (!username) return res.status(400).send({ error: "Bad request, send username" });
+
+        const user = await User.aggregate([
+            {
+                $match: { username: username },
+            }
+        ]).lookup({
+            from: 'users',
+            localField: 'followersUsers',
+            foreignField: '_id',
+            as: 'followersUsers',
+        })      
+        .project({
+            followersUsers: 1,
+        })
+        .unwind('followersUsers')
+            .addFields({
+                'followersUsers.is_followed': {
+                    $in: [currUser._id, '$followersUsers.followersUsers'],
+                },
+                'followersUsers.followers_num': { $size: '$followersUsers.followersUsers' },
+                'followersUsers.followings_num': { $size: '$followersUsers.followingUsers' },
+            })
+            .project({
+                'followersUsers._id': 1,
+                'followersUsers.is_followed': 1,
+                'followersUsers.profileImage': 1,
+                'followersUsers.bio': 1,
+                'followersUsers.username': 1,
+                'followersUsers.nickname': 1,
+                'followersUsers.followers_num': 1,
+                'followersUsers.followings_num': 1,
+            });
+        return res.status(200).send({
+            status: 'success',
+            users: typeof user[0].followersUsers === 'object' ? [user[0].followersUsers] : user[0].followersUsers, 
+        });
     } catch (error) {
         // Handle and log errors
         console.error(error.message);
@@ -137,7 +175,46 @@ exports.getFollowers = async (req, res) => {
 
 exports.getFollowings = async (req, res) => {
     try {
+        const username = req.params.username;
+        const currUser = req.user;
+        if (!username) return res.status(400).send({ error: "Bad request, send username" });
 
+        const user = await User.aggregate([
+            {
+                $match: { username: username },
+            }
+        ]).lookup({
+            from: 'users',
+            localField: 'followingUsers',
+            foreignField: '_id',
+            as: 'followingUsers',
+        })      
+        .project({
+            followingUsers: 1,
+        })
+        .unwind('followingUsers')
+            .addFields({
+                'followingUsers.is_followed': {
+                    $in: [currUser._id, '$followingUsers.followersUsers'],
+                },
+                'followingUsers.followers_num': { $size: '$followingUsers.followersUsers' },
+                'followingUsers.followings_num': { $size: '$followingUsers.followingUsers' },
+            })
+            .project({
+                'followingUsers._id': 1,
+                'followingUsers.is_followed': 1,
+                'followingUsers.profileImage': 1,
+                'followingUsers.bio': 1,
+                'followingUsers.username': 1,
+                'followingUsers.nickname': 1,
+                'followingUsers.followers_num': 1,
+                'followingUsers.followings_num': 1,
+            });
+
+        return res.status(200).send({
+            status: 'success',
+            users: typeof user[0].followingUsers === 'object' ? [user[0].followingUsers] : user[0].followingUsers, 
+        });
     } catch (error) {
         // Handle and log errors
         console.error(error.message);

@@ -223,7 +223,7 @@ exports.updateProfile = async (req, res) => {
 exports.updateProfileImage = async (req, res) => {
   try {
 
-    const { profile_image } = req.query;
+    const { profile_image } = req.body;
 
     if (!profile_image) return res.status(400).send({ error: "Bad request" });
 
@@ -246,7 +246,7 @@ exports.updateProfileImage = async (req, res) => {
 
 exports.updateProfileBanner = async (req, res) => {
   try {
-    const { banner_image } = req.query;
+    const { banner_image } = req.body;
 
     if (!banner_image) return res.status(400).send({ error: "Bad request" });
 

@@ -45,6 +45,11 @@ userRouter.patch('/:username/follow', authController.protect, userInteracrionsCo
 
 userRouter.patch('/:username/unfollow', authController.protect, userInteracrionsController.unfollow);
 
+userRouter.get('/profile/:username/followers', authController.protect, userInteracrionsController.getFollowers);
+
+userRouter.get('/profile/:username/followings', authController.protect, userInteracrionsController.getFollowings);
+
+
 
 module.exports = userRouter; 
 
