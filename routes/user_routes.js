@@ -3,6 +3,7 @@ const express = require('express');
 const userRouter = express.Router();
 const userController = require('../controllers/user_controller');
 const authController = require('../controllers/auth_controller');
+const userInteracrionsController  = require('../controllers/user_interactions_controller');;
 const { upload } = require('../utils/firebase');
 
 //  Micro endPoints router
@@ -39,6 +40,11 @@ userRouter.patch('/profile/banner', [authController.protect, upload.single('prof
 userRouter.delete('/profile/image', authController.protect,userController.deleteProfileImage);
 
 userRouter.delete('/profile/banner', authController.protect, userController.deleteProfileBanner);
+
+userRouter.patch('/:username/follow', authController.protect, userInteracrionsController.follow);
+
+userRouter.patch('/:username/unfollow', authController.protect, userInteracrionsController.unfollow);
+
 
 module.exports = userRouter; 
 
