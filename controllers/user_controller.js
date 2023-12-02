@@ -46,7 +46,7 @@ exports.checkAvailableUsername = catchAsync(async (req, res, next) => {
   res.status(200).json({ message: 'Username is available' });
 });
 
-(exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
+exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   const { email } = req.body;
 
   if (!email) {
@@ -67,31 +67,31 @@ exports.checkAvailableUsername = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json({ message: 'Email is available' });
-})),
-  (exports.existedEmailORusername = catchAsync(async (req, res, next) => {
-    const { email, username } = req.body;
+});
+exports.existedEmailORusername = catchAsync(async (req, res, next) => {
+  const { email, username } = req.body;
 
-    if (!email && !username) {
-      return res
-        .status(400)
-        .json({ error: 'Email or username is required in the request body' });
+  if (!email && !username) {
+    return res
+      .status(400)
+      .json({ error: 'Email or username is required in the request body' });
+  }
+
+  if (email) {
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser && existingUser.active) {
+      return res.status(200).json({ message: 'Email is existed' });
     }
+  } else {
+    const existingUser = await User.findOne({ username });
 
-    if (email) {
-      const existingUser = await User.findOne({ email });
-
-      if (existingUser && existingUser.active) {
-        return res.status(200).json({ message: 'Email is existed' });
-      }
-    } else {
-      const existingUser = await User.findOne({ username });
-
-      if (existingUser && existingUser.active) {
-        return res.status(200).json({ message: 'username is existed' });
-      }
+    if (existingUser && existingUser.active) {
+      return res.status(200).json({ message: 'username is existed' });
     }
-    res.status(404).json({ error: 'Email or username  not existed' });
-  }));
+  }
+  res.status(404).json({ error: 'Email or username  not existed' });
+});
 
 exports.getProfile = async (req, res) => {
   try {
