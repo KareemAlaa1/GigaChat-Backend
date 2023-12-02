@@ -4,18 +4,14 @@ const validator = require('validator');
 const chatSchema = new mongoose.Schema({
   usersList: [
     {
-      member: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
   ],
   messagesList: [
     {
-      message: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Message',
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Message',
     },
   ],
 });
