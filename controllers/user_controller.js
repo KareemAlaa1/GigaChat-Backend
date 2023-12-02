@@ -1,11 +1,14 @@
 const express = require('express');
 const User = require('../models/user_model');
+const Chat = require('../models/chat_model');
+const Message = require('../models/message_model');
+const mongoose = require('mongoose');
+
 const { bucket, uuidv4 } = require('../utils/firebase');
 const catchAsync = require('../utils/catch_async');
 
 const DEFAULT_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
-
 
 exports.checkBirthDate = async (req, res) => {
   const { birthDate } = req.body;
@@ -43,13 +46,13 @@ exports.checkAvailableUsername = catchAsync(async (req, res, next) => {
   res.status(200).json({ message: 'Username is available' });
 });
 
-exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
+(exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   const { email } = req.body;
 
   if (!email) {
     return res
-        .status(400)
-        .json({ error: 'Email is required in the request body' });
+      .status(400)
+      .json({ error: 'Email is required in the request body' });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
@@ -64,43 +67,44 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json({ message: 'Email is available' });
-}),
+})),
+  (exports.existedEmailORusername = catchAsync(async (req, res, next) => {
+    const { email, username } = req.body;
 
-exports.existedEmailORusername= catchAsync(async (req, res, next) => {
-  const { email, username } = req.body;
-
-  if (!email && !username) {
-    return res
+    if (!email && !username) {
+      return res
         .status(400)
         .json({ error: 'Email or username is required in the request body' });
-  }
-
-  if (email) {
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser && existingUser.active) {
-      return res.status(200).json({ message: 'Email is existed' });
     }
-  } else {
-    const existingUser = await User.findOne({ username });
 
-    if (existingUser && existingUser.active) {
-      return res.status(200).json({ message: 'username is existed' });
+    if (email) {
+      const existingUser = await User.findOne({ email });
+
+      if (existingUser && existingUser.active) {
+        return res.status(200).json({ message: 'Email is existed' });
+      }
+    } else {
+      const existingUser = await User.findOne({ username });
+
+      if (existingUser && existingUser.active) {
+        return res.status(200).json({ message: 'username is existed' });
+      }
     }
-  }
-  res.status(404).json({ error: 'Email or username  not existed' });
-})
-
+    res.status(404).json({ error: 'Email or username  not existed' });
+  }));
 
 exports.getProfile = async (req, res) => {
   try {
     const { username } = req.params;
     if (!username) return res.status(400).send({ error: 'Bad Request' });
 
-    const user = await User.
-      findOne({ username: username, active: true, isDeleted: false }).
-      select('username nickname _id bio profileImage bannerImage location website birthDate joinedAt followingUsers followersUsers');
-
+    const user = await User.findOne({
+      username: username,
+      active: true,
+      isDeleted: false,
+    }).select(
+      'username nickname _id bio profileImage bannerImage location website birthDate joinedAt followingUsers followersUsers',
+    );
 
     if (!user) return res.status(404).send({ error: 'user not found' });
 
@@ -156,7 +160,6 @@ exports.updateProfile = async (req, res) => {
 
 exports.updateProfileImage = async (req, res) => {
   try {
-
     if (!req.file) return res.status(400).send({ error: 'Bad Request' });
 
     const fileName = `${uuidv4()}-${req.file.originalname}`;
@@ -219,7 +222,6 @@ exports.updateProfileBanner = async (req, res) => {
 
 exports.deleteProfileImage = async (req, res) => {
   try {
-
     req.user.profileImage = DEFAULT_IMAGE_URL;
 
     await req.user.save();
@@ -239,7 +241,6 @@ exports.deleteProfileImage = async (req, res) => {
 
 exports.deleteProfileBanner = async (req, res) => {
   try {
-
     req.user.profileBanner = DEFAULT_IMAGE_URL;
 
     await req.user.save();
@@ -252,6 +253,184 @@ exports.deleteProfileBanner = async (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getChatIdbyUserId = async (req, res) => {
+  try {
+    const chatId = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+      },
+      {
+        $project: { chatList: 1 },
+      },
+    ])
+      .lookup({
+        from: 'chats',
+        localField: 'chatList',
+        foreignField: '_id',
+        as: 'chats',
+      })
+      .unwind('chats')
+      .project({ chats: 1, _id: 0 })
+      .addFields({
+        'chats.exist': {
+          $in: [
+            new mongoose.Types.ObjectId(req.params.userId),
+            '$chats.usersList',
+          ],
+        },
+      })
+      .project({ id: '$chats._id', exist: '$chats.exist' })
+      .match({
+        exist: true,
+      });
+
+    if (chatId.length > 0) {
+      res.status(200).json({
+        status: 'Chat Id Get Success',
+        data: chatId[0].id,
+      });
+    } else {
+      res.status(404).json({
+        status: 'Chat not Found',
+      });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.sendMessage = async (req, res) => {
+  try {
+    const description = req.body.message;
+    const media = req.body.media;
+    if (description == undefined && media == undefined) {
+      res.status(400).json({
+        status: 'bad request',
+        message: 'no media and no message',
+      });
+    } else {
+      const chat = await Chat.findOne({
+        _id: req.params.chatId,
+        usersList: { $in: [req.user._id] },
+      }).select('_id');
+      if (chat) {
+        const message = await Message.create({
+          description: description,
+          media: media,
+          sender: req.user._id,
+        });
+        await Chat.findByIdAndUpdate(req.params.chatId, {
+          $push: { messagesList: message._doc._id },
+        });
+        res.status(200).json({
+          status: 'message sent success',
+        });
+        console.log(chat);
+      } else {
+        res.status(404).json({
+          status: 'bad request',
+          message: 'chat id not found',
+        });
+      }
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getMessages = async (req, res) => {
+  try {
+    const size = parseInt(req.body.count, 10) || 10;
+
+    const skip = ((req.body.page || 1) - 1) * size;
+    const chat = await Chat.findOne({
+      _id: req.params.chatId,
+      usersList: { $in: [req.user._id] },
+    }).select('_id');
+    if (chat) {
+      const messages = await Chat.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(req.params.chatId) },
+        },
+        {
+          $project: { messagesList: 1, _id: 0 },
+        },
+      ])
+        .lookup({
+          from: 'messages',
+          localField: 'messagesList',
+          foreignField: '_id',
+          as: 'message',
+        })
+        .unwind('message')
+        .project({ message: 1 })
+        .addFields({
+          'message.mine': {
+            $eq: [new mongoose.Types.ObjectId(req.user._id), '$message.sender'],
+          },
+        })
+        .project({
+          id: '$message._id',
+          description: '$message.description',
+          media: '$message.media',
+          isDeleted: '$message.isDeleted',
+          mine: '$message.mine',
+        })
+        .sort({ 'message.sendTime': -1 })
+        .skip(skip)
+        .limit(size);
+      res.status(200).json({
+        status: 'message sent success',
+        data: messages,
+      });
+      const messages2 = await Chat.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(req.params.chatId) },
+        },
+        {
+          $project: { messagesList: 1, _id: 0 },
+        },
+      ])
+        .lookup({
+          from: 'messages',
+          localField: 'messagesList',
+          foreignField: '_id',
+          as: 'message',
+        })
+        .unwind('message')
+        .project({ message: 1 })
+        .project({
+          id: '$message._id',
+          sender: '$message.sender',
+          seen: '$message.seen',
+        })
+        .match({
+          sender: { $ne: new mongoose.Types.ObjectId(req.user._id) },
+          seen: { $eq: false },
+        })
+        .project({ id: 1 })
+        .group({
+          _id: null,
+          arrayOfIds: { $push: '$id' },
+        })
+        .project({
+          arrayOfIds: 1,
+          _id: 0,
+        });
+
+      const lol = await Message.updateMany(
+        { _id: { $in: messages2[0].arrayOfIds } },
+        { $set: { seen: true } },
+      );
+    }
+  } catch (error) {
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
@@ -281,4 +460,5 @@ function calculateAge(birthDate) {
   }
   return age;
 }
+
 exports.calculateAge = calculateAge;
