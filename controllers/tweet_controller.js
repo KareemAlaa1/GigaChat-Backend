@@ -227,7 +227,10 @@ const TweetController = {
             message: 'Can not Find This Tweet',
           });
         } else {
-          const data = await User.aggregate([
+          const size = parseInt(req.body.count, 10) || 10;
+
+          const skip = ((req.body.page || 1) - 1) * size;
+          const likersList = await User.aggregate([
             {
               $match: {
                 _id: { $in: tweet.likersList },
@@ -247,15 +250,101 @@ const TweetController = {
                   $size: '$followingUsers',
                 },
                 isDeleted: 1,
+                isFollowed: { $in: [req.user._id, '$followersUsers'] },
+              },
+            },
+            {
+              $facet: {
+                paginatedResults: [{ $skip: skip }, { $limit: size }],
+                totalCount: [{ $group: { _id: null, count: { $sum: 1 } } }],
               },
             },
           ]);
+          const data = likersList[0].paginatedResults;
+          const totalCount =
+            likersList[0].totalCount.length > 0
+              ? likersList[0].totalCount[0].count
+              : 0;
 
           // console.log(data);
           res.status(200);
           res.json({
             status: 'Success',
             message: 'Tweet Likers Get Success',
+            data,
+          });
+          return 1;
+        }
+      }
+    } catch (err) {
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
+
+  getTweetRetweeters: async (req, res) => {
+    try {
+      const tweet = await Tweet.findById(req.params.tweetId).select(
+        'retweetList userId isDeleted',
+      );
+      if (tweet === null || tweet.isDeleted === true) {
+        res.status(404);
+        res.json({
+          status: 'Fail',
+          message: 'Can not Find This Tweet',
+        });
+      } else {
+        const user = await getUserDatabyId(tweet.userId);
+        if (user === null) {
+          res.status(404);
+          res.json({
+            status: 'Fail',
+            message: 'Can not Find This Tweet',
+          });
+        } else {
+          const size = parseInt(req.body.count, 10) || 10;
+
+          const skip = ((req.body.page || 1) - 1) * size;
+          const retweetersList = await User.aggregate([
+            {
+              $match: {
+                _id: { $in: tweet.retweetList },
+              },
+            },
+            {
+              $project: {
+                id: '$_id',
+                username: 1,
+                nickname: 1,
+                bio: 1,
+                profile_image: '$profileImage',
+                followers_num: {
+                  $size: '$followersUsers',
+                },
+                following_num: {
+                  $size: '$followingUsers',
+                },
+                isDeleted: 1,
+                isFollowed: { $in: [req.user._id, '$followersUsers'] },
+              },
+            },
+            {
+              $facet: {
+                paginatedResults: [{ $skip: skip }, { $limit: size }],
+                totalCount: [{ $group: { _id: null, count: { $sum: 1 } } }],
+              },
+            },
+          ]);
+          const data = retweetersList[0].paginatedResults;
+          const totalCount =
+            retweetersList[0].totalCount.length > 0
+              ? retweetersList[0].totalCount[0].count
+              : 0;
+
+          // console.log(data);
+          res.status(200);
+          res.json({
+            status: 'Success',
+            message: 'Tweet Retweeters Get Success',
             data,
           });
           return 1;
@@ -352,6 +441,7 @@ const TweetController = {
                       profile_image: '$profileImage',
                       followers_num: { $size: '$followersUsers' },
                       following_num: { $size: '$followingUsers' },
+                      isFollowed: { $in: [req.user._id, '$followersUsers'] },
                     },
                   },
                 ],
