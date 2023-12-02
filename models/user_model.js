@@ -32,7 +32,6 @@ const userSchema = new mongoose.Schema({
     type: String,
   },
   profileImage: {
-    
     type: String,
   },
   phone: {
@@ -132,6 +131,7 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
 });
+
 // Document MiddleWare
 
 userSchema.pre('save', async function (next) {
@@ -141,30 +141,25 @@ userSchema.pre('save', async function (next) {
   // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12); //.hash is async
 
-  // Delete passwordConfirm field
-  this.passwordConfirm = undefined;
   next();
 });
 userSchema.pre('save', function (next) {
   if (!this.isModified('password') || this.isNew) return next(); // not changed or the user is new
 
-  this.passwordChangedAt = Date.now() - 1000; // video 136 min:16 -> why he minus 1 sec
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
 // Instance Methods
 
 userSchema.methods.correctPassword = async function (
-  //candidatePassword is not encrypted & userPassword is encrypted
   candidatePassword,
-  userPassword, //we pass the user password and did not use this.password cz it by default not selected
+  userPassword,
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
-  // log to see the shapes
-  //console.log(this.passwordChangedAt, JWTTimestamp);
   if (this.passwordChangedAt) {
     // if there is password changing even happen first
     const changedTimestamp = parseInt(
@@ -175,20 +170,16 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
     return JWTTimestamp < changedTimestamp;
   }
 
-  // False means NOT changed
   return false;
 };
 userSchema.methods.createPasswordResetToken = function () {
-  // we dont need to encrypt this token strongly so we will use simple encrypt model
-  const resetToken = crypto.randomBytes(32).toString('hex'); // generate random string
-  // and then we will encryt it and not save it to our database as plane as it
-  // we always save our sensitive data in encrypted form
+  const resetToken = crypto.randomBytes(6).toString('base64');
+  // console.log(resetToken);
+
   this.passwordResetToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-
-  console.log({ resetToken }, this.passwordResetToken);
 
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //ten minute from now
 
@@ -198,7 +189,6 @@ userSchema.methods.createConfirmCode = function () {
   let code = crypto.randomBytes(4).readUInt32BE(0);
   code = code.toString().padStart(8, '0');
 
-  // we always save our sensitive data in encrypted form
   this.confirmEmailCode = crypto
     .createHash('sha256')
     .update(code)
