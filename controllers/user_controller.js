@@ -246,15 +246,15 @@ exports.updateProfileImage = async (req, res) => {
 
 exports.updateProfileBanner = async (req, res) => {
   try {
-    const { banner_image } = req.body;
+    const { profile_banner } = req.body;
 
-    if (!banner_image) return res.status(400).send({ error: "Bad request" });
+    if (!profile_banner) return res.status(400).send({ error: "Bad request" });
 
-    const media = await Media.findOne({ url: banner_image });
+    const media = await Media.findOne({ url: profile_banner });
 
     if (!media) return res.status(404).send({ error: "The file doesn't exist" });
 
-    req.user.bannerImage = banner_image;
+    req.user.bannerImage = profile_banner;
 
     await req.user.save();
 
