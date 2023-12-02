@@ -35,7 +35,7 @@ app.use('/api/user', userRouter);
 app.use('/api/homepage', homepageRouter);
 app.use('/api/trends', hashtagRouter);
 app.use('/api/tweets', tweetRouter);
-app.use('/api/:username', userProfileRouter);
+app.use('/api/profile', userProfileRouter);
 app.use('/api/media', mediaRouter);
 
 // Handling  Wrong Route Req.

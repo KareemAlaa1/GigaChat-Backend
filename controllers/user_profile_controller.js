@@ -14,7 +14,10 @@ exports.getUserTweets = async (req, res) => {
     const limit = req.body.count * 1 || 1;
     const skip = (page - 1) * limit;
     username = req.params.username;
-    const user = await User.findOne({ username }).select('_id');
+
+    const user = await User.findOne({ username });
+
+    if (!user) return res.status(404).send({ error: 'User Not Found' });
     const tweets = await User.aggregate([
       {
         $match: { _id: user._id },
@@ -90,7 +93,10 @@ exports.getUserLikedTweets = async (req, res) => {
     const limit = req.body.count * 1 || 1;
     const skip = (page - 1) * limit;
     username = req.params.username;
-    const user = await User.findOne({ username }).select('_id');
+
+    const user = await User.findOne({ username });
+
+    if (!user) return res.status(404).send({ error: 'User Not Found' });
     const tweets = await User.aggregate([
       {
         $match: { _id: user._id },

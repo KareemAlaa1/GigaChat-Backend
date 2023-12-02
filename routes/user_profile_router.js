@@ -4,17 +4,15 @@ const userProfileController = require('../controllers/user_profile_controller');
 const authController = require('../controllers/auth_controller');
 
 router.get(
-  '/tweets',
+  '/:username/tweets',
   authController.protect,
   userProfileController.getUserTweets,
 );
 
-
 router.get(
-  '/likes',
+  '/:username/likes',
   authController.protect,
   userProfileController.getUserLikedTweets,
 );
-
 
 module.exports = router;
