@@ -13,11 +13,13 @@ exports.follow = async (req, res) => {
         const followedUser = await User.findOne({ username });
 
         if (!followedUser) return res.status(404).send({ error: "user not found" });
-
+        
         if (followedUser.followersUsers.includes(currUser._id))
             return res.status(400).send({ error: "Bad request, User already followed" });
         if (currUser.followingUsers.includes(followedUser._id))
             return res.status(400).send({ error: "Bad request, User already followed" });
+
+
 
         followedUser.followersUsers.push(currUser._id);
         currUser.followingUsers.push(followedUser._id);
@@ -50,8 +52,8 @@ exports.unfollow = async (req, res) => {
             return res.status(400).send({ error: "Bad request, User is not followed" });
 
         followedUser.followersUsers = followedUser.followersUsers.filter(_id => _id.toString() !== currUser._id.toString());
-        currUser.followersUsers = currUser.followersUsers.filter(_id => _id.toString() !== followedUser._id.toString());
-
+        currUser.followingUsers = currUser.followingUsers.filter(_id => _id.toString() !== followedUser._id.toString());
+        
         await followedUser.save();
         await currUser.save();
 
