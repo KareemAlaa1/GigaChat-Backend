@@ -258,86 +258,83 @@ exports.deleteProfileBanner = async (req, res) => {
   }
 };
 
-exports.getChatIdbyUserId = async (req, res) => {
-  try {
-    const chatId = await User.aggregate([
-      {
-        $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
-      },
-      {
-        $project: { chatList: 1 },
-      },
-    ])
-      .lookup({
-        from: 'chats',
-        localField: 'chatList',
-        foreignField: '_id',
-        as: 'chats',
-      })
-      .unwind('chats')
-      .project({ chats: 1, _id: 0 })
-      .addFields({
-        'chats.exist': {
-          $in: [
-            new mongoose.Types.ObjectId(req.params.userId),
-            '$chats.usersList',
-          ],
-        },
-      })
-      .project({ id: '$chats._id', exist: '$chats.exist' })
-      .match({
-        exist: true,
-      });
-
-    if (chatId.length > 0) {
-      res.status(200).json({
-        status: 'Chat Id Get Success',
-        data: chatId[0].id,
-      });
-    } else {
-      res.status(404).json({
-        status: 'Chat not Found',
-      });
-    }
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
-  }
-};
-
 exports.sendMessage = async (req, res) => {
   try {
-    const description = req.body.message;
-    const media = req.body.media;
-    if (description == undefined && media == undefined) {
-      res.status(400).json({
-        status: 'bad request',
-        message: 'no media and no message',
-      });
-    } else {
-      const chat = await Chat.findOne({
-        _id: req.params.chatId,
-        usersList: { $in: [req.user._id] },
-      }).select('_id');
-      if (chat) {
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
+    if (
+      recieverUser &&
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      const description = req.body.message;
+      const media = req.body.media;
+      // message cant be empty
+      if (description == undefined && media == undefined) {
+        res.status(400).json({
+          status: 'bad request',
+          message: 'no media and no message',
+        });
+      } else {
+        // get the chat id of certain user
+        const chatId = await User.aggregate([
+          {
+            $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+          },
+          {
+            $project: { chatList: 1 },
+          },
+        ])
+          .lookup({
+            from: 'chats',
+            localField: 'chatList',
+            foreignField: '_id',
+            as: 'chats',
+          })
+          .unwind('chats')
+          .project({ chats: 1, _id: 0 })
+          .addFields({
+            'chats.exist': {
+              $in: [
+                new mongoose.Types.ObjectId(req.params.userId),
+                '$chats.usersList',
+              ],
+            },
+          })
+          .project({ id: '$chats._id', exist: '$chats.exist' })
+          .match({
+            exist: true,
+          });
         const message = await Message.create({
           description: description,
           media: media,
           sender: req.user._id,
         });
-        await Chat.findByIdAndUpdate(req.params.chatId, {
-          $push: { messagesList: message._doc._id },
-        });
+        // if chat exist then send else create new chat and add its id to chatList of the users and send
+        if (chatId.length > 0) {
+          await Chat.findByIdAndUpdate(chatId[0].id, {
+            $push: { messagesList: message._doc._id },
+          });
+        } else {
+          const newChat = await Chat.create({
+            usersList: [req.user._id, req.params.userId],
+          });
+          await Chat.findByIdAndUpdate(newChat._doc._id, {
+            $push: { messagesList: message._doc._id },
+          });
+          const lol = await User.updateMany(
+            { _id: { $in: [recieverUser._id, req.user._id] } },
+            { $push: { chatList: newChat._doc._id } },
+          );
+          console.log(lol);
+        }
         res.status(200).json({
           status: 'message sent success',
         });
-        console.log(chat);
-      } else {
-        res.status(404).json({
-          status: 'bad request',
-          message: 'chat id not found',
-        });
       }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
     }
   } catch (error) {
     console.error(error.message);
@@ -347,88 +344,139 @@ exports.sendMessage = async (req, res) => {
 
 exports.getMessages = async (req, res) => {
   try {
-    const size = parseInt(req.body.count, 10) || 10;
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
 
-    const skip = ((req.body.page || 1) - 1) * size;
-    const chat = await Chat.findOne({
-      _id: req.params.chatId,
-      usersList: { $in: [req.user._id] },
-    }).select('_id');
-    if (chat) {
-      const messages = await Chat.aggregate([
+    if (
+      recieverUser &&
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      // get the chat id of certain user
+
+      const chatId = await User.aggregate([
         {
-          $match: { _id: new mongoose.Types.ObjectId(req.params.chatId) },
+          $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
         },
         {
-          $project: { messagesList: 1, _id: 0 },
+          $project: { chatList: 1 },
         },
       ])
         .lookup({
-          from: 'messages',
-          localField: 'messagesList',
+          from: 'chats',
+          localField: 'chatList',
           foreignField: '_id',
-          as: 'message',
+          as: 'chats',
         })
-        .unwind('message')
-        .project({ message: 1 })
+        .unwind('chats')
+        .project({ chats: 1, _id: 0 })
         .addFields({
-          'message.mine': {
-            $eq: [new mongoose.Types.ObjectId(req.user._id), '$message.sender'],
+          'chats.exist': {
+            $in: [
+              new mongoose.Types.ObjectId(req.params.userId),
+              '$chats.usersList',
+            ],
           },
         })
-        .project({
-          id: '$message._id',
-          description: '$message.description',
-          media: '$message.media',
-          isDeleted: '$message.isDeleted',
-          mine: '$message.mine',
-        })
-        .sort({ 'message.sendTime': -1 })
-        .skip(skip)
-        .limit(size);
-      res.status(200).json({
-        status: 'message sent success',
-        data: messages,
-      });
-      const messages2 = await Chat.aggregate([
-        {
-          $match: { _id: new mongoose.Types.ObjectId(req.params.chatId) },
-        },
-        {
-          $project: { messagesList: 1, _id: 0 },
-        },
-      ])
-        .lookup({
-          from: 'messages',
-          localField: 'messagesList',
-          foreignField: '_id',
-          as: 'message',
-        })
-        .unwind('message')
-        .project({ message: 1 })
-        .project({
-          id: '$message._id',
-          sender: '$message.sender',
-          seen: '$message.seen',
-        })
+        .project({ id: '$chats._id', exist: '$chats.exist' })
         .match({
-          sender: { $ne: new mongoose.Types.ObjectId(req.user._id) },
-          seen: { $eq: false },
-        })
-        .project({ id: 1 })
-        .group({
-          _id: null,
-          arrayOfIds: { $push: '$id' },
-        })
-        .project({
-          arrayOfIds: 1,
-          _id: 0,
+          exist: true,
         });
+      // if chat id exist get the messages in it else send empty array
+      // and also specify if the message is mine or not in the response
+      if (chatId.length > 0) {
+        const size = parseInt(req.body.count, 10) || 10;
 
-      const lol = await Message.updateMany(
-        { _id: { $in: messages2[0].arrayOfIds } },
-        { $set: { seen: true } },
-      );
+        const skip = ((req.body.page || 1) - 1) * size;
+        const messages = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .addFields({
+            'message.mine': {
+              $eq: [
+                new mongoose.Types.ObjectId(req.user._id),
+                '$message.sender',
+              ],
+            },
+          })
+          .project({
+            id: '$message._id',
+            description: '$message.description',
+            media: '$message.media',
+            isDeleted: '$message.isDeleted',
+            mine: '$message.mine',
+          })
+          .sort({ 'message.sendTime': -1 })
+          .skip(skip)
+          .limit(size);
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+        // after sending respose all unseen messages in this chat of the another user not mine is now seen to me so update its state
+        const messages2 = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .project({
+            id: '$message._id',
+            sender: '$message.sender',
+            seen: '$message.seen',
+          })
+          .match({
+            sender: { $ne: new mongoose.Types.ObjectId(req.user._id) },
+            seen: { $eq: false },
+          })
+          .project({ id: 1 })
+          .group({
+            _id: null,
+            arrayOfIds: { $push: '$id' },
+          })
+          .project({
+            arrayOfIds: 1,
+            _id: 0,
+          });
+        if (messages2.length > 0) {
+          await Message.updateMany(
+            { _id: { $in: messages2[0].arrayOfIds } },
+            { $set: { seen: true } },
+          );
+        }
+      } else {
+        const messages = [];
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
     }
   } catch (error) {
     console.error(error.message);
