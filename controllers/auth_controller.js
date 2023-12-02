@@ -494,4 +494,69 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // 1) check input data valididty
+  const { password, passwordResetToken } = req.body;
+
+  if (!password || !passwordResetToken) {
+    return next(
+      new AppError(
+        'the user should provide both, password and passwordResetToken',
+        400,
+      ),
+    );
+  }
+  if (password.length < 8) {
+    return next(new AppError('password should be at least 8 characters', 404));
+  }
+
+  // 2) get user based on the token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(passwordResetToken)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() }, //to check if the token expires or not
+  });
+
+  if (!user) {
+    return next(
+      new AppError('passwordResetToken is invalid or has expired', 400),
+    );
+  }
+
+  // 3) update user password and
+  user.password = password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  await user.save(); // this will too trigger the pre save hook and update passwordChangedAt property
+
+  // 4) login the user and send nessesary profile data
+  const token = signToken(user._id);
+
+  res.status(200).json({
+    token,
+    status: 'success',
+    data: {
+      user: {
+        username: user.username,
+        nickname: user.nickname,
+        _id: user._id.toString(),
+        bio: user.bio,
+        profileImage: user.profileImage,
+        bannerImage: user.bannerImage,
+        location: user.location,
+        website: user.website,
+        birthDate: user.birthDate,
+        joinedAt: user.joinedAt,
+        followings_num: user.followersUsers.length,
+        followers_num: user.followingUsers.length,
+      },
+    },
+  });
+});
+
 exports.signToken = signToken;
