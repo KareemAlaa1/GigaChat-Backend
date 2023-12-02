@@ -335,4 +335,5 @@ function calculateAge(birthDate) {
   }
   return age;
 }
+
 exports.calculateAge = calculateAge;

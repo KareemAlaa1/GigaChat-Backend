@@ -17,9 +17,9 @@ tweetRouter.patch('/retweet/:tweetId', authController.protect,tweetController.re
 
 tweetRouter.get('/replies/:tweetId', authController.protect, tweetController.getTweetReplies);
 
-tweetRouter.patch('/like/:tweetId', authController.protect, like);
+tweetRouter.post('/like/:tweetId', authController.protect, like);
 
-tweetRouter.patch('/unlike/:tweetId', authController.protect, unlike);
+tweetRouter.post('/unlike/:tweetId', authController.protect, unlike);
 
 
 module.exports = tweetRouter;

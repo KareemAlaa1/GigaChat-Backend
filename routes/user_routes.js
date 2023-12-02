@@ -41,9 +41,9 @@ userRouter.delete('/profile/image', authController.protect,userController.delete
 
 userRouter.delete('/profile/banner', authController.protect, userController.deleteProfileBanner);
 
-userRouter.patch('/:username/follow', authController.protect, userInteracrionsController.follow);
+userRouter.post('/:username/follow', authController.protect, userInteracrionsController.follow);
 
-userRouter.patch('/:username/unfollow', authController.protect, userInteracrionsController.unfollow);
+userRouter.post('/:username/unfollow', authController.protect, userInteracrionsController.unfollow);
 
 userRouter.get('/profile/:username/followers', authController.protect, userInteracrionsController.getFollowers);
 
