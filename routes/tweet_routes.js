@@ -10,6 +10,7 @@ tweetRouter.get('/:tweetId', authController.protect, tweetController.getTweet);
 
 tweetRouter.delete('/:tweetId', authController.protect,tweetController.deleteTweet);
 tweetRouter.get('/likers/:tweetId', authController.protect,tweetController.getTweetLikers,);
+tweetRouter.get('/retweeters/:tweetId', authController.protect,tweetController.getTweetRetweeters,);
 
 tweetRouter.patch('/retweet/:tweetId', authController.protect,tweetController.retweetTweet,);
 
