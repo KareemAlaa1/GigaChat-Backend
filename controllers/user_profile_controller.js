@@ -10,13 +10,14 @@ const mongoose = require('mongoose');
  */
 exports.getUserTweets = async (req, res) => {
   try {
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 1;
+    const page = req.body.page * 1 || 1;
+    const limit = req.body.count * 1 || 1;
     const skip = (page - 1) * limit;
-
+    username = req.params.username;
+    const user = await User.findOne({ username }).select('_id');
     const tweets = await User.aggregate([
       {
-        $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+        $match: { _id: user._id },
       },
     ])
       .unwind('tweetList')

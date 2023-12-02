@@ -223,7 +223,7 @@ exports.updateProfile = async (req, res) => {
 exports.updateProfileImage = async (req, res) => {
   try {
 
-    const { profile_image } = req.query;
+    const { profile_image } = req.body;
 
     if (!profile_image) return res.status(400).send({ error: "Bad request" });
 
@@ -235,7 +235,7 @@ exports.updateProfileImage = async (req, res) => {
 
     await req.user.save();
 
-    return res.status(204);
+    return res.status(204).end();
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
@@ -246,19 +246,19 @@ exports.updateProfileImage = async (req, res) => {
 
 exports.updateProfileBanner = async (req, res) => {
   try {
-    const { banner_image } = req.query;
+    const { profile_banner } = req.body;
 
-    if (!banner_image) return res.status(400).send({ error: "Bad request" });
+    if (!profile_banner) return res.status(400).send({ error: "Bad request" });
 
-    const media = await Media.findOne({ url: banner_image });
+    const media = await Media.findOne({ url: profile_banner });
 
     if (!media) return res.status(404).send({ error: "The file doesn't exist" });
 
-    req.user.bannerImage = banner_image;
+    req.user.bannerImage = profile_banner;
 
     await req.user.save();
 
-    return res.status(204);
+    return res.status(204).end();
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
