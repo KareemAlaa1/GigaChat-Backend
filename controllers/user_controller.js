@@ -1,5 +1,7 @@
 const express = require('express');
 const User = require('../models/user_model');
+const Media = require('../models/media_model');
+const { deleteMedia } = require('../controllers/media_controller');
 const { bucket, uuidv4 } = require('../utils/firebase');
 const catchAsync = require('../utils/catch_async');
 
@@ -48,8 +50,8 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
 
   if (!email) {
     return res
-        .status(400)
-        .json({ error: 'Email is required in the request body' });
+      .status(400)
+      .json({ error: 'Email is required in the request body' });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
@@ -66,59 +68,123 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   res.status(200).json({ message: 'Email is available' });
 }),
 
-exports.existedEmailORusername= catchAsync(async (req, res, next) => {
-  const { email, username } = req.body;
+exports.existedEmailORusername = catchAsync(async (req, res, next) => {
+    const { email, username } = req.body;
 
-  if (!email && !username) {
-    return res
+    if (!email && !username) {
+      return res
         .status(400)
         .json({ error: 'Email or username is required in the request body' });
-  }
-
-  if (email) {
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser && existingUser.active) {
-      return res.status(200).json({ message: 'Email is existed' });
     }
-  } else {
-    const existingUser = await User.findOne({ username });
 
-    if (existingUser && existingUser.active) {
-      return res.status(200).json({ message: 'username is existed' });
+    if (email) {
+      const existingUser = await User.findOne({ email });
+
+      if (existingUser && existingUser.active) {
+        return res.status(200).json({ message: 'Email is existed' });
+      }
+    } else {
+      const existingUser = await User.findOne({ username });
+
+      if (existingUser && existingUser.active) {
+        return res.status(200).json({ message: 'username is existed' });
+      }
     }
-  }
-  res.status(404).json({ error: 'Email or username  not existed' });
-})
+    res.status(404).json({ error: 'Email or username  not existed' });
+  })
 
 
 exports.getProfile = async (req, res) => {
   try {
     const { username } = req.params;
+    const currUser = req.user;
+
     if (!username) return res.status(400).send({ error: 'Bad Request' });
 
-    const user = await User.
-      findOne({ username: username, active: true, isDeleted: false }).
-      select('username nickname _id bio profileImage bannerImage location website birthDate joinedAt followingUsers followersUsers');
+    const aggregateResult = await User.aggregate([
+      { $match: { username: username, active: true, isDeleted: false } },
+      {
+        $project: {
+          username: 1,
+          nickname: 1,
+          _id: 1,
+          bio: 1,
+          profileImage: 1,
+          bannerImage: 1,
+          location: 1,
+          website: 1,
+          birthDate: 1,
+          joinedAt: 1,
+          blockingUsers: 1,
+          mutedUsers: 1,
+          followings_num: { $size: '$followingUsers' },
+          followers_num: { $size: '$followersUsers' },
+          isCurrUserBlocked: {
+            $in: [ currUser._id.toString(), '$blockingUsers']
+          },
+          isWantedUserFollowed: {
+            $in: [ currUser._id.toString(), '$followersUsers']
+          },
+        }
+      }
+    ]);
+    const wantedUser = aggregateResult[0];
 
+    if (!wantedUser) return res.status(404).send({ error: 'user not found' });
 
-    if (!user) return res.status(404).send({ error: 'user not found' });
+    const isWantedUserBlocked = currUser.blockingUsers.includes(wantedUser._id);
+    const isWantedUserMuted = currUser.mutedUsers.includes(wantedUser._id);
+    const isCurruser = wantedUser.id === currUser._id.toString();
 
     const result = {};
     result.status = 'success';
     result.user = {
-      username: user.username,
-      nickname: user.nickname,
-      _id: user._id.toString(),
-      bio: user.bio,
-      profile_image: user.profileImage,
-      banner_image: user.bannerImage,
-      location: user.location,
-      website: user.website,
-      birth_date: user.birthDate,
-      joined_date: user.joinedAt,
-      followings_num: user.followersUsers.length,
-      followers_num: user.followingUsers.length,
+      username: wantedUser.username,
+      nickname: wantedUser.nickname,
+      _id: wantedUser._id,
+      bio: wantedUser.bio,
+      profile_image: wantedUser.profileImage,
+      banner_image: wantedUser.bannerImage,
+      location: wantedUser.location,
+      website: wantedUser.website,
+      birth_date: wantedUser.birthDate,
+      joined_date: wantedUser.joinedAt,
+      followings_num: wantedUser.followings_num,
+      followers_num: wantedUser.followers_num,
+      is_wanted_user_blocked: isWantedUserBlocked,
+      is_wanted_user_muted: isWantedUserMuted,
+      is_curr_user_blocked: wantedUser.isCurrUserBlocked,
+      is_wanted_user_followed: wantedUser.isWantedUserFollowed,
+      is_curr_user: isCurruser
+    };
+
+    return res.status(200).send(result);
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getCurrUserProfile = async (req, res) => {
+  try {
+    const currUser = req.user;
+
+    const result = {};
+    result.status = 'success';
+    result.user = {
+      username: currUser.username,
+      nickname: currUser.nickname,
+      _id: currUser._id,
+      bio: currUser.bio,
+      profile_image: currUser.profileImage,
+      banner_image: currUser.bannerImage,
+      location: currUser.location,
+      website: currUser.website,
+      birth_date: currUser.birthDate,
+      joined_date: currUser.joinedAt,
+      followings_num: currUser.followersUsers.length,
+      followers_num: currUser.followingUsers.length,
     };
 
     return res.status(200).send(result);
@@ -132,7 +198,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     // get the sent data from the request body
-    const { bio, location, website, nickname, birth_date } = req.query;
+    const { bio, location, website, nickname, birth_date } = req.body;
 
     if (!bio && !location && !website && !nickname && !birth_date) {
       return res.status(400).send({ error: 'Bad Request' });
@@ -157,68 +223,54 @@ exports.updateProfile = async (req, res) => {
 exports.updateProfileImage = async (req, res) => {
   try {
 
-    if (!req.file) return res.status(400).send({ error: 'Bad Request' });
+    const { profile_image } = req.query;
 
-    const fileName = `${uuidv4()}-${req.file.originalname}`;
-    const file = bucket.file(fileName);
+    if (!profile_image) return res.status(400).send({ error: "Bad request" });
 
-    await file.createWriteStream().end(req.file.buffer);
+    const media = await Media.findOne({ url: profile_image });
 
-    // Get the download URL with a token
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '12-3-9999', // Set the expiration date to infinity :D
-    });
+    if (!media) return res.status(404).send({ error: "The file doesn't exist" });
 
-    req.user.profileImage = url;
+    req.user.profileImage = profile_image;
 
     await req.user.save();
 
-    const result = {
-      status: 'image uploaded successfully',
-      image_profile_url: url,
-    };
-    res.status(200).send(result);
+    return res.status(204);
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+
 };
 
 exports.updateProfileBanner = async (req, res) => {
   try {
-    if (!req.file) return res.status(400).send({ error: 'Bad Request' });
+    const { banner_image } = req.query;
 
-    const fileName = `${uuidv4()}-${req.file.originalname}`;
-    const file = bucket.file(fileName);
+    if (!banner_image) return res.status(400).send({ error: "Bad request" });
 
-    await file.createWriteStream().end(req.file.buffer);
+    const media = await Media.findOne({ url: banner_image });
 
-    // Get the download URL with a token
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '12-31-9999', // Set the expiration date to infinity :D
-    });
+    if (!media) return res.status(404).send({ error: "The file doesn't exist" });
 
-    req.user.profileBanner = url;
+    req.user.bannerImage = banner_image;
 
     await req.user.save();
 
-    const result = {
-      status: 'image uploaded successfully',
-      image_profile_url: url,
-    };
-    res.status(200).send(result);
+    return res.status(204);
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+
 };
 
 exports.deleteProfileImage = async (req, res) => {
   try {
+
+    await deleteMedia(req.user.profileImage);
 
     req.user.profileImage = DEFAULT_IMAGE_URL;
 
@@ -240,7 +292,9 @@ exports.deleteProfileImage = async (req, res) => {
 exports.deleteProfileBanner = async (req, res) => {
   try {
 
-    req.user.profileBanner = DEFAULT_IMAGE_URL;
+    await deleteMedia(req.user.bannerImage);
+
+    req.user.bannerImage = DEFAULT_IMAGE_URL;
 
     await req.user.save();
 
