@@ -9,4 +9,12 @@ router.get(
   userProfileController.getUserTweets,
 );
 
+
+router.get(
+  '/likes',
+  authController.protect,
+  userProfileController.getUserLikedTweets,
+);
+
+
 module.exports = router;
