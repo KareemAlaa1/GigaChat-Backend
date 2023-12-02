@@ -2,12 +2,15 @@ const express = require('express');
 const User = require('../models/user_model');
 const Media = require('../models/media_model');
 const { deleteMedia } = require('../controllers/media_controller');
+const Chat = require('../models/chat_model');
+const Message = require('../models/message_model');
+const mongoose = require('mongoose');
+
 const { bucket, uuidv4 } = require('../utils/firebase');
 const catchAsync = require('../utils/catch_async');
 
 const DEFAULT_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
-
 
 exports.checkBirthDate = async (req, res) => {
   const { birthDate } = req.body;
@@ -66,33 +69,32 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
   }
 
   res.status(200).json({ message: 'Email is available' });
-}),
+});
 
 exports.existedEmailORusername = catchAsync(async (req, res, next) => {
-    const { email, username } = req.body;
+  const { email, username } = req.body;
 
-    if (!email && !username) {
-      return res
-        .status(400)
-        .json({ error: 'Email or username is required in the request body' });
+  if (!email && !username) {
+    return res
+      .status(400)
+      .json({ error: 'Email or username is required in the request body' });
+  }
+
+  if (email) {
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser && existingUser.active) {
+      return res.status(200).json({ message: 'Email is existed' });
     }
+  } else {
+    const existingUser = await User.findOne({ username });
 
-    if (email) {
-      const existingUser = await User.findOne({ email });
-
-      if (existingUser && existingUser.active) {
-        return res.status(200).json({ message: 'Email is existed' });
-      }
-    } else {
-      const existingUser = await User.findOne({ username });
-
-      if (existingUser && existingUser.active) {
-        return res.status(200).json({ message: 'username is existed' });
-      }
+    if (existingUser && existingUser.active) {
+      return res.status(200).json({ message: 'username is existed' });
     }
-    res.status(404).json({ error: 'Email or username  not existed' });
-  })
-
+  }
+  res.status(404).json({ error: 'Email or username  not existed' });
+});
 
 exports.getProfile = async (req, res) => {
   try {
@@ -120,13 +122,13 @@ exports.getProfile = async (req, res) => {
           followings_num: { $size: '$followingUsers' },
           followers_num: { $size: '$followersUsers' },
           isCurrUserBlocked: {
-            $in: [ currUser._id.toString(), '$blockingUsers']
+            $in: [currUser._id.toString(), '$blockingUsers'],
           },
           isWantedUserFollowed: {
-            $in: [ currUser._id.toString(), '$followersUsers']
+            $in: [currUser._id.toString(), '$followersUsers'],
           },
-        }
-      }
+        },
+      },
     ]);
     const wantedUser = aggregateResult[0];
 
@@ -155,7 +157,7 @@ exports.getProfile = async (req, res) => {
       is_wanted_user_muted: isWantedUserMuted,
       is_curr_user_blocked: wantedUser.isCurrUserBlocked,
       is_wanted_user_followed: wantedUser.isWantedUserFollowed,
-      is_curr_user: isCurruser
+      is_curr_user: isCurruser,
     };
 
     return res.status(200).send(result);
@@ -222,14 +224,14 @@ exports.updateProfile = async (req, res) => {
 
 exports.updateProfileImage = async (req, res) => {
   try {
-
     const { profile_image } = req.body;
 
-    if (!profile_image) return res.status(400).send({ error: "Bad request" });
+    if (!profile_image) return res.status(400).send({ error: 'Bad request' });
 
     const media = await Media.findOne({ url: profile_image });
 
-    if (!media) return res.status(404).send({ error: "The file doesn't exist" });
+    if (!media)
+      return res.status(404).send({ error: "The file doesn't exist" });
 
     req.user.profileImage = profile_image;
 
@@ -241,18 +243,18 @@ exports.updateProfileImage = async (req, res) => {
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
-
 };
 
 exports.updateProfileBanner = async (req, res) => {
   try {
     const { profile_banner } = req.body;
 
-    if (!profile_banner) return res.status(400).send({ error: "Bad request" });
+    if (!profile_banner) return res.status(400).send({ error: 'Bad request' });
 
     const media = await Media.findOne({ url: profile_banner });
 
-    if (!media) return res.status(404).send({ error: "The file doesn't exist" });
+    if (!media)
+      return res.status(404).send({ error: "The file doesn't exist" });
 
     req.user.bannerImage = profile_banner;
 
@@ -264,12 +266,10 @@ exports.updateProfileBanner = async (req, res) => {
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
-
 };
 
 exports.deleteProfileImage = async (req, res) => {
   try {
-
     await deleteMedia(req.user.profileImage);
 
     req.user.profileImage = DEFAULT_IMAGE_URL;
@@ -291,7 +291,6 @@ exports.deleteProfileImage = async (req, res) => {
 
 exports.deleteProfileBanner = async (req, res) => {
   try {
-
     await deleteMedia(req.user.bannerImage);
 
     req.user.bannerImage = DEFAULT_IMAGE_URL;
@@ -306,6 +305,232 @@ exports.deleteProfileBanner = async (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.sendMessage = async (req, res) => {
+  try {
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
+    if (
+      recieverUser &&
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      const description = req.body.message;
+      const media = req.body.media;
+      // message cant be empty
+      if (description == undefined && media == undefined) {
+        res.status(400).json({
+          status: 'bad request',
+          message: 'no media and no message',
+        });
+      } else {
+        // get the chat id of certain user
+        const chatId = await User.aggregate([
+          {
+            $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+          },
+          {
+            $project: { chatList: 1 },
+          },
+        ])
+          .lookup({
+            from: 'chats',
+            localField: 'chatList',
+            foreignField: '_id',
+            as: 'chats',
+          })
+          .unwind('chats')
+          .project({ chats: 1, _id: 0 })
+          .addFields({
+            'chats.exist': {
+              $in: [
+                new mongoose.Types.ObjectId(req.params.userId),
+                '$chats.usersList',
+              ],
+            },
+          })
+          .project({ id: '$chats._id', exist: '$chats.exist' })
+          .match({
+            exist: true,
+          });
+        const message = await Message.create({
+          description: description,
+          media: media,
+          sender: req.user._id,
+        });
+        // if chat exist then send else create new chat and add its id to chatList of the users and send
+        if (chatId.length > 0) {
+          await Chat.findByIdAndUpdate(chatId[0].id, {
+            $push: { messagesList: message._doc._id },
+          });
+        } else {
+          const newChat = await Chat.create({
+            usersList: [req.user._id, req.params.userId],
+          });
+          await Chat.findByIdAndUpdate(newChat._doc._id, {
+            $push: { messagesList: message._doc._id },
+          });
+          const lol = await User.updateMany(
+            { _id: { $in: [recieverUser._id, req.user._id] } },
+            { $push: { chatList: newChat._doc._id } },
+          );
+          console.log(lol);
+        }
+        res.status(200).json({
+          status: 'message sent success',
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getMessages = async (req, res) => {
+  try {
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
+
+    if (
+      recieverUser &&
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      // get the chat id of certain user
+
+      const chatId = await User.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+        },
+        {
+          $project: { chatList: 1 },
+        },
+      ])
+        .lookup({
+          from: 'chats',
+          localField: 'chatList',
+          foreignField: '_id',
+          as: 'chats',
+        })
+        .unwind('chats')
+        .project({ chats: 1, _id: 0 })
+        .addFields({
+          'chats.exist': {
+            $in: [
+              new mongoose.Types.ObjectId(req.params.userId),
+              '$chats.usersList',
+            ],
+          },
+        })
+        .project({ id: '$chats._id', exist: '$chats.exist' })
+        .match({
+          exist: true,
+        });
+      // if chat id exist get the messages in it else send empty array
+      // and also specify if the message is mine or not in the response
+      if (chatId.length > 0) {
+        const size = parseInt(req.body.count, 10) || 10;
+
+        const skip = ((req.body.page || 1) - 1) * size;
+        const messages = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .addFields({
+            'message.mine': {
+              $eq: [
+                new mongoose.Types.ObjectId(req.user._id),
+                '$message.sender',
+              ],
+            },
+          })
+          .project({
+            id: '$message._id',
+            description: '$message.description',
+            media: '$message.media',
+            isDeleted: '$message.isDeleted',
+            mine: '$message.mine',
+          })
+          .sort({ 'message.sendTime': -1 })
+          .skip(skip)
+          .limit(size);
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+        // after sending respose all unseen messages in this chat of the another user not mine is now seen to me so update its state
+        const messages2 = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .project({
+            id: '$message._id',
+            sender: '$message.sender',
+            seen: '$message.seen',
+          })
+          .match({
+            sender: { $ne: new mongoose.Types.ObjectId(req.user._id) },
+            seen: { $eq: false },
+          })
+          .project({ id: 1 })
+          .group({
+            _id: null,
+            arrayOfIds: { $push: '$id' },
+          })
+          .project({
+            arrayOfIds: 1,
+            _id: 0,
+          });
+        if (messages2.length > 0) {
+          await Message.updateMany(
+            { _id: { $in: messages2[0].arrayOfIds } },
+            { $set: { seen: true } },
+          );
+        }
+      } else {
+        const messages = [];
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
+    }
+  } catch (error) {
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
@@ -335,4 +560,5 @@ function calculateAge(birthDate) {
   }
   return age;
 }
+
 exports.calculateAge = calculateAge;

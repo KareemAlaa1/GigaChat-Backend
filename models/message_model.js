@@ -1,7 +1,6 @@
-
 const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
-  discription: {
+  description: {
     type: String,
     required: true,
   },
@@ -14,13 +13,14 @@ const messageSchema = new mongoose.Schema({
     },
   },
   sender: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
   seen: {
     type: Boolean,
     required: true,
+    default: false,
   },
   sendTime: {
     type: Date,

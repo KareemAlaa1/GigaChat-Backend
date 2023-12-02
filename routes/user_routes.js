@@ -40,6 +40,13 @@ userRouter.delete('/profile/image', authController.protect,userController.delete
 
 userRouter.delete('/profile/banner', authController.protect, userController.deleteProfileBanner);
 
+
+
+
+// userRouter.get('/chat/chatId/:userId', authController.protect, userController.getChatIdbyUserId);
+userRouter.post('/chat/:userId', authController.protect, userController.sendMessage);
+userRouter.get('/chat/:userId', authController.protect, userController.getMessages);
+
 module.exports = userRouter; 
 
 
