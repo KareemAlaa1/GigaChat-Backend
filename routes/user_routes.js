@@ -1,4 +1,3 @@
-
 const express = require('express');
 const userRouter = express.Router();
 const userController = require('../controllers/user_controller');
@@ -8,11 +7,17 @@ const { upload } = require('../utils/firebase');
 //  Micro endPoints router
 userRouter.post('/checkBirthDate', userController.checkBirthDate); // stage 1
 
-userRouter.post('/checkAvailableUsername', userController.checkAvailableUsername);
+userRouter.post(
+  '/checkAvailableUsername',
+  userController.checkAvailableUsername,
+);
 
 userRouter.post('/checkAvailableEmail', userController.checkAvailableEmail); // stage 1
 
-userRouter.post('/existedEmailORusername', userController.existedEmailORusername);
+userRouter.post(
+  '/existedEmailORusername',
+  userController.existedEmailORusername,
+);
 
 userRouter.post('/signup', authController.signUp); // stage 1
 
@@ -26,20 +31,48 @@ userRouter.patch('/AssignPassword', authController.AssignPassword);
 
 userRouter.post('/login', authController.login);
 
-userRouter.get('/profile/:username', authController.protect ,userController.getProfile);
+router.post('/forgotpassword', authController.forgotPassword);
 
-userRouter.get('/profile', authController.protect ,userController.getCurrUserProfile);
+userRouter.get(
+  '/profile/:username',
+  authController.protect,
+  userController.getProfile,
+);
 
-userRouter.patch('/profile', authController.protect, userController.updateProfile);
+userRouter.get(
+  '/profile',
+  authController.protect,
+  userController.getCurrUserProfile,
+);
 
-userRouter.patch('/profile/image', [authController.protect, upload.single('profile_image')], userController.updateProfileImage);
+userRouter.patch(
+  '/profile',
+  authController.protect,
+  userController.updateProfile,
+);
 
-userRouter.patch('/profile/banner', [authController.protect, upload.single('profile_banner')],userController.updateProfileBanner);
+userRouter.patch(
+  '/profile/image',
+  [authController.protect, upload.single('profile_image')],
+  userController.updateProfileImage,
+);
 
-userRouter.delete('/profile/image', authController.protect,userController.deleteProfileImage);
+userRouter.patch(
+  '/profile/banner',
+  [authController.protect, upload.single('profile_banner')],
+  userController.updateProfileBanner,
+);
 
-userRouter.delete('/profile/banner', authController.protect, userController.deleteProfileBanner);
+userRouter.delete(
+  '/profile/image',
+  authController.protect,
+  userController.deleteProfileImage,
+);
 
-module.exports = userRouter; 
+userRouter.delete(
+  '/profile/banner',
+  authController.protect,
+  userController.deleteProfileBanner,
+);
 
-
+module.exports = userRouter;
