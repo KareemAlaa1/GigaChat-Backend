@@ -31,7 +31,9 @@ userRouter.patch('/AssignPassword', authController.AssignPassword);
 
 userRouter.post('/login', authController.login);
 
-router.post('/forgotpassword', authController.forgotPassword);
+userRouter.post('/forgotpassword', authController.forgotPassword);
+
+userRouter.patch('/resetpassword', authController.resetPassword);
 
 userRouter.get(
   '/profile/:username',
