@@ -235,7 +235,7 @@ exports.updateProfileImage = async (req, res) => {
 
     await req.user.save();
 
-    return res.status(204);
+    return res.status(204).end();
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
@@ -258,7 +258,7 @@ exports.updateProfileBanner = async (req, res) => {
 
     await req.user.save();
 
-    return res.status(204);
+    return res.status(204).end();
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
