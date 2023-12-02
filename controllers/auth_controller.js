@@ -133,11 +133,11 @@ exports.login = catchAsync(async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    const queryString = '+password username email bio birthDate bannerImage profileImage nickname location website joinedAt followersUsers followingUsers';
-    user = await User.findOne({ email }).select(queryString);
+    user = await User.findOne({ email }).select('+password');
   } else {
-    user = await User.findOne({ username }).select(queryString);
+    user = await User.findOne({ username }).select('+password');
   }
+  
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
