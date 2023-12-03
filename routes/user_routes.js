@@ -38,6 +38,12 @@ userRouter.patch(
   authController.updateUsername,
 );
 
+userRouter.patch(
+  '/updatepassword',
+  authController.protect,
+  authController.updatePassword,
+);
+
 userRouter.get(
   '/profile/:username',
   authController.protect,
