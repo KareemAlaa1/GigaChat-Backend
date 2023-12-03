@@ -523,4 +523,60 @@ exports.userEmail = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateEmail = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  const currentUser = req.user;
+
+  // 1) check data validity
+  if (!email) {
+    return next(new AppError('email is required', 400));
+  }
+  if (email === currentUser.email) {
+    return next(new AppError('email is the same as the old one', 400));
+  }
+  // Check email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  // available email
+  const user = await User.findOne({ email });
+  if (user && user.active) {
+    return next(
+      new AppError('There is active user with  this email address.', 404),
+    );
+  }
+
+  // 2) create verify code  && message
+  const confirmCode = req.user.createConfirmCode();
+  await currentUser.save({ validateBeforeSave: false });
+
+  const message = `Your verify Code is ${confirmCode}`;
+
+  // 3) sending the message
+  try {
+    await sendEmail({
+      email: email,
+      subject: 'Your verify Code (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        message: 'Code sent to the email the user provided',
+      },
+    });
+  } catch (err) {
+    currentUser.confirmEmailCode = undefined;
+    currentUser.confirmEmailExpires = undefined;
+    await currentUser.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
+    );
+  }
+});
+
 exports.signToken = signToken;
