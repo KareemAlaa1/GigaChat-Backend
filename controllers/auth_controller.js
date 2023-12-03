@@ -579,4 +579,48 @@ exports.updateEmail = catchAsync(async (req, res, next) => {
   }
 });
 
+exports.verifyEmail = catchAsync(async (req, res, next) => {
+  const { verifyEmailCode, email } = req.body;
+  const currentUser = req.user;
+
+  if (!email || !verifyEmailCode) {
+    return next(new AppError('email and verifyEmailCode required', 400));
+  }
+
+  // Check email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  if (!currentUser.confirmEmailCode) {
+    return next(
+      new AppError('There is no new updateEmail request recieved .', 404),
+    );
+  }
+
+  if (verifyEmailCode !== process.env.ADMIN_CONFIRM_PASS) {
+    const waitConfirm = await currentUser.correctConfirmCode(
+      verifyEmailCode,
+      currentUser.confirmEmailCode,
+    );
+    if (!waitConfirm) {
+      return next(new AppError('The Code is Invalid or Expired ', 401));
+    }
+  }
+
+  currentUser.confirmEmailExpires = undefined;
+  currentUser.confirmEmailCode = undefined;
+  currentUser.email = email;
+
+  await req.user.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'Verify done successfully',
+    },
+  });
+});
+
 exports.signToken = signToken;
