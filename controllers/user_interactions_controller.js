@@ -10,7 +10,7 @@ exports.follow = async (req, res) => {
 
         if (!username) return res.status(400).send({ error: "Bad request, send username" });
 
-        const followedUser = await User.findOne({ username });
+        const followedUser = await User.findOne({ username: username, isDeleted: false, active: true });
 
         if (!followedUser) return res.status(404).send({ error: "user not found" });
         
@@ -42,7 +42,7 @@ exports.unfollow = async (req, res) => {
 
         if (!username) return res.status(400).send({ error: "Bad request" });
 
-        const followedUser = await User.findOne({ username });
+        const followedUser = await User.findOne({ username: username, isDeleted: false, active: true });
 
         if (!followedUser) return res.status(404).send({ error: "user not found" });
 
@@ -75,7 +75,7 @@ exports.like = async (req, res) => {
 
         const likedTweet = await Tweet.findById(tweetId);
 
-        if (!likedTweet) return res.status(404).send({ error: "tweet not found" });
+        if (!likedTweet || likedTweet.isDeleted) return res.status(404).send({ error: "tweet not found" });
 
         if (likedTweet.likersList.includes(currUser._id))
             return res.status(400).send({ error: "Bad request, User already like this tweet" });
@@ -106,7 +106,7 @@ exports.unlike = async (req, res) => {
 
         const likedTweet = await Tweet.findById(tweetId);
 
-        if (!likedTweet) return res.status(404).send({ error: "tweet not found" });
+        if (!likedTweet && likedTweet.isDeleted) return res.status(404).send({ error: "tweet not found" });
 
         if (!likedTweet.likersList.includes(currUser._id))
             return res.status(400).send({ error: "Bad request, User already doesn't like this tweet1" });
@@ -135,7 +135,7 @@ exports.getFollowers = async (req, res) => {
 
         const user = await User.aggregate([
             {
-                $match: { username: username },
+                $match: { username: username, isDeleted: false, active: true},
             }
         ]).lookup({
             from: 'users',
