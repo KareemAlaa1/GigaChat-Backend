@@ -514,4 +514,13 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.userEmail = catchAsync(async (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    data: {
+      email: req.user.email,
+    },
+  });
+});
+
 exports.signToken = signToken;
