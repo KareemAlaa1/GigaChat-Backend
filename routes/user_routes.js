@@ -44,6 +44,8 @@ userRouter.patch(
   authController.updatePassword,
 );
 
+userRouter.get('/useremail', authController.protect, authController.userEmail);
+
 userRouter.get(
   '/profile/:username',
   authController.protect,
