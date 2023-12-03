@@ -80,7 +80,8 @@ exports.signUp = catchAsync(async (req, res, next) => {
     nickname: req.body.nickname,
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
-    profileImage:   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2',
+    profileImage:
+      'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2',
   });
   // 2) Generate random code
   const confirmCode = newUser.createConfirmCode();
@@ -137,7 +138,7 @@ exports.login = catchAsync(async (req, res, next) => {
   } else {
     user = await User.findOne({ username }).select('+password');
   }
-  
+
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
@@ -161,7 +162,7 @@ exports.login = catchAsync(async (req, res, next) => {
         joinedAt: user.joinedAt,
         followings_num: user.followersUsers.length,
         followers_num: user.followingUsers.length,
-      }
+      },
     },
   });
 });
@@ -428,6 +429,40 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
     status: 'success',
     data: {
       message: ' user assign password correctly ',
+    },
+  });
+});
+
+exports.updateUsername = catchAsync(async (req, res, next) => {
+  // 1) check data validity
+  const { newUsername } = req.body;
+  if (!newUsername) {
+    return next(new AppError('request should have newUsername', 400));
+  }
+
+  // 2) different from the oldUsername
+  if (req.user.username === newUsername) {
+    return next(
+      new AppError(
+        'the newUsername should not be the same as the old one',
+        400,
+      ),
+    ); // CHECK THE STATUS CODE
+  }
+
+  // 3) check available username
+  const existingUser = await User.findOne({ username: newUsername });
+  if (existingUser) {
+    return next(new AppError('The username is already taken.', 400));
+  }
+
+  // 4) update Username and save it
+  await User.findOneAndUpdate({ _id: req.user.id }, { username: newUsername });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'username updated successfully',
     },
   });
 });
