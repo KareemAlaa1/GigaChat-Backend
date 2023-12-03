@@ -467,4 +467,51 @@ exports.updateUsername = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) check data validity
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) {
+    return next(
+      new AppError(
+        'request should have both, oldPassword and newPassword',
+        400,
+      ),
+    );
+  }
+
+  // 2) different from the oldPassword
+  if (oldPassword === newPassword) {
+    return next(
+      new AppError('the newPassword should not be the same as old one', 400),
+    ); // CHECK THE STATUS CODE
+  }
+
+  // 3) check if password larger than 7 char.
+  if (newPassword.length < 8) {
+    return next(
+      new AppError('the newPassword should be at least 8 characters', 400),
+    ); // CHECK THE STATUS CODE
+  }
+  // 3) check the old password is correct
+  const currentUser = await User.findById(req.user.id).select('+password');
+
+  if (!(await currentUser.correctPassword(oldPassword, currentUser.password))) {
+    return next(new AppError('the oldPassword provided is not correct', 401));
+  }
+
+  // 4) update password and save it
+  currentUser.password = newPassword;
+  await currentUser.save(); // presave hook will encrypt the password and assign passwordChangedAt too
+
+  // 5) create and send new token
+  const token = signToken(currentUser._id);
+  res.status(200).json({
+    token,
+    status: 'success',
+    data: {
+      message: 'user update password correctly',
+    },
+  });
+});
+
 exports.signToken = signToken;
