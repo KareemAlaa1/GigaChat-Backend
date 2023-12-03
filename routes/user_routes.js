@@ -52,6 +52,12 @@ userRouter.post(
   authController.updateEmail,
 );
 
+userRouter.post(
+  '/verifyemail',
+  authController.protect,
+  authController.verifyEmail,
+);
+
 userRouter.get(
   '/profile/:username',
   authController.protect,
