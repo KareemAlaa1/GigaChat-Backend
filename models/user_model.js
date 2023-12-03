@@ -194,8 +194,6 @@ userSchema.methods.createConfirmCode = function () {
     .update(code)
     .digest('hex');
 
-  console.log({ code }, this.passwordResetToken);
-
   this.confirmEmailExpires = Date.now() + 10 * 60 * 1000; //ten minute from now
 
   return code;

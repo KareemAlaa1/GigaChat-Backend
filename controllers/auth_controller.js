@@ -271,7 +271,7 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
 exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
   const { email } = req.body;
   if (!email) {
-    return next(new AppError('email and confirmEmailCode required', 400));
+    return next(new AppError('email is required', 400));
   }
   // Check email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
