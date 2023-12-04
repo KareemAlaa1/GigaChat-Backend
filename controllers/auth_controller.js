@@ -436,12 +436,22 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) get the input data and check the validity
-  const { username, email } = req.body;
+  const { query } = req.body;
 
-  if (!email && !username) {
+
+  if (!query) {
     return next(
-      new AppError('the user should provide email or user name', 400),
+      new AppError('Email or username is required', 400),
     );
+  }
+  //check if email or username
+  let email;
+  let username;
+  if (validator.isEmail(query)) {
+    email = query;
+  }
+  else{
+    username = query
   }
   let user;
   if (email) {
@@ -507,7 +517,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     );
   }
   if (password.length < 8) {
-    return next(new AppError('password should be at least 8 characters', 404));
+    return next(new AppError('password should be at least 8 characters', 400));
   }
 
   // 2) get user based on the token

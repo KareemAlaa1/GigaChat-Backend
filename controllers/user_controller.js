@@ -69,12 +69,21 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
 }),
 
 exports.existedEmailORusername = catchAsync(async (req, res, next) => {
-    const { email, username } = req.body;
+    const { query } = req.body;
 
-    if (!email && !username) {
+    if (!query) {
       return res
         .status(400)
         .json({ error: 'Email or username is required in the request body' });
+    }
+
+    //check if email or username
+    let email;
+    let username;
+    if(validator.isEmail(query)) {
+      email = query;
+    } else {
+      username = query;
     }
 
     if (email) {
