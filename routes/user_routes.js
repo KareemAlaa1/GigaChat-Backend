@@ -6,6 +6,11 @@ const authController = require('../controllers/auth_controller');
 const userInteracrionsController  = require('../controllers/user_interactions_controller');;
 const { upload } = require('../utils/firebase');
 
+
+
+//google endpoint
+userRouter.post('/googleAuth', authController.googleAuth);
+userRouter.post('/confirmPassword',authController.protect, authController.confirmPassword);
 //  Micro endPoints router
 userRouter.post('/checkBirthDate', userController.checkBirthDate); // stage 1
 
