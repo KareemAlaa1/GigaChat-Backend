@@ -72,7 +72,6 @@ userRouter.patch(
   [authController.protect, upload.single('profile_banner')],
   userController.updateProfileBanner,
 );
-
 userRouter.post(
   '/chat/:userId',
   authController.protect,
@@ -119,6 +118,32 @@ userRouter.delete(
   '/profile/banner',
   authController.protect,
   userController.deleteProfileBanner,
+);
+
+userRouter.patch(
+  '/updateusername',
+  authController.protect,
+  authController.updateUsername,
+);
+
+userRouter.patch(
+  '/updatepassword',
+  authController.protect,
+  authController.updatePassword,
+);
+
+userRouter.get('/useremail', authController.protect, authController.userEmail);
+
+userRouter.post(
+  '/updateemail',
+  authController.protect,
+  authController.updateEmail,
+);
+
+userRouter.post(
+  '/verifyemail',
+  authController.protect,
+  authController.verifyEmail,
 );
 
 module.exports = userRouter;

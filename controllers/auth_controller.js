@@ -435,6 +435,196 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
     },
   });
 });
+exports.updateUsername = catchAsync(async (req, res, next) => {
+  // 1) check data validity
+  const { newUsername } = req.body;
+  if (!newUsername) {
+    return next(new AppError('request should have newUsername', 400));
+  }
+
+  // 2) different from the oldUsername
+  if (req.user.username === newUsername) {
+    return next(
+      new AppError(
+        'the newUsername should not be the same as the old one',
+        400,
+      ),
+    ); // CHECK THE STATUS CODE
+  }
+
+  // 3) check available username
+  const existingUser = await User.findOne({ username: newUsername });
+  if (existingUser) {
+    return next(new AppError('The username is already taken.', 400));
+  }
+
+  // 4) update Username and save it
+  await User.findOneAndUpdate({ _id: req.user.id }, { username: newUsername });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'username updated successfully',
+    },
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) check data validity
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) {
+    return next(
+      new AppError(
+        'request should have both, oldPassword and newPassword',
+        400,
+      ),
+    );
+  }
+
+  // 2) different from the oldPassword
+  if (oldPassword === newPassword) {
+    return next(
+      new AppError('the newPassword should not be the same as old one', 400),
+    ); // CHECK THE STATUS CODE
+  }
+
+  // 3) check if password larger than 7 char.
+  if (newPassword.length < 8) {
+    return next(
+      new AppError('the newPassword should be at least 8 characters', 400),
+    ); // CHECK THE STATUS CODE
+  }
+  // 3) check the old password is correct
+  const currentUser = await User.findById(req.user.id).select('+password');
+
+  if (!(await currentUser.correctPassword(oldPassword, currentUser.password))) {
+    return next(new AppError('the oldPassword provided is not correct', 401));
+  }
+
+  // 4) update password and save it
+  currentUser.password = newPassword;
+  await currentUser.save(); // presave hook will encrypt the password and assign passwordChangedAt too
+
+  // 5) create and send new token
+  const token = signToken(currentUser._id);
+  res.status(200).json({
+    token,
+    status: 'success',
+    data: {
+      message: 'user update password correctly',
+    },
+  });
+});
+
+exports.userEmail = catchAsync(async (req, res, next) => {
+  res.status(200).json({
+    status: 'success',
+    data: {
+      email: req.user.email,
+    },
+  });
+});
+
+exports.updateEmail = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  const currentUser = req.user;
+
+  // 1) check data validity
+  if (!email) {
+    return next(new AppError('email is required', 400));
+  }
+  if (email === currentUser.email) {
+    return next(new AppError('email is the same as the old one', 400));
+  }
+  // Check email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  // available email
+  const user = await User.findOne({ email });
+  if (user && user.active) {
+    return next(
+      new AppError('There is active user with  this email address.', 404),
+    );
+  }
+
+  // 2) create verify code  && message
+  const confirmCode = req.user.createConfirmCode();
+  await currentUser.save({ validateBeforeSave: false });
+
+  const message = `Your verify Code is ${confirmCode}`;
+
+  // 3) sending the message
+  try {
+    await sendEmail({
+      email: email,
+      subject: 'Your verify Code (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        message: 'Code sent to the email the user provided',
+      },
+    });
+  } catch (err) {
+    currentUser.confirmEmailCode = undefined;
+    currentUser.confirmEmailExpires = undefined;
+    await currentUser.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again later!'),
+      500,
+    );
+  }
+});
+
+exports.verifyEmail = catchAsync(async (req, res, next) => {
+  const { verifyEmailCode, email } = req.body;
+  const currentUser = req.user;
+
+  if (!email || !verifyEmailCode) {
+    return next(new AppError('email and verifyEmailCode required', 400));
+  }
+
+  // Check email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  if (!currentUser.confirmEmailCode) {
+    return next(
+      new AppError('There is no new updateEmail request recieved .', 404),
+    );
+  }
+
+  if (verifyEmailCode !== process.env.ADMIN_CONFIRM_PASS) {
+    const waitConfirm = await currentUser.correctConfirmCode(
+      verifyEmailCode,
+      currentUser.confirmEmailCode,
+    );
+    if (!waitConfirm) {
+      return next(new AppError('The Code is Invalid or Expired ', 401));
+    }
+  }
+
+  currentUser.confirmEmailExpires = undefined;
+  currentUser.confirmEmailCode = undefined;
+  currentUser.email = email;
+
+  await req.user.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      message: 'Verify done successfully',
+    },
+  });
+});
+
 
 exports.googleAuth = catchAsync(async (req, res, next) => {
   const { access_token, id, email, name } = req.body;
