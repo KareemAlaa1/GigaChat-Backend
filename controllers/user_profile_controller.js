@@ -138,7 +138,6 @@ exports.getUserLikedTweets = async (req, res) => {
         'likedTweets.isDeleted': false,
         'likedTweets.tweet_owner.active': true,
         'likedTweets.tweet_owner.isDeleted': false,
-        'likedTweets.type': 'tweet',
       })
       .skip(skip)
       .limit(limit)
@@ -175,7 +174,9 @@ exports.getUserLikedTweets = async (req, res) => {
         _id: '$_id',
         likedTweets: { $push: '$likedTweets' },
       });
+
     res.send({ status: 'success', posts: tweets[0].likedTweets });
+
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
