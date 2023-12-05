@@ -163,8 +163,8 @@ exports.login = catchAsync(async (req, res, next) => {
         website: user.website,
         birthDate: user.birthDate,
         joinedAt: user.joinedAt,
-        followings_num: user.followersUsers.length,
-        followers_num: user.followingUsers.length,
+        followings_num: user.followingsUsers.length,
+        followers_num: user.followersUsers.length,
       },
     },
   });
@@ -627,7 +627,7 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
 
 
 exports.googleAuth = catchAsync(async (req, res, next) => {
-  const { access_token, id, email, name } = req.body;
+  const { access_token, id, email, name,profileImage} = req.body;
   if (!access_token) {
     return next(new AppError('access_token is required', 400));
   }
@@ -671,8 +671,8 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           website: user.website,
           birthDate: user.birthDate,
           joinedAt: user.joinedAt,
-          followings_num: user.followersUsers.length,
-          followers_num: user.followingUsers.length,
+          followings_num: user.followingsUsers.length,
+          followers_num: user.followersUsers.length,
         },
       },
     });
@@ -680,12 +680,13 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
     const newUser = new User({
       nickname: name,
       email: email,
+      active:true,
+      profileImage:profileImage,
     });
     const generatedUsername = await generateUserName(name);
     newUser.username = generatedUsername;
 
     newUser.set('googleId', user_id);
-
     await newUser.save();
     const token = signToken(newUser._id);
     return res.status(201).json({
@@ -703,6 +704,9 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           bannerImage: newUser.bannerImage,
           location: newUser.location,
           website: newUser.website,
+          joinedAt: user.joinedAt,
+          followings_num: user.followingsUsers.length,
+          followers_num: user.followersUsers.length,
         },
       },
     });
@@ -848,8 +852,8 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
         website: user.website,
         birthDate: user.birthDate,
         joinedAt: user.joinedAt,
-        followings_num: user.followersUsers.length,
-        followers_num: user.followingUsers.length,
+        followings_num: user.followingsUsers.length,
+        followers_num: user.followersUsers.length,
       },
     },
   });
