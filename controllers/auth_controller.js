@@ -7,6 +7,7 @@ const User = require('../models/user_model');
 const userController = require('../controllers/user_controller');
 const catchAsync = require('../utils/catch_async');
 const sendEmail = require('../utils/email');
+const validator = require('validator');
 
 const dotenv = require('dotenv');
 const { querystring } = require('@firebase/util');
