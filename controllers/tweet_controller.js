@@ -44,8 +44,9 @@ const TweetController = {
 
   retweetTweet: async (req, res) => {
     try {
-      const tweet = await getTweetDatabyId(req.params.tweetId);
-      if (tweet === null) {
+      const currUser = req.user;
+      const tweet = await Tweet.findById(req.params.tweetId);
+      if (!tweet || tweet.isDeleted) {
         res.status(404);
         res.json({
           status: 'Fail',
@@ -60,16 +61,23 @@ const TweetController = {
             message: 'Can not Find This Tweet Owner',
           });
         } else {
-          await Tweet.findByIdAndUpdate(tweet.id, {
-            $push: { retweetList: req.user._id },
-          });
-          await User.findByIdAndUpdate(req.user._id, {
-            $push: { tweetList: { tweetId: tweet.id, type: 'retweet' } },
-          });
-          res.status(204);
-          res.json({
-            status: 'Retweet Success',
-          });
+          if (tweet.retweetList.includes(currUser._id)) {
+            res.status(400);
+            res.json({
+              status: 'Bad request, User already retweeted this tweet',
+            });
+          } else {
+            await Tweet.findByIdAndUpdate(tweet._id, {
+              $push: { retweetList: req.user._id },
+            });
+            await User.findByIdAndUpdate(req.user._id, {
+              $push: { tweetList: { tweetId: tweet._id, type: 'retweet' } },
+            });
+            res.status(204);
+            res.json({
+              status: 'Retweet Success',
+            });
+          }
         }
       }
     } catch (err) {
@@ -77,6 +85,48 @@ const TweetController = {
     }
   },
 
+  undoRetweetTweet: async (req, res) => {
+    try {
+      const currUser = req.user;
+      const tweet = await Tweet.findById(req.params.tweetId);
+      if (!tweet || tweet.isDeleted) {
+        res.status(404);
+        res.json({
+          status: 'Fail',
+          message: 'Can not Find This Tweet',
+        });
+      } else {
+        const user = await getUserDatabyId(tweet.userId);
+        if (user === null) {
+          res.status(404);
+          res.json({
+            status: 'Fail',
+            message: 'Can not Find This Tweet Owner',
+          });
+        } else {
+          if (!tweet.retweetList.includes(currUser._id)) {
+            res.status(400);
+            res.json({
+              status: 'Bad request, you have not retweeted this tweet',
+            });
+          } else {
+            await Tweet.findByIdAndUpdate(tweet._id, {
+              $pull: { retweetList: req.user._id },
+            });
+            await User.findByIdAndUpdate(req.user._id, {
+              $pull: { tweetList: { tweetId: tweet._id, type: 'retweet' } },
+            });
+            res.status(204);
+            res.json({
+              status: 'Retweet Success',
+            });
+          }
+        }
+      }
+    } catch (err) {
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
   getTweet: async (req, res) => {
     try {
       const tweet = await getTweetDatabyId(req.params.tweetId);

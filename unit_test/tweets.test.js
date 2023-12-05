@@ -366,10 +366,19 @@ describe('Patch /api/tweets/retweet/:tweetId', () => {
     await User.deleteMany();
   });
 
-  it('responds with 404 when user exists but deleted and tweet exists', async () => {
+  it('responds with 401 when user exists but deleted and tweet exists', async () => {
     deletedTestUser1 = await createUser(deletedUser);
-    token = jwt.sign(
+    token1 = jwt.sign(
       { id: deletedTestUser1._id.toString() },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      },
+    );
+    testUser0 = await createUser(user0);
+
+    token2 = jwt.sign(
+      { id: testUser0._id.toString() },
       process.env.JWT_SECRET,
       {
         expiresIn: process.env.JWT_EXPIRES_IN,
@@ -377,15 +386,15 @@ describe('Patch /api/tweets/retweet/:tweetId', () => {
     );
     const response1 = await request(app)
       .post('/api/tweets/')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${token2}`)
       .send(validTweet);
 
     const addedTweet = (await Tweet.find())[0];
     const response2 = await request(app)
       .patch(`/api/tweets/retweet/${addedTweet._id}`)
-      .set('Authorization', `Bearer ${token}`);
+      .set('Authorization', `Bearer ${token1}`);
 
-    expect(response2.status).toBe(404);
+    expect(response2.status).toBe(401);
     await Tweet.deleteMany();
     await User.deleteMany();
   });
@@ -459,7 +468,7 @@ describe('Get /api/tweets/:tweetId', () => {
     await User.deleteMany();
   });
 
-  it('responds with 404 when user doesnt exist or deleted and tweet exists', async () => {
+  it('responds with 401 when user doesnt exist or deleted and tweet exists', async () => {
     testUser0 = await createUser(user0);
 
     token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
@@ -479,7 +488,7 @@ describe('Get /api/tweets/:tweetId', () => {
       .get(`/api/tweets/${addedTweet._id}`)
       .set('Authorization', `Bearer ${token}`);
 
-    expect(response2.status).toBe(404);
+    expect(response2.status).toBe(401);
     await Tweet.deleteMany();
     await User.deleteMany();
   });
@@ -795,6 +804,212 @@ describe('Delete /api/tweets/:tweetId', () => {
     const response2 = await request(app).delete(
       `/api/tweets/${addedTweet._id}`,
     );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
+describe('Get /api/tweets/retweeters/:tweetId', () => {
+  it('responds with 200 when user exists and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/retweeters/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(200);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).get(
+      `/api/tweets/retweeters/${addedTweet._id}`,
+    );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when tweet does not exist', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    const response = await request(app)
+      .get('/api/tweets/retweeters/654c193b688f342c88a547e8')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(404);
+    await User.deleteMany();
+  });
+});
+
+describe('Patch /api/tweets/unretweet/:tweetId', () => {
+  it('responds with 204 when user exists and tweet exists and have retweeted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+
+    const response2 = await request(app)
+      .patch(`/api/tweets/retweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+    const response3 = await request(app)
+      .patch(`/api/tweets/unretweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response3.status).toBe(204);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 400 when user exists and tweet exists and have not retweeted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+
+    const response2 = await request(app)
+      .patch(`/api/tweets/unretweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(400);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .patch(`/api/tweets/unretweet/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+    const response2 = await request(app)
+      .patch(`/api/tweets/unretweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user unAuthorized', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app).patch(
+      `/api/tweets/unretweet/${addedTweet._id}`,
+    );
+
+    expect(response2.status).toBe(401);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 401 when user exists but deleted and tweet exists', async () => {
+    deletedTestUser1 = await createUser(deletedUser);
+    token1 = jwt.sign(
+      { id: deletedTestUser1._id.toString() },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      },
+    );
+    testUser0 = await createUser(user0);
+
+    token2 = jwt.sign(
+      { id: testUser0._id.toString() },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      },
+    );
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token2}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .patch(`/api/tweets/unretweet/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token1}`);
 
     expect(response2.status).toBe(401);
     await Tweet.deleteMany();

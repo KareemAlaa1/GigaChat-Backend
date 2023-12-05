@@ -383,11 +383,10 @@ exports.sendMessage = async (req, res) => {
           await Chat.findByIdAndUpdate(newChat._doc._id, {
             $push: { messagesList: message._doc._id },
           });
-          const lol = await User.updateMany(
+          const updatedItems = await User.updateMany(
             { _id: { $in: [recieverUser._id, req.user._id] } },
             { $push: { chatList: newChat._doc._id } },
           );
-          console.log(lol);
         }
         res.status(200).json({
           status: 'message sent success',
