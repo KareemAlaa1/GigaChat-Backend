@@ -5,6 +5,9 @@ const app = require('../app');
 const User = require('../models/user_model');
 const {catchAsync} = require('../utils/app_error');
 const {signToken} = require('../controllers/auth_controller');
+const dotenv = require('dotenv');
+const crypto = require("crypto");
+dotenv.config({ path: './config/dev.env' });
 
 // Define a utility function to create a test user
 async function createUser(userData) {
@@ -364,8 +367,8 @@ describe('auth', () => {
         });
     });
     //###################### Check Existed Email ######################
+    describe('existedEmailORusername endpoint', () => {
 
-    describe('ExistedEmailORusername endpoint', () => {
         it('should respond with 200 and message if email exists', async () => {
             // Create a user with a specific email to simulate an existing user
             const existingUser = await User.create({
@@ -376,14 +379,12 @@ describe('auth', () => {
 
             const response = await request(app)
                 .post('/api/user/ExistedEmailORusername')
-                .send({email: existingUser.email});
-
+                .send({ email: existingUser.email });
             expect(response.status).toBe(200);
             expect(response.body.message).toBe('Email is existed');
 
             // Clean up: Remove the created user from the database
-            await existingUser.deleteOne();
-        });
+            await User.deleteOne({ _id: existingUser._id });});
 
         it('should respond with 200 and message if username exists', async () => {
             // Create a user with a specific username to simulate an existing user
@@ -395,13 +396,13 @@ describe('auth', () => {
 
             const response = await request(app)
                 .post('/api/user/ExistedEmailORusername')
-                .send({username: existingUser.username});
+                .send({ email: existingUser.username });
 
             expect(response.status).toBe(200);
             expect(response.body.message).toBe('username is existed');
 
             // Clean up: Remove the created user from the database
-            await User.deleteOne({_id: existingUser._id});
+            await User.deleteOne({ _id: existingUser._id });
         });
 
         it('should respond with 400 if neither email nor username is provided', async () => {
@@ -420,13 +421,13 @@ describe('auth', () => {
                 .post('/api/user/ExistedEmailORusername')
                 .send({
                     email: 'nonexistent@example.com',
-                    username: 'nonexistentuser',
                 });
 
             expect(response.status).toBe(404);
             expect(response.body.error).toBe('Email or username  not existed');
         });
     });
+
 
     //###################### login ######################
     describe('POST /api/user/login', () => {
@@ -791,4 +792,510 @@ describe('auth', () => {
 
     });
 
+    //###################### confirmPassword ######################
+
+    describe('confirmPassword endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific password
+            user = new User({
+                username: 'test_username',
+                email: 'testcon@example.com',
+                password: 'password123',
+                active: true,
+            });
+            await user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and message if password is correct', async () => {
+            const response = await request(app)
+                .post('/api/user/confirmPassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ password: 'password123' });
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe(200);
+            expect(response.body.data.message).toBe('password is correct');
+        });
+
+        it('should respond with 401 if password is incorrect', async () => {
+            const response = await request(app)
+                .post('/api/user/confirmPassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ password: 'incorrectpassword' });
+
+            expect(response.status).toBe(401);
+            expect(response.body.message).toBe('password is not correct');
+        });
+    });
+
+    //###################### updateUsername ######################
+    describe('updateUsername endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific username
+            user = new User({
+                email: 'testup@example.com',
+                username: 'oldusername',
+                active: true,
+            });
+            await  user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and message if username is updated successfully', async () => {
+            const response = await request(app)
+                .patch('/api/user/updateUsername')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ newUsername: 'newusername' });
+
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.data.message).toBe('username updated successfully');
+        });
+
+        it('should respond with 400 if newUsername is not provided', async () => {
+            const response = await request(app)
+                .patch('/api/user/updateUsername')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('request should have newUsername');
+        });
+
+        it('should respond with 400 if newUsername is the same as the old one', async () => {
+            const response = await request(app)
+                .patch('/api/user/updateUsername')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ newUsername: 'oldusername' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe(
+                'the newUsername should not be the same as the old one',
+            );
+        });
+
+        it('should respond with 400 if newUsername is already taken', async () => {
+            // Create another user with the newUsername
+            await User.create({
+                email: 'another@example.com',
+                username: 'newusername',
+            });
+
+            const response = await request(app)
+                .patch('/api/user/updateUsername')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ newUsername: 'newusername' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('The username is already taken.');
+        });
+    });
+    //###################### updatePassword ######################
+    describe('updatePassword endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific password
+            user = await new User({
+                username: 'testup_username',
+                email: 'testup@example.com',
+                password: 'oldpassword123',
+                active: true,
+            });
+            await user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and message if password is updated successfully', async () => {
+            const response = await request(app)
+                .patch('/api/user/updatePassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ oldPassword: 'oldpassword123', newPassword: 'newpassword123' });
+
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.data.message).toBe('user update password correctly');
+            expect(response.body.token).toBeDefined();
+        });
+
+        it('should respond with 400 if oldPassword or newPassword is not provided', async () => {
+            const response = await request(app)
+                .patch('/api/user/updatePassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe(
+                'request should have both, oldPassword and newPassword',
+            );
+        });
+
+        it('should respond with 400 if newPassword is the same as the old one', async () => {
+            const response = await request(app)
+                .patch('/api/user/updatePassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ oldPassword: 'oldpassword123', newPassword: 'oldpassword123' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe(
+                'the newPassword should not be the same as old one',
+            );
+        });
+
+        it('should respond with 400 if newPassword is less than 8 characters', async () => {
+            const response = await request(app)
+                .patch('/api/user/updatePassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ oldPassword: 'oldpassword123', newPassword: 'pass' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe(
+                'the newPassword should be at least 8 characters',
+            );
+        });
+
+        it('should respond with 401 if oldPassword is incorrect', async () => {
+            const response = await request(app)
+                .patch('/api/user/updatePassword')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ oldPassword: 'incorrectpassword', newPassword: 'newpassword123' });
+
+            expect(response.status).toBe(401);
+            expect(response.body.message).toBe(
+                'the oldPassword provided is not correct',
+            );
+        });
+    });
+
+    //###################### userEmail ######################
+    describe('userEmail endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific email
+            user = new User({
+                email: 'testuE@example.com',
+                username: 'test_username',
+                active: true,
+            });
+            await user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and the user email', async () => {
+            const response = await request(app)
+                .get('/api/user/useremail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`);
+            console.log(response.body);
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.data.email).toBe('testuE@example.com');
+        });
+
+    });
+
+    //###################### updateEmail ######################
+    describe('updateEmail endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific email
+            user = new User({
+                email: 'testuEm@example.com',
+                username: 'test__username',
+                active: true,
+            });
+            await user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and message if email is updated successfully', async () => {
+            const response = await request(app)
+                .post('/api/user/updateEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'newemail@example.com' });
+            console.log(response.body,'tess')
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.data.message).toBe('Code sent to the email the user provided');
+        });
+
+        it('should respond with 400 if email is not provided', async () => {
+            const response = await request(app)
+                .post('/api/user/updateEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('email is required');
+        });
+
+        it('should respond with 400 if email is the same as the old one', async () => {
+            const response = await request(app)
+                .post('/api/user/updateEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'testuEm@example.com' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('email is the same as the old one');
+        });
+
+        it('should respond with 400 if email format is invalid', async () => {
+            const response = await request(app)
+                .post('/api/user/updateEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'invalidemail' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe('Invalid email format');
+        });
+
+        it('should respond with 404 if there is an active user with the provided email', async () => {
+            // Create another user with the same email
+            await User.create({
+                email: 'newemail@example.com',
+                username: 'new_x_username',
+                active: true,
+            });
+
+            const response = await request(app)
+                .post('/api/user/updateEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'newemail@example.com' });
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe('There is active user with  this email address.');
+        });
+    });
+
+//###################### verifyEmail ######################
+    describe('verifyEmail endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific email and confirmEmailCode
+            user = new User({
+                email: 'testvE@example.com',
+                username: 'test_username',
+                confirmEmailCode: '123145',
+                active: true,
+            });
+            await user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and message if email is verified successfully', async () => {
+            const response = await request(app)
+                .post('/api/user/verifyEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'newemailvE@example.com', verifyEmailCode: process.env.ADMIN_CONFIRM_PASS });
+            console.log(response.body,'test1118');
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.data.message).toBe('Verify done successfully');
+
+            // Check if the user's email has been updated
+            const updatedUser = await User.findById(user._id);
+            expect(updatedUser.email).toBe('newemailvE@example.com');
+        });
+
+        it('should respond with 400 if email or verifyEmailCode is not provided', async () => {
+            const response = await request(app)
+                .post('/api/user/verifyEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('email and verifyEmailCode required');
+        });
+
+        it('should respond with 400 if email format is invalid', async () => {
+            const response = await request(app)
+                .post('/api/user/verifyEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'invalidemail', verifyEmailCode: '123456' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.error).toBe('Invalid email format');
+        });
+
+        it('should respond with 404 if there is no new updateEmail request recieved.', async () => {
+            // Clear the confirmEmailCode for the user
+            user.confirmEmailCode = undefined;
+            await user.save();
+
+            const response = await request(app)
+                .post('/api/user/verifyEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'newemail@example.com', verifyEmailCode: '123456' });
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe('There is no new updateEmail request recieved .');
+        });
+
+        it('should respond with 401 if the verification code is invalid or expired', async () => {
+            const response = await request(app)
+                .post('/api/user/verifyEmail')
+                .set('Authorization', `Bearer ${signToken(user._id)}`)
+                .send({ email: 'newemail@example.com', verifyEmailCode: 'invalidcode' });
+
+            expect(response.status).toBe(401);
+            expect(response.body.message).toBe('The Code is Invalid or Expired ');
+        });
+    });
+
+    //###################### forgotPassword ######################
+    describe('forgotPassword endpoint', () => {
+        let user;
+
+        beforeEach(async () => {
+            // Create a user with a specific email and username
+            user = new User({
+                email: 'testfP@example.com',
+                username: 'test_username',
+                active: true,
+            });
+            await user.save();
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and message if resetToken is sent successfully', async () => {
+            const response = await request(app)
+                .post('/api/user/forgotPassword')
+                .send({ query: 'testfP@example.com' });
+            console.log('fp',response.body);
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.message).toBe('resetToken sent to user email address!');
+        });
+
+        it('should respond with 400 if email or username is not provided', async () => {
+            const response = await request(app)
+                .post('/api/user/forgotPassword')
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('Email or username is required');
+        });
+
+        it('should respond with 404 if no user with the provided email address exists', async () => {
+            const response = await request(app)
+                .post('/api/user/forgotPassword')
+                .send({ query: 'nonexistent@example.com' });
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe('There is no user with this email address');
+        });
+
+        it('should respond with 404 if no user with the provided username exists', async () => {
+            const response = await request(app)
+                .post('/api/user/forgotPassword')
+                .send({ query: 'nonexistent_username' });
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe('There is no user with this username');
+        });
+
+
+    });
+
+    //###################### resetPassword ######################
+
+    describe('resetPassword endpoint', () => {
+        let user;
+        let resetToken;
+
+        beforeEach(async () => {
+            // Create a user with a password reset token
+            resetToken = crypto.createHash('sha256').update('123456').digest('hex');
+
+            user = new User({
+                email: 'testrP@example.com',
+                username: 'test_username',
+                passwordResetToken: resetToken,
+                passwordResetExpires: new Date(Date.now() + 3600000), // Reset token expires in 1 hour
+            });
+            await user.save();
+
+        });
+
+        afterEach(async () => {
+            // Clean up: Remove the user from the database
+            await User.deleteOne({ _id: user._id });
+        });
+
+        it('should respond with 200 and login the user if reset password is successful', async () => {
+            const response = await request(app)
+                .patch('/api/user/resetPassword')
+                .send({ password: 'newpassword', passwordResetToken: '123456' });
+            console.log('RP',response.body);
+            expect(response.status).toBe(200);
+            expect(response.body.status).toBe('success');
+            expect(response.body.data.user).toBeDefined();
+
+            // Check if the user's password has been updated
+            const updatedUser = await User.findById(user._id).select('+password');
+            const passwordMatches = await updatedUser.correctPassword('newpassword', updatedUser.password);
+            expect(passwordMatches).toBe(true);
+        });
+
+        it('should respond with 400 if password or passwordResetToken is not provided', async () => {
+            const response = await request(app)
+                .patch('/api/user/resetPassword')
+                .send({});
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('the user should provide both, password and passwordResetToken');
+        });
+
+        it('should respond with 400 if password is less than 8 characters', async () => {
+            const response = await request(app)
+                .patch('/api/user/resetPassword')
+                .send({ password: 'short', passwordResetToken: resetToken });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('password should be at least 8 characters');
+        });
+
+        it('should respond with 400 if passwordResetToken is invalid or expired', async () => {
+            const response = await request(app)
+                .patch('/api/user/resetPassword')
+                .send({ password: 'newpassword', passwordResetToken: 'invalidtoken' });
+
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('passwordResetToken is invalid or has expired');
+        });
+    });
 });

@@ -22,5 +22,7 @@ tweetRouter.post('/like/:tweetId', authController.protect, like);
 
 tweetRouter.post('/unlike/:tweetId', authController.protect, unlike);
 
+tweetRouter.patch('/unretweet/:tweetId', authController.protect,tweetController.undoRetweetTweet,);
+
 
 module.exports = tweetRouter;
