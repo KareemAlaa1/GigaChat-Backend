@@ -141,10 +141,10 @@ exports.getFollowingTweets = catchAsync(
               followers_num: 1,
               following_num: 1,
             },
-            isFollowed: 1,
-            isLiked: 1,
-            isRtweeted: 1,
           },
+          isFollowed: 1,
+          isLiked: 1,
+          isRtweeted: 1,
         },
       })
       .skip(skip)
