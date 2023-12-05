@@ -161,6 +161,7 @@ const tweetOwner = {
 
 let token;
 let testUser0;
+let testTweetOwner;
 let testUserWithoutFollowing;
 let testUserWithFollowingWithNoTweets;
 async function createUser(userData) {

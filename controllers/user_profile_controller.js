@@ -18,6 +18,13 @@ exports.getUserTweets = async (req, res) => {
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
+    if (
+      !user.tweetList ||
+      user.tweetList === undefined ||
+      user.tweetList.length == 0
+    )
+      return res.status(200).send({ posts: [] });
+
     const tweets = await User.aggregate([
       {
         $match: { _id: user._id },
@@ -97,6 +104,14 @@ exports.getUserLikedTweets = async (req, res) => {
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
+
+    if (
+      !user.likedTweets ||
+      user.likedTweets === undefined ||
+      user.likedTweets.length == 0
+    )
+      return res.status(200).send({ posts: [] });
+
     const tweets = await User.aggregate([
       {
         $match: { _id: user._id },
