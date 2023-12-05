@@ -517,6 +517,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
     });
   }
 });
+
 exports.confirmPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
   let user = await User.findById(req.user._id).select('+password');
@@ -531,16 +532,17 @@ exports.confirmPassword = catchAsync(async (req, res, next) => {
     });
   }
 });
+
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) get the input data and check the validity
-  const { query } = req.body;
+  const email = req.body.email;
+  const username = req.body.username;
 
-  if (!query) {
+  if (!email && !username) {
     return next(new AppError('Email or username is required', 400));
   }
   //check if email or username
-  let email;
-  let username;
+
   if (validator.isEmail(query)) {
     email = query;
   } else {
