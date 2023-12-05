@@ -69,7 +69,7 @@ exports.getUserTweets = async (req, res) => {
               username: 1,
               nickname: 1,
               bio: 1,
-              profile_image: 1,
+              profile_image: '$tweetList.tweet.tweet_owner.profileImage',
               followers_num: {
                 $size: '$tweetList.tweet.tweet_owner.followersUsers',
               },
@@ -159,7 +159,7 @@ exports.getUserLikedTweets = async (req, res) => {
             username: 1,
             nickname: 1,
             bio: 1,
-            profile_image: 1,
+            profile_image: '$likedTweets.tweet_owner.profileImage',
             followers_num: {
               $size: '$likedTweets.tweet_owner.followersUsers',
             },
