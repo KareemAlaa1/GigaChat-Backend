@@ -126,7 +126,7 @@ const tweet = {
     },
   ],
   views: 0,
-  repliesList: ['6550d2f9f9088e88318fd10c'],
+  repliesCount: 1,
   likersList: ['654eed855b0fe11cd47fc7eb', '6550d2f9f9088e88318fd10c'],
   retweetList: [],
   quoteRetweetList: [],

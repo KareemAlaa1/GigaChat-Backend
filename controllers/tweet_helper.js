@@ -55,14 +55,14 @@ exports.getTweetDatabyId = async (id) => {
         _id: 1,
         userId: 1,
         referredTweetId: 1,
+        referredReplyId: 1,
         description: 1,
         views: 1,
         likersList: {
           $size: '$likersList',
         },
-        repliesList: {
-          $size: '$repliesList',
-        },
+        repliesList: '$repliesCount',
+
         retweetList: {
           $size: '$retweetList',
         },
@@ -84,6 +84,7 @@ exports.getTweetDatabyId = async (id) => {
   tweetData.id = tweet[0]._id;
   tweetData.userId = tweet[0].userId;
   tweetData.referredTweetId = tweet[0].referredTweetId;
+  tweetData.referredReplyId = tweet[0].referredReplyId;
   tweetData.description = tweet[0].description;
   tweetData.viewsNum = tweet[0].views;
   tweetData.likesNum = tweet[0].likersList;
@@ -100,10 +101,11 @@ exports.getRequiredTweetDatafromTweetObject = async (tweet) => {
   tweetData.id = tweet._id;
   tweetData.userId = tweet.userId;
   tweetData.referredTweetId = tweet.referredTweetId;
+  tweetData.referredReplyId = tweet.referredReplyId;
   tweetData.description = tweet.description;
   tweetData.viewsNum = tweet.views;
   tweetData.likesNum = tweet.likersList.length;
-  tweetData.repliesNum = tweet.repliesList.length;
+  tweetData.repliesNum = tweet.repliesCount;
   tweetData.repostsNum =
     tweet.retweetList.length + tweet.quoteRetweetList.length;
   tweetData.media = tweet.media;

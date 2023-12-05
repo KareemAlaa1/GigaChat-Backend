@@ -33,12 +33,10 @@ const tweetSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  repliesList: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
-    },
-  ],
+  repliesCount: {
+    type: Number,
+    default: 0,
+  },
   likersList: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -73,6 +71,10 @@ const tweetSchema = new mongoose.Schema({
     },
   },
   referredTweetId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tweet',
+  },
+  referredReplyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tweet',
   },

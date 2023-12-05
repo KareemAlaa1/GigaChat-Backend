@@ -29,7 +29,7 @@ selectNeededInfoForUser = async (tweet, req) => {
 selectNeededInfoForTweets = async (tweets, req) => {
   req.query.type = 'array';
   req.query.fields =
-    '_id,description,media,type,referredTweetId,likersList,repliesList,retweetList,likesNum,repliesNum,repostsNum,isLiked,views,createdAt,tweetOwner,retweeter';
+    '_id,description,media,type,referredTweetId,likersList,repliesCount,retweetList,likesNum,repliesNum,repostsNum,isLiked,views,createdAt,tweetOwner,retweeter';
   const apiFeatures = new APIFeatures(tweets, req.query)
     .sort()
     .paginate()
@@ -43,7 +43,7 @@ selectNeededInfoForTweets = async (tweets, req) => {
       req.user._id.toString(),
     );
     tweet.likesNum = tweet.likersList.length;
-    tweet.repliesNum = tweet.repliesList.length;
+    tweet.repliesNum = tweet.repliesCount;
     tweet.repostsNum = tweet.retweetList.length;
     return tweet;
   });

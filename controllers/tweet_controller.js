@@ -22,22 +22,77 @@ const TweetController = {
           message: 'no media and no description',
         });
       } else {
-        const newTweet = await Tweet.create(req.body);
-        let retTweet = {};
-        retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
-        retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
-        await User.findByIdAndUpdate(req.body.userId, {
-          $push: { tweetList: { tweetId: retTweet.id, type: req.body.type } },
-        });
-        const data = retTweet;
-        res.status(201);
-        res.json({
-          status: 'Tweet Add Success',
-          data,
-        });
-        if (req.body.description) extractHashtags(newTweet);
+        let newTweet;
+        if (req.body.type == 'tweet') {
+          newTweet = await Tweet.create(req.body);
+          let retTweet = {};
+          retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
+          retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
+          await User.findByIdAndUpdate(req.body.userId, {
+            $push: { tweetList: { tweetId: retTweet.id, type: req.body.type } },
+          });
+          let data = retTweet;
+          res.status(201);
+          res.json({
+            status: 'Tweet Add Success',
+            data,
+          });
+          if (req.body.description) extractHashtags(newTweet);
+        } else {
+          const referredTweet = await getTweetDatabyId(
+            req.body.referredTweetId,
+          );
+          if (referredTweet) {
+            const updatedTweet = {};
+            updatedTweet.repliesCount = referredTweet.repliesNum + 1;
+            await Tweet.findByIdAndUpdate(referredTweet.id, updatedTweet);
+
+            if (referredTweet.type == 'tweet') {
+              newTweet = await Tweet.create({
+                userId: req.body.userId,
+                description: req.body.description,
+                media: req.body.media,
+                type: req.body.type,
+                referredTweetId: referredTweet.id,
+                referredReplyId: referredTweet.id,
+              });
+            } else {
+              newTweet = await Tweet.create({
+                userId: req.body.userId,
+                description: req.body.description,
+                media: req.body.media,
+                type: req.body.type,
+                referredTweetId: referredTweet.referredTweetId,
+                referredReplyId: referredTweet.id,
+              });
+            }
+
+            let retTweet = {};
+            retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
+            retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
+            await User.findByIdAndUpdate(req.body.userId, {
+              $push: {
+                tweetList: { tweetId: retTweet.id, type: req.body.type },
+              },
+            });
+            let data = retTweet;
+            res.status(201);
+            res.json({
+              status: 'Tweet Add Success',
+              data,
+            });
+            if (req.body.description) extractHashtags(newTweet);
+          } else {
+            res.status(400);
+            res.json({
+              status: 'bad request',
+              message: 'no referred Tweet Id',
+            });
+          }
+        }
       }
     } catch (err) {
+      console.log(err);
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
@@ -419,6 +474,7 @@ const TweetController = {
       } else {
         const user = await getUserDatabyId(tweet.userId);
         if (user === null) {
+          W;
           res.status(404);
           res.json({
             status: 'Fail',
@@ -432,7 +488,7 @@ const TweetController = {
             {
               $match: {
                 type: 'reply',
-                referredTweetId: new mongoose.Types.ObjectId(
+                referredReplyId: new mongoose.Types.ObjectId(
                   req.params.tweetId,
                 ),
               },
@@ -440,7 +496,7 @@ const TweetController = {
             {
               $project: {
                 _id: 0,
-                referredTweetId: 1,
+                referredTweetId: '$referredReplyId',
                 description: 1,
                 id: '$_id',
                 userId: 1,
@@ -448,7 +504,7 @@ const TweetController = {
                 type: 1,
                 creation_time: '$createdAt',
                 viewsNum: '$views',
-                repliesNum: { $size: '$repliesList' },
+                repliesNum: '$repliesCount',
                 repostsNum: { $size: '$retweetList' },
                 likesNum: { $size: '$likersList' },
                 likersList: 1,
@@ -521,6 +577,7 @@ const TweetController = {
         }
       }
     } catch (err) {
+      console.log(err);
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
