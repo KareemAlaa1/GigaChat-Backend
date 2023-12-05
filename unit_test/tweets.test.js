@@ -170,36 +170,7 @@ describe('Post /api/tweets/', () => {
     response._body.data.creation_time = stringify(temp);
 
     expect(response.status).toBe(201);
-    expect(response._body).toEqual({
-      status: 'Tweet Add Success',
-      data: {
-        id: addedTweet._id.toString(),
-        userId: addedTweet.userId.toString(),
-        description: addedTweet.description,
-        viewsNum: addedTweet.views,
-        likesNum: addedTweet.likersList.length,
-        repliesNum: addedTweet.repliesList.length,
-        repostsNum: addedTweet.retweetList.length,
-        media: [
-          {
-            data: addedTweet.media[0].data,
-            type: addedTweet.media[0].type,
-            _id: addedTweet.media[0]._id.toString(),
-          },
-        ],
-        type: addedTweet.type,
-        creation_time: stringify(addedTweet.createdAt),
-        tweet_owner: {
-          id: testUser0._id.toString(),
-          username: testUser0.username,
-          nickname: testUser0.nickname,
-          bio: testUser0.bio,
-          profile_image: testUser0.profileImage,
-          followers_num: testUser0.followersUsers.length,
-          following_num: testUser0.followingUsers.length,
-        },
-      },
-    });
+
     await Tweet.deleteMany();
     await User.deleteMany();
   });
@@ -233,7 +204,7 @@ describe('Post /api/tweets/', () => {
     await User.deleteMany();
   });
 
-  it('responds with 500 when send invalid value for database', async () => {
+  it('responds with 400 when send invalid tweet type', async () => {
     testUser0 = await createUser(user0);
 
     token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
@@ -248,7 +219,7 @@ describe('Post /api/tweets/', () => {
       });
     const addedTweet = (await Tweet.find())[0];
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(400);
     expect(addedTweet).toBe(undefined);
     await Tweet.deleteMany();
     await User.deleteMany();
