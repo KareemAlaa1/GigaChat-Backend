@@ -536,18 +536,18 @@ exports.confirmPassword = catchAsync(async (req, res, next) => {
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) get the input data and check the validity
-  const email = req.body.email;
-  const username = req.body.username;
 
-  if (!email && !username) {
+  if (!req.body.email && !req.body.username) {
     return next(new AppError('Email or username is required', 400));
   }
   //check if email or username
 
-  if (validator.isEmail(query)) {
-    email = query;
+  let email;
+  let username;
+  if (req.body.email && validator.isEmail(req.body.email)) {
+    email = req.body.email;
   } else {
-    username = query;
+    username = req.body.username;
   }
   let user;
   if (email) {
