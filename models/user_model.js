@@ -131,7 +131,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-});
+},{strict: false});
 
 // Document MiddleWare
 

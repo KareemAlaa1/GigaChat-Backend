@@ -1,5 +1,6 @@
 const dotenv = require('dotenv');
 dotenv.config({ path: './config/dev.env' });
+const cookieSession = require("cookie-session");
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
@@ -11,9 +12,10 @@ const tweetRouter = require('./routes/tweet_routes');
 const homepageRouter = require('./routes/homepage_router');
 const hashtagRouter = require('./routes/hashtag_router');
 const mediaRouter = require('./routes/media_routes');
-
+const googleRouter = require('./routes/google_router');
+const passportSetup = require("./google-passport");
+const passport = require("passport");
 const app = express();
-
 // MIDDLEWARES
 
 app.use(cors());
@@ -27,6 +29,19 @@ app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
+
+
+//region google-router
+app.use(
+    cookieSession({ name: "google-passport-session", keys: ["google-auth"], maxAge: 24 * 60 * 60 * 100 })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+app.use("/auth", googleRouter);
+//endregion google-router
 
 // Handling  Wrong Route Req.
 //Routs
