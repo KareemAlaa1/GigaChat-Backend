@@ -537,15 +537,6 @@ exports.getMessages = async (req, res) => {
   }
 };
 
-const filterObj = (obj, ...filter) => {
-  const newObj = {};
-  Object.keys(obj).forEach((el) => {
-    //Object.key(objName) array contian the key names of the object properties
-    if (filter.includes(el)) newObj[el] = obj[el];
-  });
-  return newObj;
-};
-
 function calculateAge(birthDate) {
   const today = new Date();
   const birthDateObj = new Date(birthDate);
