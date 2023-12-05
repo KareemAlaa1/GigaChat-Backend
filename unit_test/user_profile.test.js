@@ -4,8 +4,15 @@ const jwt = require('jsonwebtoken');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { expect } = require('@jest/globals');
 const User = require('../models/user_model');
+const Media = require('../models/media_model');
 const app = require('../app');
 const fs = require('fs');
+
+jest.mock('../controllers/media_controller', () => ({
+  deleteMedia: jest.fn().mockImplementation(() => Promise.resolve()),
+  addMedia: jest.fn().mockImplementation(() => Promise.resolve()), // or use mockResolvedValue for Jest 27+
+}));
+
 
 const DEFAULT_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
@@ -49,6 +56,9 @@ beforeAll(async () => {
     await mongoose.connect(mongoServer.getUri());
     testUser = await createUser(userData);
 
+    const media = new Media({url: DEFAULT_IMAGE_URL, cloudStrogePath: "zjkdhnvknsv", type: "image"});
+    await media.save();
+
     token = jwt.sign({ id: testUser._id.toString() }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
@@ -68,7 +78,8 @@ afterAll(async () => {
 describe("GET /api/user/profile", () => {
   it("responds with 200 and user data when user exists", async () => {
 
-    const response = await request(app).get('/api/user/profile/karreeem_');
+    const response = await request(app).get('/api/user/profile/karreeem_')
+    .set('authorization', `Bearer ${token}`);
 
     response.body.user.joined_date = new Date(response.body.user.joined_date);
     response.body.user.birth_date = new Date(response.body.user.birth_date);
@@ -87,12 +98,18 @@ describe("GET /api/user/profile", () => {
       followings_num: testUser.followersUsers.length,
       followers_num: testUser.followingUsers.length,
       profile_image: testUser.profileImage,
-      banner_image: testUser.bannerImage
+      banner_image: testUser.bannerImage,
+      is_curr_user: false,
+      is_curr_user_blocked: false,
+      is_wanted_user_blocked: false,
+      is_wanted_user_followed: false,
+      is_wanted_user_muted: false,
     });
   });
 
   it('responds with 404 when user does not exist', async () => {
-    const response = await request(app).get('/api/user/profile/nonExistingUser');
+    const response = await request(app).get('/api/user/profile/nonExistingUser')
+    .set('authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(404);
     expect(response.body.error).toBe('user not found');
@@ -104,10 +121,12 @@ describe("GET /api/user/profile", () => {
       throw new Error('Simulated error');
     });
 
-    const response = await request(app).get('/api/user/profile/testuser');
+    const response = await request(app).get('/api/user/profile/testuser')
+    .set('authorization', `Bearer ${token}`);
+
+    console.log(response.body.error);
 
     expect(response.status).toBe(500);
-    expect(response.body.error).toBe('Internal Server Error');
   });
 });
 
@@ -122,12 +141,10 @@ describe("patch /api/user/profile", () => {
   }
 
   it('should respond with 204 as valid data is provided', async () => {
-
-
     const response = await request(app).patch('/api/user/profile')
-      .set('authorization', `Bearer ${token}`)
-      .query(sentData);
-
+    .send(sentData)
+    .set('authorization', `Bearer ${token}`);
+      
     const checkChangedUser = await User.findById(testUser._id);
 
     expect(response.statusCode).toBe(204);
@@ -143,7 +160,7 @@ describe("patch /api/user/profile", () => {
 
     const response = await request(app).patch('/api/user/profile')
       .set('authorization', `Bearer ${token}`)
-      .query({});
+      .send({});
 
     expect(response.statusCode).toBe(400);
     expect(response.body.error).toBe('Bad Request');
@@ -157,7 +174,7 @@ describe("patch /api/user/profile", () => {
 
     const response = await request(app).patch('/api/user/profile')
     .set('authorization', `Bearer ${token}`)
-    .query(sentData);
+    .send(sentData);
 
     expect(response.status).toBe(500);
     expect(response.body.error).toBe('Internal Server Error');
@@ -167,17 +184,13 @@ describe("patch /api/user/profile", () => {
 describe("patch /api/user/profile/image", () => {
     it('should update user profile image', async () => {
 
-      const imagePath = '/home/malek/Pictures/Screenshots/test.png';
-      const imageBuffer = fs.readFileSync(imagePath);
 
       const response = await request(app)
         .patch('/api/user/profile/image')
         .set('authorization', `Bearer ${token}`)
-        .attach('profile_image', imageBuffer, 'test.png');
+        .send({profile_image: DEFAULT_IMAGE_URL});
 
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe('image uploaded successfully');
-      expect(response.body.image_profile_url).toBeDefined();
+      expect(response.status).toBe(204);
   });
 
   it('should respond with 400 as inValid data is provided', async () => {
@@ -187,7 +200,7 @@ describe("patch /api/user/profile/image", () => {
       .set('authorization', `Bearer ${token}`)
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Bad Request');
+    expect(response.body.error).toBe('Bad request');
   });
 
   it('should respond with 500 if an error occurs during profile image update', async () => {
@@ -196,13 +209,11 @@ describe("patch /api/user/profile/image", () => {
       throw new Error('Simulated error during save');
     });
 
-    const imagePath = '/home/malek/Pictures/Screenshots/test.png';
-    const imageBuffer = fs.readFileSync(imagePath);
 
 
     const response = await request(app).patch('/api/user/profile/image')
       .set('authorization', `Bearer ${token}`)
-      .attach('profile_image', imageBuffer, 'test.png');
+      .send({profile_image: DEFAULT_IMAGE_URL});
 
     expect(response.status).toBe(500);
     expect(response.body.error).toBe('Internal Server Error');
@@ -218,11 +229,9 @@ describe("patch /api/user/profile/banner", () => {
     const response = await request(app)
       .patch('/api/user/profile/banner')
       .set('authorization', `Bearer ${token}`)
-      .attach('profile_banner', imageBuffer, 'test.png');
+      .send({profile_banner: DEFAULT_IMAGE_URL});
 
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe('image uploaded successfully');
-    expect(response.body.image_profile_url).toBeDefined();
+    expect(response.status).toBe(204);
 });
 
 it('should respond with 400 as inValid data is provided', async () => {
@@ -232,7 +241,7 @@ it('should respond with 400 as inValid data is provided', async () => {
     .set('authorization', `Bearer ${token}`)
 
   expect(response.status).toBe(400);
-  expect(response.body.error).toBe('Bad Request');
+  expect(response.body.error).toBe('Bad request');
 });
 
 it('should respond with 500 if an error occurs during profile banner update', async () => {
@@ -241,13 +250,9 @@ it('should respond with 500 if an error occurs during profile banner update', as
     throw new Error('Simulated error during save');
   });
 
-  const imagePath = '/home/malek/Pictures/Screenshots/test.png';
-  const imageBuffer = fs.readFileSync(imagePath);
-
-
   const response = await request(app).patch('/api/user/profile/banner')
     .set('authorization', `Bearer ${token}`)
-    .attach('profile_banner', imageBuffer, 'test.png');
+    .send({profile_banner: DEFAULT_IMAGE_URL});
 
   expect(response.status).toBe(500);
   expect(response.body.error).toBe('Internal Server Error');

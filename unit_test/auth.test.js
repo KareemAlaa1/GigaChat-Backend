@@ -438,7 +438,7 @@ describe('auth', () => {
                 password: testUserData.password,
             });
 
-            expect(response.status).toBe(201);
+            expect(response.status).toBe(200);
             expect(response.body.status).toBe('success');
             expect(response.body.token).toBeDefined();
             expect(response.body.data.user).toBeDefined();
@@ -498,7 +498,7 @@ describe('auth', () => {
                 .send({});
 
             expect(response.status).toBe(400);
-            expect(response.body.message).toBe('email and confirmEmailCode required');
+            expect(response.body.message).toBe('email is required');
         });
 
         it('responds with 400 when email format is invalid', async () => {

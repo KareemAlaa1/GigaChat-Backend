@@ -5,7 +5,7 @@ const { deleteMedia } = require('../controllers/media_controller');
 const Chat = require('../models/chat_model');
 const Message = require('../models/message_model');
 const mongoose = require('mongoose');
-const validator = require('validator');
+
 
 const { bucket, uuidv4 } = require('../utils/firebase');
 const catchAsync = require('../utils/catch_async');
@@ -73,21 +73,12 @@ exports.checkAvailableEmail = catchAsync(async (req, res, next) => {
 });
 
 exports.existedEmailORusername = catchAsync(async (req, res, next) => {
-  const query = req.body.email;
+  const { email, username } = req.body;
 
-  if (!query) {
+  if (!email && !username) {
     return res
       .status(400)
       .json({ error: 'Email or username is required in the request body' });
-  }
-
-  //check if email or username
-  let email;
-  let username;
-  if (validator.isEmail(query)) {
-    email = query;
-  } else {
-    username = query;
   }
 
   if (email) {
