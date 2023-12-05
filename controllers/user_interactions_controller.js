@@ -12,7 +12,11 @@ exports.follow = async (req, res) => {
 
         const followedUser = await User.findOne({ username: username, isDeleted: false, active: true });
 
+        
         if (!followedUser) return res.status(404).send({ error: "user not found" });
+        
+        if(currUser._id.toString() === followedUser._id.toString())
+            return res.status(400).send({ error: "You Can't follow your self" });
         
         if (followedUser.followersUsers.includes(currUser._id))
             return res.status(400).send({ error: "Bad request, User already followed" });
@@ -45,6 +49,9 @@ exports.unfollow = async (req, res) => {
         const followedUser = await User.findOne({ username: username, isDeleted: false, active: true });
 
         if (!followedUser) return res.status(404).send({ error: "user not found" });
+
+        if(currUser._id.toString() === followedUser._id.toString())
+            return res.status(400).send({ error: "You Can't unfollow your self" });
 
         if (!followedUser.followersUsers.includes(currUser._id))
             return res.status(400).send({ error: "Bad request, User is not followed" });
