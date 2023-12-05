@@ -3,135 +3,137 @@ const validator = require('validator');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    unique: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    validate: {
-      validator: (value) => validator.isEmail(value),
-      message: 'Email is invalid',
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      unique: true,
     },
-    unique: true,
-  },
-  password: {
-    type: String,
-    minlength: 8,
-    select: false,
-  },
-  bio: {
-    type: String,
-  },
-  birthDate: {
-    type: Date,
-  },
-  bannerImage: {
-    type: String,
-  },
-  profileImage: {
-    
-    type: String,
-  },
-  phone: {
-    type: Number,
-    validate: {
-      validator: (value) => typeof value === 'number',
-      message: 'phone must be numbers',
+    email: {
+      type: String,
+      required: true,
+      validate: {
+        validator: (value) => validator.isEmail(value),
+        message: 'Email is invalid',
+      },
+      unique: true,
     },
-    default: '00000000000',
-  },
-  nickname: {
-    type: String,
-  },
-  location: {
-    type: String,
-  },
-  website: {
-    type: String,
-  },
-  mutedUsers: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+    password: {
+      type: String,
+      minlength: 8,
+      select: false,
     },
-  ],
-  blockingUsers: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+    bio: {
+      type: String,
     },
-  ],
-  followingUsers: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+    birthDate: {
+      type: Date,
     },
-  ],
-  followersUsers: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+    bannerImage: {
+      type: String,
     },
-  ],
-  likedTweets: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
+    profileImage: {
+      type: String,
     },
-  ],
-  tweetList: [
-    {
-      tweetId: {
+    phone: {
+      type: Number,
+      validate: {
+        validator: (value) => typeof value === 'number',
+        message: 'phone must be numbers',
+      },
+      default: '00000000000',
+    },
+    nickname: {
+      type: String,
+    },
+    location: {
+      type: String,
+    },
+    website: {
+      type: String,
+    },
+    mutedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    blockingUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    followingUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    followersUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    likedTweets: [
+      {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Tweet',
       },
-      type: {
-        type: String,
-        enum: {
-          values: ['tweet', 'retweet', 'reply'],
-          message: 'type must be tweet or retweet or reply',
+    ],
+    tweetList: [
+      {
+        tweetId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Tweet',
+        },
+        type: {
+          type: String,
+          enum: {
+            values: ['tweet', 'retweet', 'reply'],
+            message: 'type must be tweet or retweet or reply',
+          },
         },
       },
+    ],
+    notificationList: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Notifications',
+      },
+    ],
+    chatList: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Chat',
+      },
+    ],
+    mentionList: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Tweet',
+      },
+    ],
+    joinedAt: {
+      type: Date,
     },
-  ],
-  notificationList: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Notifications',
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
-  ],
-  chatList: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Chat',
+    passwordChangedAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+    confirmEmailCode: String,
+    confirmEmailExpires: Date,
+    active: {
+      type: Boolean,
+      default: false,
     },
-  ],
-  mentionList: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Tweet',
-    },
-  ],
-  joinedAt: {
-    type: Date,
   },
-  isDeleted: {
-    type: Boolean,
-    default: false,
-  },
-  passwordChangedAt: Date,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-  confirmEmailCode: String,
-  confirmEmailExpires: Date,
-  active: {
-    type: Boolean,
-    default: false,
-  },
-},{strict: false});
+  { strict: false },
+);
 
 // Document MiddleWare
 
@@ -142,14 +144,12 @@ userSchema.pre('save', async function (next) {
   // Hash the password with cost of 12
   this.password = await bcrypt.hash(this.password, 12); //.hash is async
 
-  // Delete passwordConfirm field
-  this.passwordConfirm = undefined;
   next();
 });
 userSchema.pre('save', function (next) {
   if (!this.isModified('password') || this.isNew) return next(); // not changed or the user is new
-  
-  this.passwordChangedAt = Date.now() - 1000; 
+
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
@@ -176,14 +176,13 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   return false;
 };
 userSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString('hex'); 
-  
+  const resetToken = crypto.randomBytes(6).toString('base64');
+  // console.log(resetToken);
+
   this.passwordResetToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-
-  console.log({ resetToken }, this.passwordResetToken);
 
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; //ten minute from now
 
