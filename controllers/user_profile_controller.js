@@ -10,8 +10,8 @@ const mongoose = require('mongoose');
  */
 exports.getUserTweets = async (req, res) => {
   try {
-    const page = req.body.page * 1 || 1;
-    const limit = req.body.count * 1 || 1;
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
     const skip = (page - 1) * limit;
     username = req.params.username;
 
@@ -96,8 +96,8 @@ exports.getUserTweets = async (req, res) => {
 
 exports.getUserLikedTweets = async (req, res) => {
   try {
-    const page = req.body.page * 1 || 1;
-    const limit = req.body.count * 1 || 1;
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
     const skip = (page - 1) * limit;
     username = req.params.username;
 
