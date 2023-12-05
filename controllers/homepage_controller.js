@@ -110,46 +110,49 @@ exports.getFollowingTweets = catchAsync(
       .sort({
         'tweetList.tweetDetails.createdAt': -1,
       })
-      .group({
-        _id: '$_id',
-        tweetList: { $push: '$tweetList' },
-      })
+      .unwind('tweetList.tweetDetails.tweet_owner')
       .project({
-        'tweetList.type': 1,
-        'tweetList.followingUser': {
-          _id: 1,
-          username: 1,
-          nickname: 1,
-          bio: 1,
-          profile_image: '$tweetList.followingUser.profileImage',
-          followers_num: 1,
-          following_num: 1,
-        },
-        'tweetList.tweetDetails': {
-          _id: 1,
-          description: 1,
-          media: 1,
-          referredTweetId: 1,
-          createdAt: 1,
-          likesNum: 1,
-          repliesNum: 1,
-          repostsNum: 1,
-          tweet_owner: {
+        tweetList: {
+          type: 1,
+          followingUser: {
             _id: 1,
             username: 1,
             nickname: 1,
             bio: 1,
-            profile_image: 'tweetList.tweetDetails.tweet_owner.profileImage',
+            profile_image: '$tweetList.followingUser.profileImage',
             followers_num: 1,
             following_num: 1,
           },
+          tweetDetails: {
+            _id: 1,
+            description: 1,
+            media: 1,
+            referredTweetId: 1,
+            createdAt: 1,
+            likesNum: 1,
+            repliesNum: 1,
+            repostsNum: 1,
+            tweet_owner: {
+              _id: 1,
+              username: 1,
+              nickname: 1,
+              bio: 1,
+              profile_image: '$tweetList.tweetDetails.tweet_owner.profileImage',
+              followers_num: 1,
+              following_num: 1,
+            },
+            isFollowed: 1,
+            isLiked: 1,
+            isRtweeted: 1,
+          },
         },
-        'tweetList.isFollowed': 1,
-        'tweetList.isLiked': 1,
-        'tweetList.isRtweeted': 1,
       })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .group({
+        _id: '$_id',
+        tweetList: { $push: '$tweetList' },
+      });
     res.status(200).send(user[0]);
   },
 );
