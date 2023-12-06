@@ -9,23 +9,23 @@ const extractHashtags = async (tweet) => {
   const hashtagWords = words.filter(
     (word, index, self) => /^#/.test(word) && self.indexOf(word) === index,
   );
-  await hashtagWords.forEach(async (hashtagWord) => {
+  for (const hashtagWord of hashtagWords) {
     const hashtag = await Hashtag.findOne({ title: hashtagWord });
-    // Check for this hashtage if exists in database
-    // if exists update its data and save
+    // Check for this hashtag if it exists in the database
+    // if it exists, update its data and save
     if (hashtag) {
       hashtag.count++;
       hashtag.tweet_list.push(tweetId);
-      hashtag.save();
+      await hashtag.save();
     } else {
-      // not exist so create it and save in database
-      new Hashtag({
+      // not exist, so create it and save in the database
+      await new Hashtag({
         title: hashtagWord,
         count: 1,
         tweet_list: [tweetId],
       }).save();
     }
-  });
+  }
 };
 
 module.exports = extractHashtags;
