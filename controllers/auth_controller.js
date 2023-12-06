@@ -425,6 +425,7 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
   currentUser.password = password;
 
   // Activate the User
+  await currentUser.save();
   currentUser.active = true;
   await currentUser.save();
 

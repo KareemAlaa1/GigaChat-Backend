@@ -147,7 +147,7 @@ userSchema.pre('save', async function (next) {
   next();
 });
 userSchema.pre('save', function (next) {
-  if (!this.isModified('password') || this.isNew) return next(); // not changed or the user is new
+  if (!this.active || !this.isModified('password') || this.isNew) return next(); // not changed or the user is new
 
   this.passwordChangedAt = Date.now() - 1000;
   next();
