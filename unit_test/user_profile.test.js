@@ -117,16 +117,17 @@ describe("GET /api/user/profile", () => {
 
   it('responds with 500 and error message when an internal server error occurs', async () => {
 
-    jest.spyOn(User, 'findOne').mockImplementationOnce(() => {
+    jest.spyOn(User, 'aggregate').mockImplementationOnce(() => {
       throw new Error('Simulated error');
     });
 
-    const response = await request(app).get('/api/user/profile/testuser')
+    const response = await request(app).get('/api/user/profile/karreeem_')
     .set('authorization', `Bearer ${token}`);
 
     console.log(response.body.error);
 
     expect(response.status).toBe(500);
+    expect(response.body.error).toBe('Internal Server Error')
   });
 });
 
