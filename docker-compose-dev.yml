@@ -9,5 +9,5 @@ services:
     env_file:
       - config/dev.env
     ports:
-      - 80:3000
+      - 5000:3000
  
