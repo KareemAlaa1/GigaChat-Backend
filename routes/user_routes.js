@@ -2,6 +2,7 @@ const express = require('express');
 const userRouter = express.Router();
 const userController = require('../controllers/user_controller');
 const authController = require('../controllers/auth_controller');
+const searchController = require('../controllers/search_controller');
 const userInteracrionsController = require('../controllers/user_interactions_controller');
 const { upload } = require('../utils/firebase');
 
@@ -145,5 +146,5 @@ userRouter.post(
   authController.protect,
   authController.verifyEmail,
 );
-
+userRouter.get('/search', authController.protect, searchController.search);
 module.exports = userRouter;
