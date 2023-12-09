@@ -1,57 +1,53 @@
-const arrayFeatures = require('./features/arrayFeature');
-const mongooseFeatures = require('./features/mongooseFeature');
-
-// Factory: CarFactory
 class APIFeatures {
   constructor(query, queryString) {
-    switch (queryString.type) {
-      case 'array':
-        return new arrayFeatures(query, queryString);
-      default:
-        return new mongooseFeatures(query, queryString);
+    this.query = query;
+    this.queryString = queryString;
+  }
+
+  filter() {
+    const queryObj = { ...this.queryString };
+    const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    excludedFields.forEach((el) => delete queryObj[el]);
+
+    // 1B) Advanced filtering
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+
+    this.query = this.query.find(JSON.parse(queryStr));
+
+    return this;
+  }
+
+  sort() {
+    if (this.queryString.sort) {
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
+    } else {
+      this.query = this.query.sort('-createdAt');
     }
+
+    return this;
+  }
+
+  limitFields() {
+    if (this.queryString.fields) {
+      const fields = this.queryString.fields.split(',').join(' ');
+      this.query = this.query.select(fields);
+    } else {
+      this.query = this.query.select('-__v');
+    }
+
+    return this;
+  }
+
+  paginate() {
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    this.query = this.query.skip(skip).limit(limit);
+
+    return this;
   }
 }
-
-selectNeededInfoForUser = async (tweet, req) => {
-  req.query.type = 'array';
-  req.query.fields =
-    '_id,username,nickname,bio,profileImage,followingUsers,followersUsers';
-  const users =
-    tweet.retweeter !== undefined
-      ? [tweet.tweetOwner, tweet.retweeter]
-      : [tweet.tweetOwner];
-  const apiFeatures = new APIFeatures(users, req.query).limitFields();
-  tweet.tweetOwner = await apiFeatures.query[0];
-  tweet.retweeter = await apiFeatures.query[1];
-};
-
-selectNeededInfoForTweets = async (tweets, req) => {
-  req.query.type = 'array';
-  req.query.fields =
-    '_id,description,media,type,referredTweetId,likersList,repliesCount,retweetList,likesNum,repliesNum,repostsNum,isLiked,views,createdAt,tweetOwner,retweeter';
-  const apiFeatures = new APIFeatures(tweets, req.query)
-    .sort()
-    .paginate()
-    .limitFields();
-  tweets = await apiFeatures.query;
-  tweets = tweets.map((tweet) => {
-    tweet.isLiked = tweet.likersList.includes(req.user._id.toString());
-    // console.log(req.user.followingUsers)
-
-    tweet.isTweetOwnerFollowed = tweet.tweetOwner.followersUsers.includes(
-      req.user._id.toString(),
-    );
-    tweet.likesNum = tweet.likersList.length;
-    tweet.repliesNum = tweet.repliesCount;
-    tweet.repostsNum = tweet.retweetList.length;
-    return tweet;
-  });
-  return tweets;
-};
-
-module.exports = {
-  APIFeatures,
-  selectNeededInfoForUser,
-  selectNeededInfoForTweets,
-};
+module.exports = APIFeatures;
