@@ -481,9 +481,9 @@ const TweetController = {
             message: 'Can not Find This Tweet',
           });
         } else {
-          const size = parseInt(req.body.count, 10) || 10;
-
-          const skip = ((req.body.page || 1) - 1) * size;
+          const page = req.query.page * 1 || 1;
+          const size = req.query.count * 1 || 1;
+          const skip = (page - 1) * size;
           const repliesList = await Tweet.aggregate([
             {
               $match: {
@@ -551,7 +551,17 @@ const TweetController = {
                     },
                   },
                 ],
-                as: 'tweet_owner',
+                as: 'tweet_owner_list',
+              },
+            },
+            {
+              $addFields: {
+                tweet_owner: { $arrayElemAt: ['$tweet_owner_list', 0] },
+              },
+            },
+            {
+              $project: {
+                tweet_owner_list: 0,
               },
             },
             {
