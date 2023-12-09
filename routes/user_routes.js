@@ -146,5 +146,42 @@ userRouter.post(
   authController.protect,
   authController.verifyEmail,
 );
+
+userRouter.patch(
+  '/:username/mute',
+  authController.protect,
+  userInteracrionsController.mute,
+);
+
+userRouter.patch(
+  '/:username/unmute',
+  authController.protect,
+  userInteracrionsController.unmute,
+);
+
+userRouter.patch(
+  '/:username/block',
+  authController.protect,
+  userInteracrionsController.block,
+);
+
+userRouter.patch(
+  '/:username/unblock',
+  authController.protect,
+  userInteracrionsController.unblock,
+);
+
+userRouter.get(
+  '/blockList',
+  authController.protect,
+  userInteracrionsController.getBlockList,
+);
+
+userRouter.get(
+  '/mutedList',
+  authController.protect,
+  userInteracrionsController.getMuteList,
+);
+
 userRouter.get('/search', authController.protect, searchController.search);
 module.exports = userRouter;

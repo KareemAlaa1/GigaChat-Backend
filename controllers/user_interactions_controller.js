@@ -4,276 +4,559 @@ const Tweet = require('../models/tweet_model');
 const mongoose = require('mongoose');
 
 exports.follow = async (req, res) => {
-    try {
-        const username = req.params.username;
-        const currUser = req.user;
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
 
-        if (!username) return res.status(400).send({ error: "Bad request, send username" });
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
 
-        const followedUser = await User.findOne({ username: username, isDeleted: false, active: true });
+    const followedUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
 
+    if (!followedUser) return res.status(404).send({ error: 'user not found' });
 
-        if (!followedUser) return res.status(404).send({ error: "user not found" });
+    if (currUser._id.toString() === followedUser._id.toString())
+      return res.status(400).send({ error: "You Can't follow your self" });
 
-        if (currUser._id.toString() === followedUser._id.toString())
-            return res.status(400).send({ error: "You Can't follow your self" });
+    if (followedUser.followersUsers.includes(currUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already followed' });
+    if (currUser.followingUsers.includes(followedUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already followed' });
 
-        if (followedUser.followersUsers.includes(currUser._id))
-            return res.status(400).send({ error: "Bad request, User already followed" });
-        if (currUser.followingUsers.includes(followedUser._id))
-            return res.status(400).send({ error: "Bad request, User already followed" });
+    followedUser.followersUsers.push(currUser._id);
+    currUser.followingUsers.push(followedUser._id);
 
+    await followedUser.save();
+    await currUser.save();
 
-
-        followedUser.followersUsers.push(currUser._id);
-        currUser.followingUsers.push(followedUser._id);
-
-        await followedUser.save();
-        await currUser.save();
-
-        return res.status(204).end();
-    } catch (error) {
-        // Handle and log errors
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+    return res.status(204).end();
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 exports.unfollow = async (req, res) => {
-    try {
-        const username = req.params.username;
-        const currUser = req.user;
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
 
-        if (!username) return res.status(400).send({ error: "Bad request" });
+    if (!username) return res.status(400).send({ error: 'Bad request' });
 
-        const followedUser = await User.findOne({ username: username, isDeleted: false, active: true });
+    const followedUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
 
-        if (!followedUser) return res.status(404).send({ error: "user not found" });
+    if (!followedUser) return res.status(404).send({ error: 'user not found' });
 
-        if (currUser._id.toString() === followedUser._id.toString())
-            return res.status(400).send({ error: "You Can't unfollow your self" });
+    if (currUser._id.toString() === followedUser._id.toString())
+      return res.status(400).send({ error: "You Can't unfollow your self" });
 
-        if (!followedUser.followersUsers.includes(currUser._id))
-            return res.status(400).send({ error: "Bad request, User already unfollowed" });
-        if (!currUser.followingUsers.includes(followedUser._id))
-            return res.status(400).send({ error: "Bad request, User already unfollowed" });
+    if (!followedUser.followersUsers.includes(currUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already unfollowed' });
+    if (!currUser.followingUsers.includes(followedUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already unfollowed' });
 
-        followedUser.followersUsers = followedUser.followersUsers.filter(_id => _id.toString() !== currUser._id.toString());
-        currUser.followingUsers = currUser.followingUsers.filter(_id => _id.toString() !== followedUser._id.toString());
+    followedUser.followersUsers = followedUser.followersUsers.filter(
+      (_id) => _id.toString() !== currUser._id.toString(),
+    );
+    currUser.followingUsers = currUser.followingUsers.filter(
+      (_id) => _id.toString() !== followedUser._id.toString(),
+    );
 
-        await followedUser.save();
-        await currUser.save();
+    await followedUser.save();
+    await currUser.save();
 
-        return res.status(204).end();
-    } catch (error) {
-        // Handle and log errors
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+    return res.status(204).end();
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 exports.like = async (req, res) => {
-    try {
+  try {
+    const tweetId = req.params.tweetId;
+    const currUser = req.user;
 
-        const tweetId = req.params.tweetId;
-        const currUser = req.user;
+    if (!tweetId)
+      return res.status(400).send({ error: 'Bad request, send ID' });
 
-        if (!tweetId) return res.status(400).send({ error: "Bad request, send ID" });
+    const likedTweet = await Tweet.findById(tweetId);
 
+    if (!likedTweet || likedTweet.isDeleted)
+      return res.status(404).send({ error: 'tweet not found' });
 
-        const likedTweet = await Tweet.findById(tweetId);
+    if (likedTweet.likersList.includes(currUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already like this tweet' });
+    if (currUser.likedTweets.includes(likedTweet._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already like this tweet' });
 
-        if (!likedTweet || likedTweet.isDeleted) return res.status(404).send({ error: "tweet not found" });
+    likedTweet.likersList.push(currUser._id);
+    currUser.likedTweets.push(likedTweet._id);
 
-        if (likedTweet.likersList.includes(currUser._id))
-            return res.status(400).send({ error: "Bad request, User already like this tweet" });
-        if (currUser.likedTweets.includes(likedTweet._id))
-            return res.status(400).send({ error: "Bad request, User already like this tweet" });
+    await likedTweet.save();
+    await currUser.save();
 
-        likedTweet.likersList.push(currUser._id);
-        currUser.likedTweets.push(likedTweet._id);
-
-        await likedTweet.save();
-        await currUser.save();
-
-        return res.status(204).end();
-    } catch (error) {
-        // Handle and log errors
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+    return res.status(204).end();
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 exports.unlike = async (req, res) => {
-    try {
+  try {
+    const tweetId = req.params.tweetId;
+    const currUser = req.user;
 
-        const tweetId = req.params.tweetId;
-        const currUser = req.user;
+    if (!tweetId)
+      return res.status(400).send({ error: 'Bad request, send ID' });
 
-        if (!tweetId) return res.status(400).send({ error: "Bad request, send ID" });
+    const likedTweet = await Tweet.findById(tweetId);
 
-        const likedTweet = await Tweet.findById(tweetId);
+    if (!likedTweet && likedTweet.isDeleted)
+      return res.status(404).send({ error: 'tweet not found' });
 
-        if (!likedTweet && likedTweet.isDeleted) return res.status(404).send({ error: "tweet not found" });
+    if (!likedTweet.likersList.includes(currUser._id))
+      return res
+        .status(400)
+        .send({ error: "Bad request, User already doesn't like this tweet1" });
+    if (!currUser.likedTweets.includes(likedTweet._id))
+      return res
+        .status(400)
+        .send({ error: "Bad request, User already doesn't like this tweet2" });
 
-        if (!likedTweet.likersList.includes(currUser._id))
-            return res.status(400).send({ error: "Bad request, User already doesn't like this tweet1" });
-        if (!currUser.likedTweets.includes(likedTweet._id))
-            return res.status(400).send({ error: "Bad request, User already doesn't like this tweet2" });
+    likedTweet.likersList = likedTweet.likersList.filter(
+      (_id) => _id.toString() !== currUser._id.toString(),
+    );
+    currUser.likedTweets = currUser.likedTweets.filter(
+      (_id) => _id.toString() !== likedTweet._id.toString(),
+    );
 
-        likedTweet.likersList = likedTweet.likersList.filter(_id => _id.toString() !== currUser._id.toString());
-        currUser.likedTweets = currUser.likedTweets.filter(_id => _id.toString() !== likedTweet._id.toString());
+    await likedTweet.save();
+    await currUser.save();
 
-        await likedTweet.save();
-        await currUser.save();
-
-        return res.status(204).end();
-    } catch (error) {
-        // Handle and log errors
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+    return res.status(204).end();
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 exports.getFollowers = async (req, res) => {
-    try {
-        const username = req.params.username;
-        const currUser = req.user;
-        const page = req.query.page * 1 || 1;
-        const limit = req.query.count * 1 || 1;
-        const skip = (page - 1) * limit;
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
+    const skip = (page - 1) * limit;
 
-        if (!username) return res.status(400).send({ error: "Bad request, send username" });
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
 
-        const targetUser = await User.findOne({ username });
+    const targetUser = await User.findOne({ username });
 
-        if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
-        if (
-          !targetUser.followersUsers ||
-          targetUser.followersUsers === undefined ||
-          targetUser.followersUsers.length == 0
-        )
-          return res.status(200).send({
-            status: 'success',
-            users: []
-        });
-    
+    if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
+    if (
+      !targetUser.followersUsers ||
+      targetUser.followersUsers === undefined ||
+      targetUser.followersUsers.length == 0
+    )
+      return res.status(200).send({
+        status: 'success',
+        users: [],
+      });
 
-        const user = await User.aggregate([
-            {
-                $match: { username: username, isDeleted: false, active: true },
-            }
-        ]).lookup({
-            from: 'users',
-            localField: 'followersUsers',
-            foreignField: '_id',
-            as: 'followersUsers',
-        })
-            .project({
-                followersUsers: 1,
-            })
-            .unwind('followersUsers')
-            .addFields({
-                'followersUsers.isFollowed': {
-                    $in: [currUser._id, '$followersUsers.followersUsers'],
-                },
-                'followersUsers.followers_num': { $size: '$followersUsers.followersUsers' },
-                'followersUsers.followings_num': { $size: '$followersUsers.followingUsers' },
-                'followersUsers.is_curr_user': { $eq: [currUser._id, '$followersUsers._id'] },
-                'followersUsers.profile_image': '$followersUsers.profileImage',
-            })
-            .skip(skip)
-            .limit(limit)
-            .project({
-                'followersUsers._id': 1,
-                'followersUsers.isFollowed': 1,
-                'followersUsers.bio': 1,
-                'followersUsers.username': 1,
-                'followersUsers.profile_image': 1,
-                'followersUsers.nickname': 1,
-                'followersUsers.followers_num': 1,
-                'followersUsers.followings_num': 1,
-                'followersUsers.is_curr_user': 1,
-            });
+    const user = await User.aggregate([
+      {
+        $match: { username: username, isDeleted: false, active: true },
+      },
+    ])
+      .lookup({
+        from: 'users',
+        localField: 'followersUsers',
+        foreignField: '_id',
+        as: 'followersUsers',
+      })
+      .project({
+        followersUsers: 1,
+      })
+      .unwind('followersUsers')
+      .addFields({
+        'followersUsers.isFollowed': {
+          $in: [currUser._id, '$followersUsers.followersUsers'],
+        },
+        'followersUsers.followers_num': {
+          $size: '$followersUsers.followersUsers',
+        },
+        'followersUsers.followings_num': {
+          $size: '$followersUsers.followingUsers',
+        },
+        'followersUsers.is_curr_user': {
+          $eq: [currUser._id, '$followersUsers._id'],
+        },
+        'followersUsers.profile_image': '$followersUsers.profileImage',
+      })
+      .skip(skip)
+      .limit(limit)
+      .project({
+        'followersUsers._id': 1,
+        'followersUsers.isFollowed': 1,
+        'followersUsers.bio': 1,
+        'followersUsers.username': 1,
+        'followersUsers.profile_image': 1,
+        'followersUsers.nickname': 1,
+        'followersUsers.followers_num': 1,
+        'followersUsers.followings_num': 1,
+        'followersUsers.is_curr_user': 1,
+      });
 
-        return res.status(200).send({
-            status: 'success',
-            users: typeof user[0].followersUsers === 'object' ? [user[0].followersUsers] : user[0].followersUsers,
-        });
-    } catch (error) {
-        // Handle and log errors
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+    return res.status(200).send({
+      status: 'success',
+      users:
+        typeof user[0].followersUsers === 'object'
+          ? [user[0].followersUsers]
+          : user[0].followersUsers,
+    });
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 exports.getFollowings = async (req, res) => {
-    try {
-        const username = req.params.username;
-        const currUser = req.user;
-        const page = req.query.page * 1 || 1;
-        const limit = req.query.count * 1 || 1;
-        const skip = (page - 1) * limit;
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
+    const skip = (page - 1) * limit;
 
-        if (!username) return res.status(400).send({ error: "Bad request, send username" });
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
 
-        const targetUser = await User.findOne({ username });
+    const targetUser = await User.findOne({ username });
 
-        if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
-        if (
-          !targetUser.followingUsers ||
-          targetUser.followingUsers === undefined ||
-          targetUser.followingUsers.length == 0
-        )
-          return res.status(200).send({
-            status: 'success',
-            users: []
-        });
+    if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
+    if (
+      !targetUser.followingUsers ||
+      targetUser.followingUsers === undefined ||
+      targetUser.followingUsers.length == 0
+    )
+      return res.status(200).send({
+        status: 'success',
+        users: [],
+      });
 
-        const user = await User.aggregate([
-            {
-                $match: { username: username },
-            }
-        ]).lookup({
-            from: 'users',
-            localField: 'followingUsers',
-            foreignField: '_id',
-            as: 'followingUsers',
-        })
-            .project({
-                followingUsers: 1,
-            })
-            .unwind('followingUsers')
-            .addFields({
-                'followingUsers.isFollowed': {
-                    $in: [currUser._id, '$followingUsers.followersUsers'],
-                },
-                'followingUsers.followers_num': { $size: '$followingUsers.followersUsers' },
-                'followingUsers.followings_num': { $size: '$followingUsers.followingUsers' },
-                'followingUsers.profile_image': '$followingUsers.profileImage',
-                'followingUsers.is_curr_user': { $eq: [currUser._id, '$followingUsers._id'] },
-            })
-            .skip(skip)
-            .limit(limit)
-            .project({
-                'followingUsers._id': 1,
-                'followingUsers.isFollowed': 1,
-                'followingUsers.profile_image': 1,
-                'followingUsers.bio': 1,
-                'followingUsers.username': 1,
-                'followingUsers.nickname': 1,
-                'followingUsers.followers_num': 1,
-                'followingUsers.followings_num': 1,
-                'followingUsers.is_curr_user': 1,
-            });
+    const user = await User.aggregate([
+      {
+        $match: { username: username },
+      },
+    ])
+      .lookup({
+        from: 'users',
+        localField: 'followingUsers',
+        foreignField: '_id',
+        as: 'followingUsers',
+      })
+      .project({
+        followingUsers: 1,
+      })
+      .unwind('followingUsers')
+      .addFields({
+        'followingUsers.isFollowed': {
+          $in: [currUser._id, '$followingUsers.followersUsers'],
+        },
+        'followingUsers.followers_num': {
+          $size: '$followingUsers.followersUsers',
+        },
+        'followingUsers.followings_num': {
+          $size: '$followingUsers.followingUsers',
+        },
+        'followingUsers.profile_image': '$followingUsers.profileImage',
+        'followingUsers.is_curr_user': {
+          $eq: [currUser._id, '$followingUsers._id'],
+        },
+      })
+      .skip(skip)
+      .limit(limit)
+      .project({
+        'followingUsers._id': 1,
+        'followingUsers.isFollowed': 1,
+        'followingUsers.profile_image': 1,
+        'followingUsers.bio': 1,
+        'followingUsers.username': 1,
+        'followingUsers.nickname': 1,
+        'followingUsers.followers_num': 1,
+        'followingUsers.followings_num': 1,
+        'followingUsers.is_curr_user': 1,
+      });
 
-        return res.status(200).send({
-            status: 'success',
-            users: typeof user[0].followingUsers === 'object' ? [user[0].followingUsers] : user[0].followingUsers,
-        });
-    } catch (error) {
-        // Handle and log errors
-        console.error(error.message);
-        res.status(500).send({ error: 'Internal Server Error' });
-    }
+    return res.status(200).send({
+      status: 'success',
+      users:
+        typeof user[0].followingUsers === 'object'
+          ? [user[0].followingUsers]
+          : user[0].followingUsers,
+    });
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.mute = async (req, res) => {
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
+
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
+
+    const mutedUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
+
+    if (!mutedUser) return res.status(404).send({ error: 'user not found' });
+
+    if (currUser._id.toString() === mutedUser._id.toString())
+      return res.status(400).send({ error: "You Can't mute yourself" });
+
+    if (currUser.mutedUsers.includes(mutedUser._id))
+      return res.status(400).send({ error: 'Bad request, User already muted' });
+
+    currUser.mutedUsers.push(mutedUser._id);
+
+    await currUser.save();
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.unmute = async (req, res) => {
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
+
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
+
+    const mutedUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
+
+    if (!mutedUser) return res.status(404).send({ error: 'user not found' });
+
+    if (currUser._id.toString() === mutedUser._id.toString())
+      return res.status(400).send({ error: "You Can't unmute yourself" });
+
+    if (!currUser.mutedUsers.includes(mutedUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already not muted' });
+
+    currUser.mutedUsers = currUser.mutedUsers.filter(
+      (_id) => _id.toString() !== mutedUser._id.toString(),
+    );
+    await currUser.save();
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.block = async (req, res) => {
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
+
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
+
+    const blockedUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
+
+    if (!blockedUser) return res.status(404).send({ error: 'user not found' });
+
+    if (currUser._id.toString() === blockedUser._id.toString())
+      return res.status(400).send({ error: "You Can't block yourself" });
+
+    if (currUser.blockingUsers.includes(blockedUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already blocked' });
+
+    currUser.blockingUsers.push(blockedUser._id);
+
+    await currUser.save();
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.unblock = async (req, res) => {
+  try {
+    const username = req.params.username;
+    const currUser = req.user;
+
+    if (!username)
+      return res.status(400).send({ error: 'Bad request, send username' });
+
+    const blockedUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
+
+    if (!blockedUser) return res.status(404).send({ error: 'user not found' });
+
+    if (currUser._id.toString() === blockedUser._id.toString())
+      return res.status(400).send({ error: "You Can't unblock yourself" });
+
+    if (!currUser.blockingUsers.includes(blockedUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User already not blocked' });
+
+    currUser.blockingUsers = currUser.blockingUsers.filter(
+      (_id) => _id.toString() !== blockedUser._id.toString(),
+    );
+    await currUser.save();
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getBlockList = async (req, res) => {
+  try {
+    const currUser = req.user;
+
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
+    const skip = (page - 1) * limit;
+
+    const blockList = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(currUser._id) },
+      },
+    ])
+      .lookup({
+        from: 'users',
+        localField: 'blockingUsers',
+        foreignField: '_id',
+        as: 'blockedUsers',
+      })
+      .unwind('blockedUsers')
+      .project({
+        blockedUsers: 1,
+      })
+      .project({
+        _id: 0,
+        id: '$blockedUsers._id',
+        username: '$blockedUsers.username',
+        nickname: '$blockedUsers.nickname',
+        bio: '$blockedUsers.bio',
+        profile_image: '$blockedUsers.profileImage',
+        followers_num: { $size: '$blockedUsers.followersUsers' },
+        following_num: { $size: '$blockedUsers.followingUsers' },
+      })
+      .skip(skip)
+      .limit(limit);
+    res.status(200).json({
+      status: 'Blocked Users Get Success',
+      data: blockList,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getMuteList = async (req, res) => {
+  try {
+    const currUser = req.user;
+
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.count * 1 || 1;
+    const skip = (page - 1) * limit;
+
+    const muteList = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(currUser._id) },
+      },
+    ])
+      .lookup({
+        from: 'users',
+        localField: 'mutedUsers',
+        foreignField: '_id',
+        as: 'mutedUsers',
+      })
+      .unwind('mutedUsers')
+      .project({
+        mutedUsers: 1,
+      })
+      .project({
+        _id: 0,
+        id: '$mutedUsers._id',
+        username: '$mutedUsers.username',
+        nickname: '$mutedUsers.nickname',
+        bio: '$mutedUsers.bio',
+        profile_image: '$mutedUsers.profileImage',
+        followers_num: { $size: '$mutedUsers.followersUsers' },
+        following_num: { $size: '$mutedUsers.followingUsers' },
+        isFollowed: { $in: [currUser._id, '$mutedUsers.followersUsers'] },
+      })
+      .skip(skip)
+      .limit(limit);
+    res.status(200).json({
+      status: 'Muted Users Get Success',
+      data: muteList,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
