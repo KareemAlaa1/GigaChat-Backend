@@ -79,6 +79,9 @@ exports.getUserTweets = async (req, res) => {
             },
             isLiked: { $in: ['$_id', '$tweetList.tweet.likersList'] },
             isRetweeted: { $in: ['$_id', '$tweetList.tweet.retweetList'] },
+            isFollowed: {
+              $in: ['$_id', '$tweetList.tweet.tweet_owner.followersUsers'],
+            },
           },
         },
       })
@@ -168,6 +171,9 @@ exports.getUserLikedTweets = async (req, res) => {
           },
           isLiked: 'true',
           isRetweeted: { $in: ['$_id', '$likedTweets.retweetList'] },
+          isFollowed: {
+            $in: ['$_id', '$likedTweets.tweet_owner.followersUsers'],
+          },
         },
       })
       .group({
@@ -176,7 +182,6 @@ exports.getUserLikedTweets = async (req, res) => {
       });
 
     res.send({ status: 'success', posts: tweets[0].likedTweets });
-
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
