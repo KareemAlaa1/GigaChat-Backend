@@ -118,10 +118,10 @@ exports.signUp = catchAsync(async (req, res, next) => {
 });
 
 exports.login = catchAsync(async (req, res, next) => {
-  const { email, username, password } = req.body;
+  const { query, password } = req.body;
 
   // 1) Check if email and password exist
-  if (!password || (!email && !username)) {
+  if (!password || !query) {
     return next(
       new AppError('Please provide email or username and password!', 400),
     );
@@ -129,16 +129,16 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 2) Check if user exists && password is correct
   let user;
-  if (email) {
+  if (validator.isEmail(query)) {
     // Check email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
+    // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // if (!emailRegex.test(email)) {
+    //   return res.status(400).json({ error: 'Invalid email format' });
+    // }
 
-    user = await User.findOne({ email }).select('+password');
+    user = await User.findOne({ email:query }).select('+password');
   } else {
-    user = await User.findOne({ username }).select('+password');
+    user = await User.findOne({ username:query }).select('+password');
   }
 
   if (!user || !(await user.correctPassword(password, user.password))) {
