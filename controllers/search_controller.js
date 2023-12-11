@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/user_model');
-const Hashtag = require('../models/hashtag_model');
+User.collection.createIndex({ username: 'text' });
 
 /**
  * Description :
@@ -90,35 +90,10 @@ const searchUser = async (req, res, next) => {
     .project(
       'username nickname bio profile_image followers_num following_num isFollowedbyMe isFollowingMe',
     );
-  res.status(200).send({ users });
-};
-
-/**
- * Description :
- * * get hashtags that match the search word
- * Search Criteria :
- * * fully and partially matching hashtags
- * Ranking Criteria :
- * how much popular the hashtag is
- */
-const searchHashtag = async (req, res, next) => {
-  const page = req.query.page * 1 || 1;
-  const limit = req.query.count * 1 || 1;
-  const skip = (page - 1) * limit;
-  const hashtags = await Hashtag.aggregate([
-    {
-      $match: {
-        title: {
-          $regex: new RegExp(req.searchWord, 'i'), // 'i' for case-insensitive matching
-        },
-      },
-    },
-  ])
-    .skip(skip)
-    .limit(limit)
-    .sort('-count')
-    .project('title');
-  res.status(200).send({ hashtags });
+  res.status(200).send({
+    users: users,
+  });
 };
 
 const searchTweets = async (req, res, next) => {};
+const searchHashtag = async (req, res, next) => {};
