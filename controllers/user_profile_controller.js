@@ -69,10 +69,15 @@ exports.getUserTweets = async (req, res) => {
                 $size: '$tweetList.tweet.tweet_owner.followingUsers',
               },
             },
-            isLiked: { $in: ['$_id', '$tweetList.tweet.likersList'] },
-            isRetweeted: { $in: ['$_id', '$tweetList.tweet.retweetList'] },
+            isLiked: { $in: [req.user._id, '$tweetList.tweet.likersList'] },
+            isRetweeted: {
+              $in: [req.user._id, '$tweetList.tweet.retweetList'],
+            },
             isFollowed: {
-              $in: ['$_id', '$tweetList.tweet.tweet_owner.followersUsers'],
+              $in: [
+                req.user._id,
+                '$tweetList.tweet.tweet_owner.followersUsers',
+              ],
             },
           },
         },
@@ -157,10 +162,10 @@ exports.getUserLikedTweets = async (req, res) => {
               $size: '$likedTweets.tweet_owner.followingUsers',
             },
           },
-          isLiked: 'true',
-          isRetweeted: { $in: ['$_id', '$likedTweets.retweetList'] },
+          isLiked: { $in: [req.user._id, '$likedTweets.likersList'] },
+          isRetweeted: { $in: [req.user._id, '$likedTweets.retweetList'] },
           isFollowed: {
-            $in: ['$_id', '$likedTweets.tweet_owner.followersUsers'],
+            $in: [req.user._id, '$likedTweets.tweet_owner.followersUsers'],
           },
         },
       })
