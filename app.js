@@ -13,7 +13,15 @@ const mediaRouter = require('./routes/media_routes');
 const googleRouter = require('./routes/google_router');
 const passportSetup = require("./google-passport");
 const passport = require("passport");
-const {app} = require('./app_server');
+require('./app_server');
+const express = require("express");
+const app = express();
+const http = require("http");
+const cors = require("cors");
+
+app.use(cors());
+app.use(express.json());
+
 // MIDDLEWARES
 
 
