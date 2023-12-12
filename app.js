@@ -1,9 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config({ path: './config/dev.env' });
 const cookieSession = require("cookie-session");
-const express = require('express');
 const morgan = require('morgan');
-const cors = require('cors');
 const AppError = require('./utils/app_error');
 const globalErrorHandler = require('./controllers/error_controller');
 const userRouter = require('./routes/user_routes');
@@ -15,15 +13,21 @@ const mediaRouter = require('./routes/media_routes');
 const googleRouter = require('./routes/google_router');
 const passportSetup = require("./google-passport");
 const passport = require("passport");
+require('./app_server');
+const express = require("express");
 const app = express();
-// MIDDLEWARES
+const http = require("http");
+const cors = require("cors");
 
 app.use(cors());
+app.use(express.json());
+
+// MIDDLEWARES
+
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
-app.use(express.json());
 // app.use(express.static(`${__dirname}/public`));// for static data in public
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
