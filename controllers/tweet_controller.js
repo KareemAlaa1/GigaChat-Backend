@@ -571,12 +571,108 @@ const TweetController = {
               },
             },
           ]);
-          const data = repliesList[0].paginatedResults;
+          let data = repliesList[0].paginatedResults;
           const totalCount =
             repliesList[0].totalCount.length > 0
               ? repliesList[0].totalCount[0].count
               : 0;
 
+          data = await Promise.all(
+            data.map(async (el) => {
+              const replyOfReply = await Tweet.aggregate([
+                {
+                  $match: {
+                    type: 'reply',
+                    referredReplyId: new mongoose.Types.ObjectId(el.id),
+                  },
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    referredTweetId: '$referredReplyId',
+                    description: 1,
+                    id: '$_id',
+                    userId: 1,
+                    media: 1,
+                    type: 1,
+                    creation_time: '$createdAt',
+                    viewsNum: '$views',
+                    repliesNum: '$repliesCount',
+                    repostsNum: { $size: '$retweetList' },
+                    likesNum: { $size: '$likersList' },
+                    likersList: 1,
+                    retweetList: 1,
+                  },
+                },
+                {
+                  $addFields: {
+                    isLiked: {
+                      $in: [req.user._id, '$likersList'],
+                    },
+                    isRetweeted: {
+                      $in: [req.user._id, '$retweetList'],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    likersList: 0,
+                    retweetList: 0,
+                  },
+                },
+                {
+                  $lookup: {
+                    from: 'users',
+                    let: { userId: '$userId' }, // Define a variable to store the value of the userId field
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: { $eq: ['$_id', '$$userId'] }, // Match documents where _id equals the userId variable
+                        },
+                      },
+                      {
+                        $project: {
+                          _id: 0,
+                          id: '$_id',
+                          username: 1,
+                          nickname: 1,
+                          bio: 1,
+                          profile_image: '$profileImage',
+                          followers_num: { $size: '$followersUsers' },
+                          following_num: { $size: '$followingUsers' },
+                          isFollowed: {
+                            $in: [req.user._id, '$followersUsers'],
+                          },
+                        },
+                      },
+                    ],
+                    as: 'tweet_owner_list',
+                  },
+                },
+                {
+                  $addFields: {
+                    tweet_owner: { $arrayElemAt: ['$tweet_owner_list', 0] },
+                  },
+                },
+                {
+                  $project: {
+                    tweet_owner_list: 0,
+                  },
+                },
+                {
+                  $sort: {
+                    likesNum: -1, // 1 for ascending, -1 for descending
+                  },
+                },
+                {
+                  $limit: 1,
+                },
+              ]);
+              el.reply = replyOfReply.length > 0 ? replyOfReply[0] : {};
+              console.log(replyOfReply);
+              return el;
+            }),
+          );
           res.status(200);
           res.json({
             status: 'Success',
