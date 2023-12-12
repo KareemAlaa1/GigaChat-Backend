@@ -10,4 +10,5 @@ services:
       - config/dev.env
     ports:
       - 5000:3000
+      - 6000:3002
  
