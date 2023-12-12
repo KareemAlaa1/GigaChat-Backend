@@ -71,7 +71,7 @@ exports.getUserTweets = async (req, res) => {
             },
             isLiked: { $in: [req.user._id, '$tweetList.tweet.likersList'] },
             isRetweeted: {
-              $in: [req.user._id, '$tweetList.tweet.retweetList'],
+              $in: ['$_id', '$tweetList.tweet.retweetList'],
             },
             isFollowed: {
               $in: [
@@ -163,7 +163,7 @@ exports.getUserLikedTweets = async (req, res) => {
             },
           },
           isLiked: { $in: [req.user._id, '$likedTweets.likersList'] },
-          isRetweeted: { $in: [req.user._id, '$likedTweets.retweetList'] },
+          isRetweeted: { $in: ['$_id', '$likedTweets.retweetList'] },
           isFollowed: {
             $in: [req.user._id, '$likedTweets.tweet_owner.followersUsers'],
           },
