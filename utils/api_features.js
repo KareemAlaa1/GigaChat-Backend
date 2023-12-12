@@ -39,15 +39,23 @@ class APIFeatures {
 
     return this;
   }
-
-  paginate() {
-    const page = this.queryString.page * 1 || 1;
-    const limit = this.queryString.limit * 1 || 100;
-    const skip = (page - 1) * limit;
-
-    this.query = this.query.skip(skip).limit(limit);
-
-    return this;
-  }
 }
-module.exports = APIFeatures;
+exports.paginate = (tweets, req) => {
+  const page = req.query.page * 1 || 1;
+  const limit = req.query.count * 1 || 1;
+  const skip = (page - 1) * limit;
+
+  const totalTweetNum = tweets.length;
+
+  console.log('page :', page);
+  console.log('count :', limit);
+  console.log('totalTweetNum: ', totalTweetNum);
+  console.log('skip: ', skip);
+  if (totalTweetNum <= skip || tweets.length == 0) {
+    throw new Error('This page has no tweets');
+  }
+  const paginatedTweets = tweets.slice(skip, skip + limit);
+  return paginatedTweets;
+};
+
+// module.exports = APIFeatures;

@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/user_model');
 const mongoose = require('mongoose');
+const { paginate } = require('../utils/api_features');
 
 /**
  *
@@ -10,20 +11,11 @@ const mongoose = require('mongoose');
  */
 exports.getUserTweets = async (req, res) => {
   try {
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 1;
-    const skip = (page - 1) * limit;
     username = req.params.username;
 
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
-    if (
-      !user.tweetList ||
-      user.tweetList === undefined ||
-      user.tweetList.length == 0
-    )
-      return res.status(200).send({ posts: [] });
 
     const tweets = await User.aggregate([
       {
@@ -49,8 +41,8 @@ exports.getUserTweets = async (req, res) => {
         'tweetList.tweet.tweet_owner.active': true,
         'tweetList.tweet.tweet_owner.isDeleted': false,
       })
-      .skip(skip)
-      .limit(limit)
+      // .skip(skip)
+      // .limit(limit)
       .unwind('tweetList.tweet.tweet_owner')
       .project({
         tweetList: {
@@ -89,7 +81,15 @@ exports.getUserTweets = async (req, res) => {
         _id: '$_id',
         tweetList: { $push: '$tweetList.tweet' },
       });
-    res.send({ status: 'success', posts: tweets[0].tweetList });
+    try {
+      if (tweets.length == 0)
+        return res.status(404).send({ error: 'This user has no tweets' });
+      const paginatedTweets = paginate(tweets[0].tweetList, req, res);
+      res.send({ status: 'success', posts: paginatedTweets });
+    } catch (error) {
+      console.log(error.message);
+      res.status(404).send({ error: error.message });
+    }
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
@@ -99,21 +99,11 @@ exports.getUserTweets = async (req, res) => {
 
 exports.getUserLikedTweets = async (req, res) => {
   try {
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 1;
-    const skip = (page - 1) * limit;
     username = req.params.username;
 
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
-
-    if (
-      !user.likedTweets ||
-      user.likedTweets === undefined ||
-      user.likedTweets.length == 0
-    )
-      return res.status(200).send({ posts: [] });
 
     const tweets = await User.aggregate([
       {
@@ -142,8 +132,6 @@ exports.getUserLikedTweets = async (req, res) => {
         'likedTweets.tweet_owner.active': true,
         'likedTweets.tweet_owner.isDeleted': false,
       })
-      .skip(skip)
-      .limit(limit)
       .unwind('likedTweets.tweet_owner')
       .project({
         likedTweets: {
@@ -181,7 +169,15 @@ exports.getUserLikedTweets = async (req, res) => {
         likedTweets: { $push: '$likedTweets' },
       });
 
-    res.send({ status: 'success', posts: tweets[0].likedTweets });
+    try {
+      if (tweets.length == 0)
+        return res.status(404).send({ error: 'This user has no liked tweets' });
+      const paginatedTweets = paginate(tweets[0].likedTweets, req);
+      res.send({ status: 'success', posts: tweets });
+    } catch (error) {
+      console.log(error.message);
+      res.status(404).send({ error: error.message });
+    }
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
