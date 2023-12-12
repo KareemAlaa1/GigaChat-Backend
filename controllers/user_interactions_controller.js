@@ -425,6 +425,21 @@ exports.block = async (req, res) => {
 
     currUser.blockingUsers.push(blockedUser._id);
 
+    currUser.followersUsers = currUser.followersUsers.filter(
+      (_id) => _id.toString() !== blockedUser._id.toString(),
+    );
+    currUser.followingUsers = currUser.followingUsers.filter(
+      (_id) => _id.toString() !== blockedUser._id.toString(),
+    );
+
+    blockedUser.followersUsers = blockedUser.followersUsers.filter(
+      (_id) => _id.toString() !== currUser._id.toString(),
+    );
+    blockedUser.followingUsers = blockedUser.followingUsers.filter(
+      (_id) => _id.toString() !== currUser._id.toString(),
+    );
+
+    await blockedUser.save();
     await currUser.save();
 
     return res.status(204).end();
