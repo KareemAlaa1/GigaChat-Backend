@@ -169,6 +169,9 @@ exports.getFollowingTweets = async (req, res) => {
         foreignField: '_id',
         as: 'tweetList.tweetDetails.tweet_owner',
       })
+      .match({
+        $expr: { $in: ['$tweetList.type', ['tweet', 'retweet']] },
+      })
       .unwind('tweetList.tweetDetails.tweet_owner')
       .addFields({
         'tweetList.tweetDetails.tweet_owner.following_num': {
