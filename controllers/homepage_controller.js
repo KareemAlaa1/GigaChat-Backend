@@ -1,29 +1,110 @@
 const mongoose = require('mongoose');
 const User = require('../models/user_model');
 const catchAsync = require('../utils/catch_async');
+const { paginate } = require('../utils/api_features');
 
 /**
- * [1] : get user by id
- * [2] : populate its followings
- * [3] : populate tweet list of each following (each tweet has id and type)
- * [4] : populate type of each tweet in each tweetlist
- * [5] : group all tweets and sort them by creation date
- * [6] : know if the login user follow tweet Owner
- * [7] : know if the login user liked tweet
+ *
+ * @param {*} reqUser
+ * @returns userTweets
+ *
+ * Description :
+ * helper function return user tweets within 2 hours
+ *
+ */
+const getLatestUserTweet = async (reqUser) => {
+  let twoHoursAgo = new Date();
+  twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+
+  const userTweets = await User.aggregate([
+    {
+      $match: { _id: new mongoose.Types.ObjectId(reqUser._id) },
+    },
+  ])
+    .unwind('tweetList')
+    .lookup({
+      from: 'tweets',
+      localField: 'tweetList.tweetId',
+      foreignField: '_id',
+      as: 'tweetDetails',
+    })
+    .unwind('tweetDetails')
+    .match({
+      'tweetDetails.createdAt': { $gte: new Date(twoHoursAgo.toISOString()) },
+    })
+    .lookup({
+      from: 'users',
+      localField: 'tweetDetails.userId',
+      foreignField: '_id',
+      as: 'tweetDetails.tweet_owner',
+    })
+    .unwind('tweetDetails.tweet_owner')
+    .project({
+      _id: 0,
+      type: '$tweetList.type',
+      followingUser: {
+        _id: '$_id',
+        nickname: '$nickname',
+        username: '$username',
+        following_num: { $size: '$followingUsers' },
+        followers_num: { $size: '$followersUsers' },
+        profile_image: '$profileImage',
+      },
+      tweetDetails: {
+        _id: 1,
+        description: 1,
+        media: 1,
+        referredTweetId: 1,
+        createdAt: 1,
+        likesNum: 1,
+        repliesNum: '$tweetDetails.repliesCount',
+        repostsNum: { $size: '$tweetDetails.retweetList' },
+        tweet_owner: {
+          _id: 1,
+          username: 1,
+          nickname: 1,
+          bio: 1,
+          profile_image: '$tweetDetails.tweet_owner.profileImage',
+          followers_num: { $size: '$tweetDetails.tweet_owner.followingUsers' },
+          following_num: { $size: '$tweetDetails.tweet_owner.followersUsers' },
+        },
+      },
+      isFollowed: { $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'] },
+      isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
+      isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
+    })
+    .sort({
+      'tweetDetails.createdAt': -1,
+      'tweetDetails.likesNum': -1,
+      'tweetDetails.repliesNum': -1,
+      'tweetDetails.repostsNum': -1,
+    });
+  return userTweets;
+};
+
+/**
+ * @param {*} req
+ * @param {*} res
+ * @returns userTweets
  */
 
-exports.getFollowingTweets = catchAsync(
-  async (
-    req,
-    res,
-    next = (e) => {
-      res.send(500).send(e);
-    },
-  ) => {
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 1;
-    const skip = (page - 1) * limit;
+/**
+ * Description :
+ * 1- get following tweets of the user
+ * 2- get latest tweets of the user (within 2 hours)
+ * 3- not retrieving the muted users tweets
+ * 3- apply pagination
+ *
+ * Ranking Tweets Criteria :
+ * 1- user latest tweets
+ * 2- creation time
+ * 3- number of likes
+ * 4- number of replies
+ * 5- number of reposts
+ *  */
 
+exports.getFollowingTweets = async (req, res) => {
+  try {
     const user = await User.aggregate([
       {
         $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
@@ -36,6 +117,9 @@ exports.getFollowingTweets = catchAsync(
         as: 'followingUsers',
       })
       .unwind('followingUsers')
+      .match({
+        $expr: { $not: { $in: ['$followingUsers._id', '$mutedUsers'] } },
+      })
       .unwind('followingUsers.tweetList')
       .addFields({
         'followingUsers.tweetList.followingUserId': '$followingUsers._id',
@@ -106,9 +190,6 @@ exports.getFollowingTweets = catchAsync(
         },
       })
       .unwind('tweetList')
-      .sort({
-        'tweetList.tweetDetails.createdAt': -1,
-      })
       .unwind('tweetList.tweetDetails.tweet_owner')
       .project({
         tweetList: {
@@ -146,12 +227,34 @@ exports.getFollowingTweets = catchAsync(
           isRtweeted: 1,
         },
       })
-      .skip(skip)
-      .limit(limit)
+      .sort({
+        'tweetList.tweetDetails.createdAt': -1,
+        'tweetList.tweetDetails.likesNum': -1,
+        'tweetList.tweetDetails.repliesNum': -1,
+        'tweetList.tweetDetails.repostsNum': -1,
+      })
       .group({
         _id: '$_id',
         tweetList: { $push: '$tweetList' },
       });
-    res.status(200).send(user[0]);
-  },
-);
+    let tweets = await getLatestUserTweet(req.user);
+    tweets.push(...user[0].tweetList);
+    try {
+      if (tweets.length == 0)
+        return res
+          .status(404)
+          .send({ error: 'This user has no following tweets' });
+      const paginatedTweets = paginate(tweets, req);
+      return res
+        .status(200)
+        .send({ status: 'success', tweetList: paginatedTweets });
+    } catch (error) {
+      console.log(error.message);
+      return res.status(404).send({ error: error.message });
+    }
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
