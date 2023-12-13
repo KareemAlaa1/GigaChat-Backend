@@ -1,21 +1,20 @@
 // Run the socket server: node index.js
 const express = require("express");
 const app = express();
-const http = require("http");
+// const http = require("http");
+const socketio = require("socket.io");
 const cors = require("cors");
-
 app.use(cors());
-app.use(express.json());
 
-const { Server } = require("socket.io");
+// const server = http.createServer(app);
 
-
-
-const server = http.createServer(app);
+const server = app.listen(3002, () => {
+  console.log("SERVER IS RUNNING");
+});
 
 const arr = [];
 
-const io = new Server(server, {
+const io = socketio(server, {
   cors: {
     origin: (origin, callback) => {
       // Allow any origin
@@ -32,6 +31,9 @@ const map = {
   1: "id1xyz",
   2: "id2xyz",
 }
+
+
+
 
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
@@ -60,10 +62,6 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("user disconnected: ", socket.id);
   });
-});
-
-server.listen(3002, () => {
-  console.log("SERVER IS RUNNING");
 });
 
 module.exports = app;
