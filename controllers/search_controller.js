@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const User = require('../models/user_model');
 const Hashtag = require('../models/hashtag_model');
 
+const escape = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, ''); // $& means the whole matched
+
 /**
  * Description :
  * search for words in tweets or
@@ -66,7 +68,7 @@ const searchUser = async (req, res, next) => {
       {
         $match: {
           username: {
-            $regex: new RegExp(req.searchWord, 'i'), // 'i' for case-insensitive matching
+            $regex: new RegExp(escape(req.searchWord), 'i'), // 'i' for case-insensitive matching
           },
         },
       },
@@ -122,7 +124,7 @@ const searchHashtag = async (req, res, next) => {
       {
         $match: {
           title: {
-            $regex: new RegExp(req.searchWord, 'i'), // 'i' for case-insensitive matching
+            $regex: new RegExp(escape(req.searchWord), 'i'), // 'i' for case-insensitive matching
           },
         },
       },
