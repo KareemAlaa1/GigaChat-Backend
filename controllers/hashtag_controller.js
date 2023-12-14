@@ -54,11 +54,6 @@ exports.getHastagTweets = async (req, res) => {
         message: 'No Tweets Found For This Hashtag',
       });
 
-    if (skip + limit > found.tweet_list.length)
-      res.status(400).json({
-        status: 'fail',
-        message: 'Invalid page and count value',
-      });
 
     const hashtag = await Hashtag.aggregate([
       { $match: { title: hashtagTitle } },
