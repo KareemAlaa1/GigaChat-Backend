@@ -83,7 +83,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
     profileImage:
-      'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2',
+      'https://cdn.discordapp.com/attachments/972107703973457930/1184983163399852032/image.png?ex=658df492&is=657b7f92&hm=d17faa50f2cfb592762e714603e9ba875676855e2be97902ad752306dbc24a42&',
   });
   // 2) Generate random code
   const confirmCode = newUser.createConfirmCode();

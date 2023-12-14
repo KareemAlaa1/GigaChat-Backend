@@ -160,6 +160,8 @@ exports.getProfile = async (req, res) => {
       is_curr_user_blocked: wantedUser.isCurrUserBlocked,
       is_wanted_user_followed: wantedUser.isWantedUserFollowed,
       is_curr_user: isCurruser,
+      num_of_posts: wantedUser.tweetList.length,
+      num_of_likes: wantedUser.likedTweets.length
     };
 
     return res.status(200).send(result);
