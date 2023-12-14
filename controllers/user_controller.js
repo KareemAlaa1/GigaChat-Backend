@@ -120,6 +120,8 @@ exports.getProfile = async (req, res) => {
           joinedAt: 1,
           blockingUsers: 1,
           mutedUsers: 1,
+          num_of_posts : { $size: '$tweetList' },
+          num_of_likes: { $size: '$likedTweets' },
           followings_num: { $size: '$followingUsers' },
           followers_num: { $size: '$followersUsers' },
           isCurrUserBlocked: {
@@ -128,6 +130,7 @@ exports.getProfile = async (req, res) => {
           isWantedUserFollowed: {
             $in: [currUser._id, '$followersUsers'],
           },
+
         },
       },
     ]);
@@ -160,6 +163,8 @@ exports.getProfile = async (req, res) => {
       is_curr_user_blocked: wantedUser.isCurrUserBlocked,
       is_wanted_user_followed: wantedUser.isWantedUserFollowed,
       is_curr_user: isCurruser,
+      num_of_posts: wantedUser.num_of_posts,
+      num_of_likes: wantedUser.num_of_likes
     };
 
     return res.status(200).send(result);
