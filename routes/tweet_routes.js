@@ -2,6 +2,7 @@ const express = require('express');
 const tweetController = require('../controllers/tweet_controller');
 const authController = require('../controllers/auth_controller');
 const {like, unlike} = require('../controllers/user_interactions_controller');
+const searchController = require('../controllers/search_controller');
 
 const tweetRouter = express.Router();
 
@@ -24,5 +25,6 @@ tweetRouter.post('/unlike/:tweetId', authController.protect, unlike);
 
 tweetRouter.patch('/unretweet/:tweetId', authController.protect,tweetController.undoRetweetTweet,);
 
+tweetRouter.get('/search', authController.protect, searchController.search);
 
 module.exports = tweetRouter;
