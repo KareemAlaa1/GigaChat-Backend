@@ -40,22 +40,22 @@ class APIFeatures {
     return this;
   }
 }
-exports.paginate = (tweets, req) => {
+exports.paginate = (elements, req) => {
   const page = req.query.page * 1 || 1;
   const limit = req.query.count * 1 || 1;
   const skip = (page - 1) * limit;
 
-  const totalTweetNum = tweets.length;
+  const totalElementsNum = elements.length;
 
   console.log('page :', page);
   console.log('count :', limit);
-  console.log('totalTweetNum: ', totalTweetNum);
+  console.log('totalElementNum: ', totalElementsNum);
   console.log('skip: ', skip);
-  if (totalTweetNum <= skip || tweets.length == 0) {
-    throw new Error('This page has no tweets');
+  if (totalElementsNum <= skip || elements.length == 0) {
+    throw new Error('No content is found in this page ');
   }
-  const paginatedTweets = tweets.slice(skip, skip + limit);
-  return paginatedTweets;
+  const paginatedElements = elements.slice(skip, skip + limit);
+  return paginatedElements;
 };
 
 // module.exports = APIFeatures;
