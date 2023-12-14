@@ -8,6 +8,8 @@ const tweetRouter = express.Router();
 
 tweetRouter.post('/', authController.protect, tweetController.addTweet);
 
+tweetRouter.get('/search', authController.protect, searchController.search);
+
 tweetRouter.get('/:tweetId', authController.protect, tweetController.getTweet);
 
 tweetRouter.delete('/:tweetId', authController.protect,tweetController.deleteTweet);
@@ -25,6 +27,5 @@ tweetRouter.post('/unlike/:tweetId', authController.protect, unlike);
 
 tweetRouter.patch('/unretweet/:tweetId', authController.protect,tweetController.undoRetweetTweet,);
 
-tweetRouter.get('/search', authController.protect, searchController.search);
 
 module.exports = tweetRouter;
