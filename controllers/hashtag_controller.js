@@ -99,17 +99,11 @@ exports.getHastagTweets = catchAsync(
       .unwind('$tweet_list.tweet_owner')
       .addFields({
         'tweet_list.isFollowed': {
-          $in: ['$req.user._id', '$tweet_list.tweet_owner.followersUsers'],
+          $in: [req.user._id, '$tweet_list.tweet_owner.followersUsers'],
         },
         'tweet_list.isLiked': {
-          $in: ['$req.user._id', '$tweet_list.likersList'],
+          $in: [req.user._id, '$tweet_list.likersList'],
         },
-      })
-      .group({
-        _id: '$_id',
-        title: { $first: '$title' },
-        count: { $first: '$count' },
-        tweet_list: { $push: '$tweet_list' },
       })
       .project({
         tweet_list: {
@@ -126,13 +120,23 @@ exports.getHastagTweets = catchAsync(
             username: 1,
             nickname: 1,
             bio: 1,
-            profile_image: 1,
-            followers_num: 1,
-            following_num: 1,
+            profile_image: '$tweet_list.tweet_owner.profileImage',
+            followers_num: {
+              $size: ['$tweet_list.tweet_owner.followersUsers'],
+            },
+            following_num: {
+              $size: ['$tweet_list.tweet_owner.followingUsers'],
+            },
           },
         },
         'tweet_list.isFollowed': 1,
         'tweet_list.isLiked': 1,
+      })
+      .group({
+        _id: '$_id',
+        title: { $first: '$title' },
+        count: { $first: '$count' },
+        tweet_list: { $push: '$tweet_list' },
       })
       .skip(skip)
       .limit(limit);
