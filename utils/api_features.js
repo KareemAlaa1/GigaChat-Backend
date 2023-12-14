@@ -42,7 +42,7 @@ class APIFeatures {
 }
 exports.paginate = (elements, req) => {
   const page = req.query.page * 1 || 1;
-  const limit = req.query.count * 1 || 1;
+  const limit = req.query.count * 1 || 100;
   const skip = (page - 1) * limit;
 
   const totalElementsNum = elements.length;

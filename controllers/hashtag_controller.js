@@ -1,48 +1,41 @@
 const mongoose = require('mongoose');
 const catchAsync = require('../utils/catch_async');
 const Hashtag = require('../models/hashtag_model');
+const { paginate } = require('../utils/api_features');
 
-exports.getAllHashtages = catchAsync(
-  async (
-    req,
-    res,
-    next = (e) => {
-      res.status(400).send(e);
-    },
-  ) => {
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 1;
-    const skip = (page - 1) * limit;
-
+exports.getAllHashtages = async (req, res) => {
+  try {
     const hashtags = await Hashtag.aggregate()
       .sort('-count')
-      .project('title count')
-      .skip(skip)
-      .limit(limit);
+      .project('title count');
     console.log(hashtags);
 
     if (!hashtags)
       res.status(404).json({
         message: 'No Hashtags Found',
       });
+    try {
+      if (hashtags.length == 0)
+        return res.status(404).send({ error: 'There is no hashtags' });
+      const paginatedHashtags = paginate(hashtags, req);
 
-    res.status(200).send({ status: 'success', data: hashtags });
-  },
-);
+      // send result
+      return res
+        .status(200)
+        .send({ status: 'success', data: paginatedHashtags });
+    } catch (error) {
+      console.log(error.message);
+      return res.status(404).send({ error: error.message });
+    }
+  } catch (error) {
+    // Handle and log errors
+    return res.status(500).send({ error: error.message });
+  }
+};
 
-exports.getHastagTweets = catchAsync(
-  async (
-    req,
-    res,
-    next = (e) => {
-      res.status(400).send(e);
-    },
-  ) => {
+exports.getHastagTweets = async (req, res) => {
+  try {
     const hashtagTitle = '#' + req.params.trend;
-
-    const page = req.query.page * 1 || 1;
-    const limit = req.query.count * 1 || 1;
-    const skip = (page - 1) * limit;
 
     const found = await Hashtag.findOne({ title: hashtagTitle });
 
@@ -137,10 +130,23 @@ exports.getHastagTweets = catchAsync(
         title: { $first: '$title' },
         count: { $first: '$count' },
         tweet_list: { $push: '$tweet_list' },
-      })
-      .skip(skip)
-      .limit(limit);
+      });
+    try {
+      if (hashtag[0].tweet_list == 0)
+        return res
+          .status(404)
+          .send({ error: 'There is no tweets for this hashtag' });
+      const paginatedTweets = paginate(hashtag[0].tweet_list, req);
 
-    res.send({ status: 'success', data: hashtag[0].tweet_list }).status(200);
-  },
-);
+      // send result
+      return res.status(200).send({ status: 'success', data: paginatedTweets });
+    } catch (error) {
+      console.log(error.message);
+      return res.status(404).send({ error: error.message });
+    }
+    // res.send({ status: 'success', data: hashtag[0].tweet_list }).status(200);
+  } catch (error) {
+    // Handle and log errors
+    return res.status(500).send({ error: error.message });
+  }
+};
