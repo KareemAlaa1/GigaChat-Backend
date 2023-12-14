@@ -123,10 +123,10 @@ exports.getProfile = async (req, res) => {
           followings_num: { $size: '$followingUsers' },
           followers_num: { $size: '$followersUsers' },
           isCurrUserBlocked: {
-            $in: [currUser._id.toString(), '$blockingUsers'],
+            $in: [currUser._id, '$blockingUsers'],
           },
           isWantedUserFollowed: {
-            $in: [currUser._id.toString(), '$followersUsers'],
+            $in: [currUser._id, '$followersUsers'],
           },
         },
       },
@@ -137,7 +137,8 @@ exports.getProfile = async (req, res) => {
 
     const isWantedUserBlocked = currUser.blockingUsers.includes(wantedUser._id);
     const isWantedUserMuted = currUser.mutedUsers.includes(wantedUser._id);
-    const isCurruser = wantedUser.id === currUser._id.toString();
+
+    const isCurruser = wantedUser._id.toString() === currUser._id.toString();
 
     const result = {};
     result.status = 'success';
@@ -186,8 +187,10 @@ exports.getCurrUserProfile = async (req, res) => {
       website: currUser.website,
       birth_date: currUser.birthDate,
       joined_date: currUser.joinedAt,
-      followings_num: currUser.followersUsers.length,
-      followers_num: currUser.followingUsers.length,
+      followings_num: currUser.followingUsers.length,
+      followers_num: currUser.followersUsers.length,
+      num_of_posts: currUser.tweetList.length,
+      num_of_likes: currUser.likedTweets.length
     };
 
     return res.status(200).send(result);
