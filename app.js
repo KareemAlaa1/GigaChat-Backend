@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
 dotenv.config({ path: './config/dev.env' });
-const cookieSession = require("cookie-session");
+const cookieSession = require('cookie-session');
 const morgan = require('morgan');
 const AppError = require('./utils/app_error');
 const globalErrorHandler = require('./controllers/error_controller');
@@ -10,20 +10,20 @@ const tweetRouter = require('./routes/tweet_routes');
 const homepageRouter = require('./routes/homepage_router');
 const hashtagRouter = require('./routes/hashtag_router');
 const mediaRouter = require('./routes/media_routes');
+const chatRouter = require('./routes/chat_router');
 const googleRouter = require('./routes/google_router');
-const passportSetup = require("./google-passport");
-const passport = require("passport");
+const passportSetup = require('./google-passport');
+const passport = require('passport');
 require('./app_server');
-const express = require("express");
+const express = require('express');
 const app = express();
-const http = require("http");
-const cors = require("cors");
+const http = require('http');
+const cors = require('cors');
 
 app.use(cors());
 app.use(express.json());
 
 // MIDDLEWARES
-
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -34,22 +34,24 @@ app.use((req, res, next) => {
   next();
 });
 
-
 //region google-router
 app.use(
-    cookieSession({ name: "google-passport-session", keys: ["google-auth"], maxAge: 24 * 60 * 60 * 100 })
+  cookieSession({
+    name: 'google-passport-session',
+    keys: ['google-auth'],
+    maxAge: 24 * 60 * 60 * 100,
+  }),
 );
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-
-app.use("/auth", googleRouter);
+app.use('/auth', googleRouter);
 //endregion google-router
 
 // Handling  Wrong Route Req.
 //Routs
-
+app.use('/api/user/chat', chatRouter);
 app.use('/api/user', userRouter);
 app.use('/api/homepage', homepageRouter);
 app.use('/api/trends', hashtagRouter);
