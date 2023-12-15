@@ -4,14 +4,6 @@ const messageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  media: {
-    photo: {
-      type: String,
-    },
-    vedio: {
-      type: String,
-    },
-  },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

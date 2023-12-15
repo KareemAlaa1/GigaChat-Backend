@@ -27,8 +27,6 @@ const io = new Server(server, {
 });
 
 io.on("connection", async (socket) => {
-  console.log(`User Connected: ${socket.id}`);
-
   const token = socket.handshake.headers.token;
 
   const handelAuth = await messageController.handleSocketAuth(socket, token);
@@ -36,13 +34,11 @@ io.on("connection", async (socket) => {
   if (!handelAuth) return;
 
   socket.on("send_message", async(message) => {
-    console.log(message);
     await messageController.sendMessage(socket, message.reciever_ID, message.data);
   });
 
   socket.on("disconnect", () => {
     messageController.userDisconnected(socket.id);
-    console.log("user disconnected: ", socket.id);
   });
 });
 

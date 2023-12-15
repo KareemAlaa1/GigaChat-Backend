@@ -35,26 +35,18 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
         // get the senderId
         const senderId = sockets_users[socket.id];
 
-        console.log("get the senderId");
-
         // get the reciever User
         const recieverUser = await User.findById(recieverId).select('_id');
-
-        console.log("get the reciever User");
 
         // user not found check
         if (!recieverUser) {
             return socket.emit("failed_to_send_message", { error: "User Not Found" });
         }
 
-        console.log("user not found check");
-
         // user cant talk to him/herself  
-        if (recieverId !== senderId) {
+        if (recieverId === senderId) {
             return socket.emit("failed_to_send_message", { error: "user cant talk to him/herself" });
         }
-
-        console.log("user cant talk to him/herself ");
 
         // message cant be empty
         const media = messageData.media;
@@ -64,8 +56,6 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
             return socket.emit("failed_to_send_message", { error: "message must not be empty" });
 
         // get the chat id of certain user
-        console.log("get the chat id of certain user");
-
         const chatId = await User.aggregate([
             {
                 $match: { _id: new mongoose.Types.ObjectId(senderId) },
@@ -85,7 +75,7 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
             .addFields({
                 'chats.exist': {
                     $in: [
-                        new mongoose.Types.ObjectId(req.params.userId),
+                        new mongoose.Types.ObjectId(recieverId),
                         '$chats.usersList',
                     ],
                 },
@@ -94,14 +84,12 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
             .match({
                 exist: true,
             });
-        
-        // Create a new message    
+
+        // Create a new message
         const message = await Message.create({
             description: description,
-            media: media,
             sender: new mongoose.Types.ObjectId(senderId),
         });
-        
         // if chat exist then send else create new chat and add its id to chatList of the users and send
         if (chatId.length > 0) {
             await Chat.findByIdAndUpdate(chatId[0].id, {
@@ -119,11 +107,12 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
                 { $push: { chatList: newChat._doc._id } },
             );
         }
-
+        
         // finally send the message
-        if(!users_sockets[recieverId])
+        if(users_sockets[recieverId])
             socket.broadcast.to(users_sockets[recieverId]).emit("receive_message", message);
     } catch (error) {
+        console.log(error);
         return socket.emit("failed_to_send_message", { error: "Internal Server Error" });
     }
 };
