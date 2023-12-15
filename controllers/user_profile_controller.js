@@ -90,15 +90,15 @@ exports.getUserTweets = async (req, res) => {
       if (tweets.length == 0)
         return res.status(404).send({ error: 'This user has no tweets' });
       const paginatedTweets = paginate(tweets[0].tweetList, req, res);
-      res.send({ status: 'success', posts: paginatedTweets });
+      return res.send({ status: 'success', posts: paginatedTweets });
     } catch (error) {
       console.log(error.message);
-      res.status(404).send({ error: error.message });
+      return res.status(404).send({ error: error.message });
     }
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
+    return res.status(500).send({ error: 'Internal Server Error' });
   }
 };
 
@@ -178,14 +178,14 @@ exports.getUserLikedTweets = async (req, res) => {
       if (tweets.length == 0)
         return res.status(404).send({ error: 'This user has no liked tweets' });
       const paginatedTweets = paginate(tweets[0].likedTweets, req);
-      res.send({ status: 'success', posts: tweets });
+      return res.send({ status: 'success', posts: tweets });
     } catch (error) {
       console.log(error.message);
-      res.status(404).send({ error: error.message });
+      return res.status(404).send({ error: error.message });
     }
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
+    return res.status(500).send({ error: 'Internal Server Error' });
   }
 };

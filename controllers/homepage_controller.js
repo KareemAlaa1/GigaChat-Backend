@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const User = require('../models/user_model');
-const catchAsync = require('../utils/catch_async');
 const { paginate } = require('../utils/api_features');
 
 /**
@@ -13,73 +12,79 @@ const { paginate } = require('../utils/api_features');
  *
  */
 const getLatestUserTweet = async (reqUser) => {
-  let twoHoursAgo = new Date();
-  twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+  try {
+    let twoHoursAgo = new Date();
+    twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
-  const userTweets = await User.aggregate([
-    {
-      $match: { _id: new mongoose.Types.ObjectId(reqUser._id) },
-    },
-  ])
-    .unwind('tweetList')
-    .lookup({
-      from: 'tweets',
-      localField: 'tweetList.tweetId',
-      foreignField: '_id',
-      as: 'tweetDetails',
-    })
-    .unwind('tweetDetails')
-    .match({
-      'tweetDetails.createdAt': { $gte: new Date(twoHoursAgo.toISOString()) },
-    })
-    .lookup({
-      from: 'users',
-      localField: 'tweetDetails.userId',
-      foreignField: '_id',
-      as: 'tweetDetails.tweet_owner',
-    })
-    .unwind('tweetDetails.tweet_owner')
-    .project({
-      _id: 0,
-      type: '$tweetList.type',
-      followingUser: {
-        _id: '$_id',
-        nickname: '$nickname',
-        username: '$username',
-        following_num: { $size: '$followingUsers' },
-        followers_num: { $size: '$followersUsers' },
-        profile_image: '$profileImage',
+    const userTweets = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(reqUser._id) },
       },
-      tweetDetails: {
-        _id: 1,
-        description: 1,
-        media: 1,
-        referredTweetId: 1,
-        createdAt: 1,
-        likesNum: 1,
-        repliesNum: '$tweetDetails.repliesCount',
-        repostsNum: { $size: '$tweetDetails.retweetList' },
-        tweet_owner: {
-          _id: 1,
-          username: 1,
-          nickname: 1,
-          bio: 1,
-          profile_image: '$tweetDetails.tweet_owner.profileImage',
-          followers_num: { $size: '$tweetDetails.tweet_owner.followingUsers' },
-          following_num: { $size: '$tweetDetails.tweet_owner.followersUsers' },
+    ])
+      .unwind('tweetList')
+      .lookup({
+        from: 'tweets',
+        localField: 'tweetList.tweetId',
+        foreignField: '_id',
+        as: 'tweetDetails',
+      })
+      .unwind('tweetDetails')
+      .match({
+        'tweetDetails.createdAt': { $gte: new Date(twoHoursAgo.toISOString()) },
+      })
+      .lookup({
+        from: 'users',
+        localField: 'tweetDetails.userId',
+        foreignField: '_id',
+        as: 'tweetDetails.tweet_owner',
+      })
+      .unwind('tweetDetails.tweet_owner')
+      .project({
+        _id: 0,
+        type: '$tweetList.type',
+        followingUser: {
+          _id: '$_id',
+          nickname: '$nickname',
+          username: '$username',
+          following_num: { $size: '$followingUsers' },
+          followers_num: { $size: '$followersUsers' },
+          profile_image: '$profileImage',
         },
-      },
-      isFollowed: { $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'] },
-      isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
-      isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
-    })
-    .sort({
-      'tweetDetails.createdAt': -1,
-      'tweetDetails.likesNum': -1,
-      'tweetDetails.repliesNum': -1,
-      'tweetDetails.repostsNum': -1,
-    });
-  return userTweets;
+        tweetDetails: {
+          _id: 1,
+          description: 1,
+          media: 1,
+          referredTweetId: 1,
+          createdAt: 1,
+          likesNum: 1,
+          repliesNum: '$tweetDetails.repliesCount',
+          repostsNum: { $size: '$tweetDetails.retweetList' },
+          tweet_owner: {
+            _id: 1,
+            username: 1,
+            nickname: 1,
+            bio: 1,
+            profile_image: '$tweetDetails.tweet_owner.profileImage',
+            followers_num: { $size: '$tweetDetails.tweet_owner.followingUsers' },
+            following_num: { $size: '$tweetDetails.tweet_owner.followersUsers' },
+          },
+        },
+        isFollowed: { $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'] },
+        isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
+        isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
+      })
+      .sort({
+        'tweetDetails.createdAt': -1,
+        'tweetDetails.likesNum': -1,
+        'tweetDetails.repliesNum': -1,
+        'tweetDetails.repostsNum': -1,
+      });
+    return userTweets;
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 /**
@@ -258,6 +263,6 @@ exports.getFollowingTweets = async (req, res) => {
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
+    return res.status(500).send({ error: 'Internal Server Error' });
   }
 };

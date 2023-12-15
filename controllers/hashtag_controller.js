@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const catchAsync = require('../utils/catch_async');
 const Hashtag = require('../models/hashtag_model');
 const { paginate } = require('../utils/api_features');
 
@@ -11,7 +10,7 @@ exports.getAllHashtages = async (req, res) => {
     console.log(hashtags);
 
     if (!hashtags)
-      res.status(404).json({
+      return res.status(404).json({
         message: 'No Hashtags Found',
       });
     try {
@@ -40,7 +39,7 @@ exports.getHastagTweets = async (req, res) => {
     const found = await Hashtag.findOne({ title: hashtagTitle });
 
     if (!found)
-      res.status(404).json({
+      return res.status(404).json({
         status: 'fail',
         message: 'Hashtag Not Found',
       });
@@ -49,7 +48,7 @@ exports.getHastagTweets = async (req, res) => {
       found.tweet_list === null ||
       found.tweet_list.length == 0
     )
-      res.status(404).json({
+      return res.status(404).json({
         status: 'fail',
         message: 'No Tweets Found For This Hashtag',
       });
