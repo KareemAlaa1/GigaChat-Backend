@@ -26,6 +26,7 @@ exports.getAllConversations = async (req, res) => {
           nickname: '$usersList.nickname',
           username: '$usersList.username',
           profile_image: '$usersList.profileImage',
+          id: '$usersList._id',
         },
         lastMessage: { $arrayElemAt: ['$messagesList', -1] },
       })
@@ -59,6 +60,7 @@ exports.getAllConversations = async (req, res) => {
           sendTime: 1,
           isDeleted: 1,
         },
+        _id: '$lastMessage.sender._id',
       });
 
     try {
