@@ -136,8 +136,8 @@ exports.searchTweets = async (req, res, next) => {
           following_num: { $size: '$tweet_owner.followersUsers' },
           isFollowed: { $in: ['$_id', '$tweet_owner.followersUsers'] },
         },
-        isLiked: { $in: ['$_id', '$likersList'] },
-        isRtweeted: { $in: ['$_id', '$retweetList'] },
+        isLiked: { $in: [req.user._id, '$likersList'] },
+        isRtweeted: { $in: [req.user._id, '$retweetList'] },
       })
       .sort({
         createdAt: -1,
