@@ -22,6 +22,8 @@ exports.handleSocketAuth = async(socket, token) =>{
             console.log("Connection Success Token");
             users_sockets[userId] = socket.id;
             sockets_users[socket.id] = userId;
+            console.log(sockets_users);
+            console.log(users_sockets);
             return true;
         }
     } catch (error) {
@@ -51,6 +53,7 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
         // message cant be empty
         const media = messageData.media;
         const description = messageData.text;
+        const id = messageData.id;
 
         if (!description && !media)
             return socket.emit("failed_to_send_message", { error: "message must not be empty" });
@@ -107,13 +110,15 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
                 { $push: { chatList: newChat._doc._id } },
             );
         }
-        
+
         // finally send the message
         if(users_sockets[recieverId])
-            socket.broadcast.to(users_sockets[recieverId]).emit("receive_message", message);
+            socket.broadcast.to(users_sockets[recieverId]).emit("receive_message", {...message, chat_id: chatId[0].id});
+
+        socket.emit("receive_message", {...message, chat_id: chatId[0].id, id: id});    
     } catch (error) {
         console.log(error);
-        return socket.emit("failed_to_send_message", { error: "Internal Server Error" });
+        return socket.emit("failed_to_send_message", { error: "Internal Server Error"});
     }
 };
 

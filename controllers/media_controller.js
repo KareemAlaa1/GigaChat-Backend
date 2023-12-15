@@ -56,6 +56,16 @@ exports.addMedia = async (req, res) => {
     }
 }
 
+exports.checkExistingUrl = async ([urlList]) => {
+    try {
+        const media = await Media.find({ url: { $in: urlList } });
+
+        return media;
+    } catch (error) {
+        return [];
+    }
+}
+
 exports.deleteMedia = async (url) => {
     const media = await Media.findOneAndDelete({ url: url });
     const file = bucket.file(media.cloudStrogePath);

@@ -35,6 +35,7 @@ io.on("connection", async (socket) => {
 
   socket.on("send_message", async(message) => {
     await messageController.sendMessage(socket, message.reciever_ID, message.data);
+    console.log(message);
   });
 
   socket.on("disconnect", () => {
