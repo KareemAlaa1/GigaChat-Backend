@@ -11,4 +11,5 @@ services:
     ports:
       - 5000:3000
       - 5750:3002
+    restart: on-failure
  
