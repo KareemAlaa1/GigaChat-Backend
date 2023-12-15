@@ -17,7 +17,7 @@ const updateHashtags = async (tweet) => {
       if (hashtag) {
         hashtag.count--;
         hashtag.tweet_list = hashtag.tweet_list.filter(
-          (tweet) => tweet !== tweetId,
+          (tweet) => tweet != tweetId,
         );
         await hashtag.save();
       }
