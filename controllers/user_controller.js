@@ -478,9 +478,10 @@ exports.getMessages = async (req, res) => {
             seen: '$message.seen',
             sendTime: '$message.sendTime',
           })
-          .sort({ 'message.sendTime': -1 })
+          .sort({ id: -1 })
           .skip(skip)
-          .limit(size);
+          .limit(size)
+          .sort({ id: 1 });
         res.status(200).json({
           status: 'messages get success',
           data: messages,
