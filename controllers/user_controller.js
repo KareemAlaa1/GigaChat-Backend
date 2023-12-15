@@ -6,7 +6,6 @@ const Chat = require('../models/chat_model');
 const Message = require('../models/message_model');
 const mongoose = require('mongoose');
 
-
 const { bucket, uuidv4 } = require('../utils/firebase');
 const catchAsync = require('../utils/catch_async');
 
@@ -120,7 +119,7 @@ exports.getProfile = async (req, res) => {
           joinedAt: 1,
           blockingUsers: 1,
           mutedUsers: 1,
-          num_of_posts : { $size: '$tweetList' },
+          num_of_posts: { $size: '$tweetList' },
           num_of_likes: { $size: '$likedTweets' },
           followings_num: { $size: '$followingUsers' },
           followers_num: { $size: '$followersUsers' },
@@ -130,7 +129,6 @@ exports.getProfile = async (req, res) => {
           isWantedUserFollowed: {
             $in: [currUser._id, '$followersUsers'],
           },
-
         },
       },
     ]);
@@ -164,7 +162,7 @@ exports.getProfile = async (req, res) => {
       is_wanted_user_followed: wantedUser.isWantedUserFollowed,
       is_curr_user: isCurruser,
       num_of_posts: wantedUser.num_of_posts,
-      num_of_likes: wantedUser.num_of_likes
+      num_of_likes: wantedUser.num_of_likes,
     };
 
     return res.status(200).send(result);
@@ -195,7 +193,7 @@ exports.getCurrUserProfile = async (req, res) => {
       followings_num: currUser.followingUsers.length,
       followers_num: currUser.followersUsers.length,
       num_of_posts: currUser.tweetList.length,
-      num_of_likes: currUser.likedTweets.length
+      num_of_likes: currUser.likedTweets.length,
     };
 
     return res.status(200).send(result);
@@ -360,9 +358,9 @@ exports.getMessages = async (req, res) => {
       // if chat id exist get the messages in it else send empty array
       // and also specify if the message is mine or not in the response
       if (chatId.length > 0) {
-        const size = parseInt(req.body.count, 10) || 10;
+        const size = parseInt(req.query.count, 10) || 10;
 
-        const skip = ((req.body.page || 1) - 1) * size;
+        const skip = ((req.query.page || 1) - 1) * size;
         const messages = await Chat.aggregate([
           {
             $match: { _id: chatId[0].id },
@@ -393,10 +391,13 @@ exports.getMessages = async (req, res) => {
             media: '$message.media',
             isDeleted: '$message.isDeleted',
             mine: '$message.mine',
+            seen: '$message.seen',
+            sendTime: '$message.sendTime',
           })
-          .sort({ 'message.sendTime': -1 })
+          .sort({ id: -1 })
           .skip(skip)
-          .limit(size);
+          .limit(size)
+          .sort({ id: 1 });
         res.status(200).json({
           status: 'messages get success',
           data: messages,
@@ -475,6 +476,5 @@ function calculateAge(birthDate) {
   }
   return age;
 }
-
 
 exports.calculateAge = calculateAge;
