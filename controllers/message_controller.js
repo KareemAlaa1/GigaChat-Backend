@@ -48,7 +48,9 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
         }
 
         // message cant be empty
-        const { description, media } = messageData;
+        const media = messageData.media;
+        const description = messageData.text;
+
         if (!description && !media)
             return socket.emit("failed_to_send_message", { error: "message must not be empty" });
 
