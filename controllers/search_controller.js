@@ -40,7 +40,7 @@ exports.search = async (req, res, next) => {
       result = await searchHashtag(req, res, next);
     } else {
       // not allowed search type
-      res.status(400).send({
+      return res.status(400).send({
         error:
           'Only these values [ user , tweet , hashtag ] are allowed in type of search request',
       });
