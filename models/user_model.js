@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     phone: {
-      type: Number,
+      type: String,
       validate: {
         validator: (value) => typeof value === 'number',
         message: 'phone must be numbers',
