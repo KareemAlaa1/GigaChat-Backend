@@ -33,6 +33,33 @@ const generateUserName = async (nickname) => {
   return finalUsername;
 };
 
+exports.checkToken = async (token) => {
+  try {
+    // 2) Verification token
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET); // this function {jwt.verify(token,secret,callback fun)} takes 3 argument -> the callback once the verification happen but here we promisifying it and await it
+    // docoded -> is the docoded payload from jwta
+    //console.log(decode);//take alook at the shape of it
+
+    // 3) Check if user still exists
+    // if the user deleted or active we no more need to send data
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser || !currentUser.active || currentUser.isDeleted) {
+      return false;
+    }
+
+    // 4) Check if user changed password after the token was issued
+    // users usually change their passwork if somone steal his token
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      //decoded.iat -> issued at
+      return false;
+    }
+    return currentUser._id;
+
+  } catch (error) {
+    return false;
+  }
+};
+
 exports.signUp = catchAsync(async (req, res, next) => {
   // 1) Check data recieved
   const { email, nickname, birthDate } = req.body;
@@ -76,10 +103,9 @@ exports.signUp = catchAsync(async (req, res, next) => {
       .status(400)
       .json({ error: 'nickName is required in the request body' });
   }
-  const generatedUsername = await generateUserName(req.body.nickname);
+
   const newUser = await User.create({
     email: req.body.email,
-    username:generatedUsername,
     nickname: req.body.nickname,
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
@@ -121,6 +147,8 @@ exports.signUp = catchAsync(async (req, res, next) => {
 exports.login = catchAsync(async (req, res, next) => {
   const { query, password } = req.body;
 
+
+  console.log(req.body);
   // 1) Check if email and password exist
   if (!password || !query) {
     return next(
@@ -137,9 +165,9 @@ exports.login = catchAsync(async (req, res, next) => {
     //   return res.status(400).json({ error: 'Invalid email format' });
     // }
 
-    user = await User.findOne({ email:query }).select('+password');
+    user = await User.findOne({ email: query }).select('+password');
   } else {
-    user = await User.findOne({ username:query }).select('+password');
+    user = await User.findOne({ username: query }).select('+password');
   }
 
   if (!user || !(await user.correctPassword(password, user.password))) {
@@ -257,15 +285,15 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
 
   user.confirmEmailExpires = undefined;
   user.confirmEmailCode = undefined;
-  // const generatedUsername = await generateUserName(user.nickname);
-  // user.username = generatedUsername;
+  const generatedUsername = await generateUserName(user.nickname);
+  user.username = generatedUsername;
   await user.save();
   const token = signToken(user._id);
   res.status(201).json({
     token,
     status: 'success',
     data: {
-      suggestedUsername: user.username,
+      suggestedUsername: generatedUsername,
       message: 'Confirm done successfully',
     },
   });
@@ -629,7 +657,7 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
 
 
 exports.googleAuth = catchAsync(async (req, res, next) => {
-  const { access_token, id, email, name,profileImage} = req.body;
+  const { access_token, id, email, name, profileImage } = req.body;
   if (!access_token) {
     return next(new AppError('access_token is required', 400));
   }
@@ -682,8 +710,8 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
     const newUser = new User({
       nickname: name,
       email: email,
-      active:true,
-      profileImage:profileImage,
+      active: true,
+      profileImage: profileImage,
     });
     const generatedUsername = await generateUserName(name);
     newUser.username = generatedUsername;
@@ -706,7 +734,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           bannerImage: newUser.bannerImage,
           location: newUser.location,
           website: newUser.website,
-          joinedAt: Date.now(),
+          joinedAt: user.joinedAt,
           followings_num: user.followingUsers.length,
           followers_num: user.followersUsers.length,
         },
@@ -732,7 +760,7 @@ exports.confirmPassword = catchAsync(async (req, res, next) => {
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) get the input data and check the validity
-  let {query} = req.body;
+  let { query } = req.body;
   if (!query) {
     return next(new AppError('Email or username is required', 400));
   }

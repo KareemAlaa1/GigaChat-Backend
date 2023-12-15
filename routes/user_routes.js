@@ -73,11 +73,6 @@ userRouter.patch(
   [authController.protect, upload.single('profile_banner')],
   userController.updateProfileBanner,
 );
-userRouter.post(
-  '/chat/:userId',
-  authController.protect,
-  userController.sendMessage,
-);
 
 userRouter.get(
   '/chat/:userId',
