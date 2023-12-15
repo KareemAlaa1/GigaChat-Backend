@@ -4,7 +4,7 @@ const Media = require('../models/media_model');
 const Chat = require('../models/chat_model');
 const Message = require('../models/message_model');
 const mongoose = require('mongoose');
-
+const {checkToken} = require('./auth_controller');
 
 const sockets_users = {};
 const users_sockets = {};
