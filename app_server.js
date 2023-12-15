@@ -41,6 +41,7 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", () => {
+    messageController.userDisconnected(socket.id);
     console.log("user disconnected: ", socket.id);
   });
 });
