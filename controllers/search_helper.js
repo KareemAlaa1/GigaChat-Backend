@@ -123,7 +123,7 @@ exports.searchTweets = async (req, res, next) => {
         media: 1,
         referredTweetId: 1,
         createdAt: 1,
-        likesNum: 1,
+        likesNum: { $size: '$likersList' },
         repliesNum: '$repliesCount',
         repostsNum: { $size: '$retweetList' },
         tweet_owner: {
