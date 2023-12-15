@@ -61,21 +61,17 @@ exports.getAllConversations = async (req, res) => {
         },
       });
 
-    return res.send(chats);
+    try {
+      if (chats.length == 0)
+        return res.status(404).send({ error: 'There is no chats' });
+      const paginatedchats = paginate(chats, req);
 
-    // try {
-    //   if (hashtags.length == 0)
-    //     return res.status(404).send({ error: 'There is no hashtags' });
-    //   const paginatedHashtags = paginate(hashtags, req);
-
-    //   // send result
-    //   return res
-    //     .status(200)
-    //     .send({ status: 'success', data: paginatedHashtags });
-    // } catch (error) {
-    //   console.log(error.message);
-    //   return res.status(404).send({ error: error.message });
-    // }
+      // send result
+      return res.status(200).send({ status: 'success', data: chats });
+    } catch (error) {
+      console.log(error.message);
+      return res.status(404).send({ error: error.message });
+    }
   } catch (error) {
     // Handle and log errors
     return res.status(500).send({ error: error.message });
