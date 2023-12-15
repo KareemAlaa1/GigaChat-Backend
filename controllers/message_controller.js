@@ -35,17 +35,26 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
         // get the senderId
         const senderId = sockets_users[socket.id];
 
+        console.log("get the senderId");
+
         // get the reciever User
         const recieverUser = await User.findById(recieverId).select('_id');
+
+        console.log("get the reciever User");
 
         // user not found check
         if (!recieverUser) {
             return socket.emit("failed_to_send_message", { error: "User Not Found" });
         }
+
+        console.log("user not found check");
+
         // user cant talk to him/herself  
         if (recieverId !== senderId) {
             return socket.emit("failed_to_send_message", { error: "user cant talk to him/herself" });
         }
+
+        console.log("user cant talk to him/herself ");
 
         // message cant be empty
         const media = messageData.media;
@@ -55,6 +64,8 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
             return socket.emit("failed_to_send_message", { error: "message must not be empty" });
 
         // get the chat id of certain user
+        console.log("get the chat id of certain user");
+
         const chatId = await User.aggregate([
             {
                 $match: { _id: new mongoose.Types.ObjectId(senderId) },
@@ -119,6 +130,6 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
 
 exports.userDisconnected  = (socketId) => {
     delete users_sockets[[sockets_users[socketId]]];
-    delete sockets_users[socket.id];
+    delete sockets_users[socketId];
 }
 
