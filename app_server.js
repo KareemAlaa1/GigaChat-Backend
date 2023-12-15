@@ -32,8 +32,8 @@ io.on("connection", async (socket) => {
   const token = socket.handshake.headers.token;
 
   const handelAuth = await messageController.handleSocketAuth(socket, token);
-
-  if (handelAuth) return;
+  console.log(handelAuth);
+  if (!handelAuth) return;
 
   socket.on("send_message", async(message) => {
     console.log(message);
