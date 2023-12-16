@@ -126,9 +126,8 @@ exports.like = async (req, res) => {
     await currUser.save();
     //region addLikeNotification
     const notification = await notificationController.addLikeNotification(
-      currUser,
-      likedTweet,
-    );
+      currUser, likedTweet
+    )
     //endregion
     return res.status(204).end();
   } catch (error) {
@@ -189,9 +188,10 @@ exports.getFollowers = async (req, res) => {
     if (!username)
       return res.status(400).send({ error: 'Bad request, send username' });
 
-    const targetUser = await User.findOne({ username });
+    const targetUser = await User.findOne({ username: username, isDeleted: false, active: true });
 
     if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
+
     if (
       !targetUser.followersUsers ||
       targetUser.followersUsers === undefined ||
@@ -232,26 +232,24 @@ exports.getFollowers = async (req, res) => {
         },
         'followersUsers.profile_image': '$followersUsers.profileImage',
       })
-      .skip(skip)
-      .limit(limit)
       .project({
-        'followersUsers._id': 1,
-        'followersUsers.isFollowed': 1,
-        'followersUsers.bio': 1,
-        'followersUsers.username': 1,
-        'followersUsers.profile_image': 1,
-        'followersUsers.nickname': 1,
-        'followersUsers.followers_num': 1,
-        'followersUsers.followings_num': 1,
-        'followersUsers.is_curr_user': 1,
-      });
+        _id: 0,
+        _id: '$followersUsers._id',
+        isFollowed: '$followersUsers.isFollowed',
+        bio: '$followersUsers.bio',
+        username: '$followersUsers.username',
+        profile_image: '$followersUsers.profile_image',
+        nickname: '$followersUsers.nickname',
+        followers_num: '$followersUsers.followers_num',
+        followings_num: '$followersUsers.followings_num',
+        is_curr_user: '$followersUsers.is_curr_user',
+      })
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).send({
       status: 'success',
-      users:
-        typeof user[0].followersUsers === 'object'
-          ? [user[0].followersUsers]
-          : user[0].followersUsers,
+      users: user
     });
   } catch (error) {
     // Handle and log errors
@@ -284,56 +282,55 @@ exports.getFollowings = async (req, res) => {
         users: [],
       });
 
-    const user = await User.aggregate([
-      {
-        $match: { username: username },
-      },
-    ])
-      .lookup({
-        from: 'users',
-        localField: 'followingUsers',
-        foreignField: '_id',
-        as: 'followingUsers',
-      })
-      .project({
-        followingUsers: 1,
-      })
-      .unwind('followingUsers')
-      .addFields({
-        'followingUsers.isFollowed': {
-          $in: [currUser._id, '$followingUsers.followersUsers'],
+      const user = await User.aggregate([
+        {
+          $match: { username: username, isDeleted: false, active: true },
         },
-        'followingUsers.followers_num': {
-          $size: '$followingUsers.followersUsers',
-        },
-        'followingUsers.followings_num': {
-          $size: '$followingUsers.followingUsers',
-        },
-        'followingUsers.profile_image': '$followingUsers.profileImage',
-        'followingUsers.is_curr_user': {
-          $eq: [currUser._id, '$followingUsers._id'],
-        },
-      })
-      .skip(skip)
-      .limit(limit)
-      .project({
-        'followingUsers._id': 1,
-        'followingUsers.isFollowed': 1,
-        'followingUsers.profile_image': 1,
-        'followingUsers.bio': 1,
-        'followingUsers.username': 1,
-        'followingUsers.nickname': 1,
-        'followingUsers.followers_num': 1,
-        'followingUsers.followings_num': 1,
-        'followingUsers.is_curr_user': 1,
-      });
+      ])
+        .lookup({
+          from: 'users',
+          localField: 'followingUsers',
+          foreignField: '_id',
+          as: 'followingUsers',
+        })
+        .project({
+          followingUsers: 1,
+        })
+        .unwind('followingUsers')
+        .addFields({
+          'followingUsers.isFollowed': {
+            $in: [currUser._id, '$followingUsers.followersUsers'],
+          },
+          'followingUsers.followers_num': {
+            $size: '$followingUsers.followersUsers',
+          },
+          'followingUsers.followings_num': {
+            $size: '$followingUsers.followingUsers',
+          },
+          'followingUsers.is_curr_user': {
+            $eq: [currUser._id, '$followingUsers._id'],
+          },
+          'followingUsers.profile_image': '$followingUsers.profileImage',
+        })
+        .project({
+          _id: 0,
+          _id: '$followingUsers._id',
+          isFollowed: '$followingUsers.isFollowed',
+          bio: '$followingUsers.bio',
+          username: '$followingUsers.username',
+          profile_image: '$followingUsers.profile_image',
+          nickname: '$followingUsers.nickname',
+          followers_num: '$followingUsers.followers_num',
+          followings_num: '$followingUsers.followings_num',
+          is_curr_user: '$followingUsers.is_curr_user',
+        })
+        .skip(skip)
+        .limit(limit);
+  
 
     return res.status(200).send({
       status: 'success',
-      users:
-        typeof user[0].followingUsers === 'object'
-          ? [user[0].followingUsers]
-          : user[0].followingUsers,
+      users: user
     });
   } catch (error) {
     // Handle and log errors
