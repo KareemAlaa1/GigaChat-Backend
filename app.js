@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const AppError = require('./utils/app_error');
 const globalErrorHandler = require('./controllers/error_controller');
 const userRouter = require('./routes/user_routes');
+const notificationsRouter = require('./routes/notifications_router');
 const userProfileRouter = require('./routes/user_profile_router');
 const tweetRouter = require('./routes/tweet_routes');
 const homepageRouter = require('./routes/homepage_router');
@@ -51,6 +52,7 @@ app.use("/auth", googleRouter);
 //Routs
 
 app.use('/api/user', userRouter);
+app.use('/api/user', notificationsRouter);
 app.use('/api/homepage', homepageRouter);
 app.use('/api/trends', hashtagRouter);
 app.use('/api/tweets', tweetRouter);

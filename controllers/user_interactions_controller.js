@@ -2,6 +2,8 @@ const express = require('express');
 const User = require('../models/user_model');
 const Tweet = require('../models/tweet_model');
 const mongoose = require('mongoose');
+const notificationController = require('./notifications_controller');
+
 
 exports.follow = async (req, res) => {
   try {
@@ -36,8 +38,11 @@ exports.follow = async (req, res) => {
 
     await followedUser.save();
     await currUser.save();
-
+    //region addFollowNotification
+    const notification = await notificationController.addFollowNotification(currUser, followedUser);
+    console.log(notification)
     return res.status(204).end();
+    //endregion
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
@@ -117,7 +122,11 @@ exports.like = async (req, res) => {
 
     await likedTweet.save();
     await currUser.save();
-
+    //region addLikeNotification
+    const notification = await notificationController.addLikeNotification(
+      currUser,likedTweet
+    )
+    //endregion
     return res.status(204).end();
   } catch (error) {
     // Handle and log errors
