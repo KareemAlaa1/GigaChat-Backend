@@ -65,11 +65,17 @@ const getLatestUserTweet = async (reqUser) => {
             nickname: 1,
             bio: 1,
             profile_image: '$tweetDetails.tweet_owner.profileImage',
-            followers_num: { $size: '$tweetDetails.tweet_owner.followingUsers' },
-            following_num: { $size: '$tweetDetails.tweet_owner.followersUsers' },
+            followers_num: {
+              $size: '$tweetDetails.tweet_owner.followingUsers',
+            },
+            following_num: {
+              $size: '$tweetDetails.tweet_owner.followersUsers',
+            },
           },
         },
-        isFollowed: { $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'] },
+        isFollowed: {
+          $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'],
+        },
         isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
         isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
       })
@@ -110,6 +116,7 @@ const getLatestUserTweet = async (reqUser) => {
 
 exports.getFollowingTweets = async (req, res) => {
   try {
+    console.log(req.user._id);
     const user = await User.aggregate([
       {
         $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
@@ -246,7 +253,8 @@ exports.getFollowingTweets = async (req, res) => {
         tweetList: { $push: '$tweetList' },
       });
     let tweets = await getLatestUserTweet(req.user);
-    tweets.push(...user[0].tweetList);
+    if (user[0] !== undefined && user[0].tweetList !== undefined)
+      tweets.push(...user[0].tweetList);
     try {
       if (tweets.length == 0)
         return res
