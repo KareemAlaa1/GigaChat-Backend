@@ -7,7 +7,7 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: [true, 'A notification must have a type'],
     enum: {
-      values: ['like', 'reply', 'mention', 'retweet', 'follow'],
+      values: ['like', 'reply','quote', 'mention', 'retweet', 'follow'],
       message:
         'notification type is either: like, reply, mention, retweet, follow',
     },
@@ -18,7 +18,7 @@ const notificationSchema = new mongoose.Schema({
   },
   seen: {
     type: Boolean,
-    required: true,
+    default: false,
   },
   creation_time: {
     type: Date,
@@ -26,12 +26,12 @@ const notificationSchema = new mongoose.Schema({
     required: true,
   },
   notifier: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     required: [true, 'A notification must have a notifier'],
     ref: 'User',
   },
   notified: {
-    type: Schema.Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     required: [true, 'A notification must have a notified user'],
     ref: 'User',
   },

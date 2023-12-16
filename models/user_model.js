@@ -91,8 +91,8 @@ const userSchema = new mongoose.Schema(
         type: {
           type: String,
           enum: {
-            values: ['tweet', 'retweet', 'reply'],
-            message: 'type must be tweet or retweet or reply',
+            values: ['tweet', 'quote', 'reply'],
+            message: 'type must be tweet or quote or reply',
           },
         },
       },

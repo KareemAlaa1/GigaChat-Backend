@@ -103,9 +103,10 @@ exports.signUp = catchAsync(async (req, res, next) => {
       .status(400)
       .json({ error: 'nickName is required in the request body' });
   }
-
+  const generatedUsername = await generateUserName(req.body.nickname);
   const newUser = await User.create({
     email: req.body.email,
+    username: generatedUsername,
     nickname: req.body.nickname,
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
@@ -285,15 +286,15 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
 
   user.confirmEmailExpires = undefined;
   user.confirmEmailCode = undefined;
-  const generatedUsername = await generateUserName(user.nickname);
-  user.username = generatedUsername;
+  // const generatedUsername = await generateUserName(user.nickname);
+  // user.username = generatedUsername;
   await user.save();
   const token = signToken(user._id);
   res.status(201).json({
     token,
     status: 'success',
     data: {
-      suggestedUsername: generatedUsername,
+      suggestedUsername: user.username,
       message: 'Confirm done successfully',
     },
   });
@@ -700,7 +701,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           location: user.location,
           website: user.website,
           birthDate: user.birthDate,
-          joinedAt: user.joinedAt,
+          joinedAt: Date.now(),
           followings_num: user.followingUsers.length,
           followers_num: user.followersUsers.length,
         },
