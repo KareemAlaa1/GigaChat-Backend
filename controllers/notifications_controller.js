@@ -4,7 +4,7 @@ const catchAsync = require('../utils/catch_async');
 const User = require('../models/user_model');
 
 
-function getMentions(tweet) {
+exports.getMentions=(tweet)=> {
   const mentions = {};
   const words = tweet.description.split(' ');
   for (let i = 0; i < words.length; i++) {
