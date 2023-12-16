@@ -22,8 +22,6 @@ exports.handleSocketAuth = async(socket, token) =>{
             console.log("Connection Success Token");
             users_sockets[userId] = socket.id;
             sockets_users[socket.id] = userId;
-            console.log(sockets_users);
-            console.log(users_sockets);
             return true;
         }
     } catch (error) {
@@ -121,7 +119,7 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
         // finally send the message
         if(users_sockets[recieverId])
             socket.broadcast.to(users_sockets[recieverId]).emit("receive_message", {message: retMessage, chat_id: chatId[0]._id});
-                
+
         retMessage.mine = true;    
         socket.emit("receive_message", {message: retMessage, chat_id: chatId[0]._id, id: id});    
     } catch (error) {
