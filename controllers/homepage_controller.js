@@ -116,14 +116,7 @@ const getLatestUserTweet = async (reqUser) => {
 
 exports.getFollowingTweets = async (req, res) => {
   try {
-    const reqUser = await User.findById(req.user._id);
-    const hasFollowings = reqUser.followingUsers;
-    console.log(hasFollowings);
-    if ((hasFollowings === undefined) | (hasFollowings.length == 0)) {
-      return res
-        .status(404)
-        .send({ error: 'this user has no following users' });
-    }
+    console.log(req.user._id);
     const user = await User.aggregate([
       {
         $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
@@ -260,7 +253,8 @@ exports.getFollowingTweets = async (req, res) => {
         tweetList: { $push: '$tweetList' },
       });
     let tweets = await getLatestUserTweet(req.user);
-    tweets.push(...user[0].tweetList);
+    if (user[0] !== undefined && user[0].tweetList !== undefined)
+      tweets.push(...user[0].tweetList);
     try {
       if (tweets.length == 0)
         return res
