@@ -4,7 +4,6 @@ const Tweet = require('../models/tweet_model');
 const mongoose = require('mongoose');
 const notificationController = require('./notifications_controller');
 
-
 exports.follow = async (req, res) => {
   try {
     const username = req.params.username;
@@ -39,8 +38,11 @@ exports.follow = async (req, res) => {
     await followedUser.save();
     await currUser.save();
     //region addFollowNotification
-    const notification = await notificationController.addFollowNotification(currUser, followedUser);
-    console.log(notification)
+    const notification = await notificationController.addFollowNotification(
+      currUser,
+      followedUser,
+    );
+    console.log(notification);
     return res.status(204).end();
     //endregion
   } catch (error) {
@@ -124,8 +126,9 @@ exports.like = async (req, res) => {
     await currUser.save();
     //region addLikeNotification
     const notification = await notificationController.addLikeNotification(
-      currUser,likedTweet
-    )
+      currUser,
+      likedTweet,
+    );
     //endregion
     return res.status(204).end();
   } catch (error) {
@@ -526,6 +529,7 @@ exports.getBlockList = async (req, res) => {
         profile_image: '$blockedUsers.profileImage',
         followers_num: { $size: '$blockedUsers.followersUsers' },
         following_num: { $size: '$blockedUsers.followingUsers' },
+        isMuted: { $in: ['$blockedUsers._id', currUser.mutedUsers] },
       })
       .skip(skip)
       .limit(limit);
@@ -572,6 +576,7 @@ exports.getMuteList = async (req, res) => {
         followers_num: { $size: '$mutedUsers.followersUsers' },
         following_num: { $size: '$mutedUsers.followingUsers' },
         isFollowed: { $in: [currUser._id, '$mutedUsers.followersUsers'] },
+        isBlocked: { $in: ['$mutedUsers._id', currUser.blockingUsers] },
       })
       .skip(skip)
       .limit(limit);

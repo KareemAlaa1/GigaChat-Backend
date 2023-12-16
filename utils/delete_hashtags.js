@@ -8,7 +8,6 @@ const deleteHashtags = async (tweet) => {
   const hashtagWords = words.filter(
     (word, index, self) => /^#/.test(word) && self.indexOf(word) === index,
   );
-  console.log(hashtagWords, '\n\n\n\n\n');
   for (const hashtagWord of hashtagWords) {
     const hashtag = await Hashtag.findOne({ title: hashtagWord });
     // Check for this hashtag if it exists in the database
@@ -18,11 +17,8 @@ const deleteHashtags = async (tweet) => {
       hashtag.tweet_list.pull(tweetId);
 
       if (hashtag.count == 0) {
-        console.log(hashtag, 'deleted to the end\n\n\n\n\n');
         await Hashtag.findOneAndDelete({ title: hashtagWord });
       } else {
-        console.log(hashtag, 'deleted one\n\n\n\n\n');
-
         await hashtag.save();
       }
     }
