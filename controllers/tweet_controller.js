@@ -393,6 +393,11 @@ const TweetController = {
               },
             },
             {
+              $match: {
+                _id: { $nin: req.user.blockingUsers },
+              },
+            },
+            {
               $project: {
                 id: '$_id',
                 username: 1,
@@ -407,6 +412,17 @@ const TweetController = {
                 },
                 isDeleted: 1,
                 isFollowed: { $in: [req.user._id, '$followersUsers'] },
+                blockingUsers: 1,
+              },
+            },
+            {
+              $match: {
+                blockingUsers: { $nin: [req.user._id] },
+              },
+            },
+            {
+              $project: {
+                blockingUsers: 0,
               },
             },
             {
@@ -467,6 +483,11 @@ const TweetController = {
               },
             },
             {
+              $match: {
+                _id: { $nin: req.user.blockingUsers },
+              },
+            },
+            {
               $project: {
                 id: '$_id',
                 username: 1,
@@ -481,6 +502,17 @@ const TweetController = {
                 },
                 isDeleted: 1,
                 isFollowed: { $in: [req.user._id, '$followersUsers'] },
+                blockingUsers: 1,
+              },
+            },
+            {
+              $match: {
+                blockingUsers: { $nin: [req.user._id] },
+              },
+            },
+            {
+              $project: {
+                blockingUsers: 0,
               },
             },
             {
@@ -599,6 +631,7 @@ const TweetController = {
                       followers_num: { $size: '$followersUsers' },
                       following_num: { $size: '$followingUsers' },
                       isFollowed: { $in: [req.user._id, '$followersUsers'] },
+                      blockingUsers: 1,
                     },
                   },
                 ],
@@ -613,6 +646,26 @@ const TweetController = {
             {
               $project: {
                 tweet_owner_list: 0,
+              },
+            },
+            {
+              $match: {
+                userId: { $nin: req.user.blockingUsers },
+              },
+            },
+            {
+              $addFields: {
+                blockingUsers: '$tweet_owner.blockingUsers',
+              },
+            },
+            {
+              $match: {
+                blockingUsers: { $nin: [req.user._id] },
+              },
+            },
+            {
+              $project: {
+                blockingUsers: 0,
               },
             },
             {

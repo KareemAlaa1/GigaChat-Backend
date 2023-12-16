@@ -93,6 +93,7 @@ exports.getTweetDatabyId = async (id) => {
   tweetData.media = tweet[0].media;
   tweetData.type = tweet[0].type;
   tweetData.creation_time = tweet[0].createdAt;
+  tweetData.createdAt = tweet[0].createdAt;
   return tweetData;
 };
 
@@ -111,5 +112,7 @@ exports.getRequiredTweetDatafromTweetObject = async (tweet) => {
   tweetData.media = tweet.media;
   tweetData.type = tweet.type;
   tweetData.creation_time = tweet.createdAt;
+  tweetData.createdAt = tweet.createdAt;
+
   return tweetData;
 };
