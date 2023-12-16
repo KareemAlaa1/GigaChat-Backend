@@ -4,7 +4,7 @@ const catchAsync = require('../utils/catch_async');
 const User = require('../models/user_model');
 
 
-exports.getMentions=(tweet)=> {
+const getMentions=(tweet)=> {
   const mentions = {};
   const words = tweet.description.split(' ');
   for (let i = 0; i < words.length; i++) {
@@ -14,6 +14,7 @@ exports.getMentions=(tweet)=> {
   }
   return mentions;
 }
+exports.getMentions = getMentions;
 exports.addFollowNotification = async (notifier, notified) => {
 
   const notification = await Notification.create({
