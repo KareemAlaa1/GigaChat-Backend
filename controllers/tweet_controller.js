@@ -2,9 +2,12 @@ const mongoose = require('mongoose');
 const Tweet = require('../models/tweet_model');
 const User = require('../models/user_model');
 const extractHashtags = require('../utils/extract_hashtags');
+const deleteHashtags = require('../utils/delete_hashtags');
+
+const extractMentions = require('../utils/extract_mentions');
+const deleteMentions = require('../utils/delete_mentions');
+
 const notificationController = require('./notifications_controller');
-
-
 
 const {
   getUserDatabyId,
@@ -36,13 +39,16 @@ const TweetController = {
             $push: { tweetList: { tweetId: retTweet.id, type: req.body.type } },
           });
           let data = retTweet;
-          await notificationController.addMentionNotification(req.user,data);
+          await notificationController.addMentionNotification(req.user, data);
           res.status(201);
           res.json({
             status: 'Tweet Add Success',
             data,
           });
-          if (req.body.description) extractHashtags(newTweet);
+          if (req.body.description) {
+            extractHashtags(newTweet);
+            extractMentions(newTweet);
+          }
         } else {
           const referredTweet = await getTweetDatabyId(
             req.body.referredTweetId,
@@ -83,25 +89,36 @@ const TweetController = {
             let data = retTweet;
             let notification;
             //region addNotification
-            if(data.type!='tweet'){
-              if(data.type == 'reply'){
-                 notification = await notificationController.addReplyNotification(req.user,referredTweet.userId,data.referredReplyId)
-              }
-              else if(data.type == 'quote'){
+            if (data.type != 'tweet') {
+              if (data.type == 'reply') {
+                notification =
+                  await notificationController.addReplyNotification(
+                    req.user,
+                    referredTweet.userId,
+                    data.referredReplyId,
+                  );
+              } else if (data.type == 'quote') {
                 console.log(req.user);
 
-                 notification = await notificationController.addQuoteNotification(req.user,referredTweet.userId,data.referredReplyId)
+                notification =
+                  await notificationController.addQuoteNotification(
+                    req.user,
+                    referredTweet.userId,
+                    data.referredReplyId,
+                  );
               }
-
             }
-            await notificationController.addMentionNotification(req.user,data);
+            await notificationController.addMentionNotification(req.user, data);
             //endregion
             res.status(201);
             res.json({
               status: 'Tweet Add Success',
               data,
             });
-            if (req.body.description) extractHashtags(newTweet);
+            if (req.body.description) {
+              extractHashtags(newTweet);
+              extractMentions(newTweet);
+            }
           } else {
             res.status(400);
             res.json({
@@ -149,9 +166,11 @@ const TweetController = {
               $push: { tweetList: { tweetId: tweet._id, type: 'retweet' } },
             });
             //region addRetweetNotification
-            const notification = await notificationController.addRetweetNotification(
-              currUser,tweet
-            )
+            const notification =
+              await notificationController.addRetweetNotification(
+                currUser,
+                tweet,
+              );
             //endregion
             res.status(204);
             res.json({
@@ -321,6 +340,11 @@ const TweetController = {
               $pull: { tweetList: { tweetId: req.params.tweetId } },
             });
 
+            if (tweet.description) {
+              deleteHashtags(tweet);
+              deleteMentions(tweet);
+            }
+
             res.status(204).json({
               status: 'Tweet Delete Success',
             });
@@ -334,6 +358,7 @@ const TweetController = {
         }
       }
     } catch (err) {
+      console.log(err);
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },

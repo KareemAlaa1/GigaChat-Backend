@@ -1,7 +1,7 @@
 const User = require('../models/user_model');
 
 // extract the hashtags in the tweet description
-const extractMentions = async (tweet) => {
+const deleteMentions = async (tweet) => {
   const tweetId = tweet.id;
   const tweetDescription = tweet.description;
   if (tweetDescription === undefined || tweetDescription === '') return;
@@ -16,10 +16,10 @@ const extractMentions = async (tweet) => {
     // Check for this mentionedUser if exists in the database
     // if he/she exists, update his/her data and save
     if (mentionedUser) {
-      mentionedUser.mentionList.push(tweetId);
+      mentionedUser.mentionList.pull(tweetId);
       await mentionedUser.save();
     }
   }
 };
 
-module.exports = extractMentions;
+module.exports = deleteMentions;
