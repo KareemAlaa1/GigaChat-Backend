@@ -207,17 +207,21 @@ exports.getCurrUserProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     // get the sent data from the request body
-    const { bio, location, website, nickname, birth_date } = req.body;
+    
+    console.log(req.body);
 
-    if (!bio && !location && !website && !nickname && !birth_date) {
+    const { bio, location, website, nickname, birth_date } = req.body;
+  
+    if (bio === undefined && location === undefined && website === undefined && nickname === undefined && birth_date === undefined) {
       return res.status(400).send({ error: 'Bad Request' });
     }
 
-    if (bio) req.user.bio = bio;
-    if (location) req.user.location = location;
-    if (website) req.user.website = website;
-    if (nickname) req.user.nickname = nickname;
-    if (birth_date) req.user.birthDate = new Date(birth_date);
+
+    if (bio !== undefined) req.user.bio = bio;
+    if (location !== undefined) req.user.location = location;
+    if (website !== undefined) req.user.website = website;
+    if (nickname !== undefined) req.user.nickname = nickname;
+    if (birth_date !== undefined) req.user.birthDate = new Date(birth_date);
 
     await req.user.save();
 

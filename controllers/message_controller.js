@@ -116,12 +116,14 @@ exports.sendMessage = async(socket, recieverId, messageData) => {
             sendTime: message._doc.sendTime,
             mine: false,
         }
+        
         // finally send the message
+
         if(users_sockets[recieverId])
-            socket.broadcast.to(users_sockets[recieverId]).emit("receive_message", {message: retMessage, chat_id: chatId[0]._id});
+            socket.broadcast.to(users_sockets[recieverId]).emit("receive_message", {message: retMessage, chat_ID: senderId});
 
         retMessage.mine = true;    
-        socket.emit("receive_message", {message: retMessage, chat_id: chatId[0]._id, id: id});    
+        socket.emit("receive_message", {message: retMessage, chat_ID: recieverId, id: id});    
     } catch (error) {
         console.log(error);
         return socket.emit("failed_to_send_message", { error: "Internal Server Error"});
