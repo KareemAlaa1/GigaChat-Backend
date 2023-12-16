@@ -66,6 +66,6 @@ exports.search = async (req, res, next) => {
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
+    return res.status(500).send({ error: 'Internal Server Error' });
   }
 };

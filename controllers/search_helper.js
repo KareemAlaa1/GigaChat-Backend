@@ -148,6 +148,6 @@ exports.searchTweets = async (req, res, next) => {
     return tweets;
   } catch (error) {
     // Handle and log errors
-    res.status(500).send({ error: error.message });
+    return res.status(500).send({ error: error.message });
   }
 };
