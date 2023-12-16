@@ -65,11 +65,17 @@ const getLatestUserTweet = async (reqUser) => {
             nickname: 1,
             bio: 1,
             profile_image: '$tweetDetails.tweet_owner.profileImage',
-            followers_num: { $size: '$tweetDetails.tweet_owner.followingUsers' },
-            following_num: { $size: '$tweetDetails.tweet_owner.followersUsers' },
+            followers_num: {
+              $size: '$tweetDetails.tweet_owner.followingUsers',
+            },
+            following_num: {
+              $size: '$tweetDetails.tweet_owner.followersUsers',
+            },
           },
         },
-        isFollowed: { $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'] },
+        isFollowed: {
+          $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'],
+        },
         isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
         isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
       })
@@ -110,6 +116,14 @@ const getLatestUserTweet = async (reqUser) => {
 
 exports.getFollowingTweets = async (req, res) => {
   try {
+    const reqUser = await User.findById(req.user._id);
+    const hasFollowings = reqUser.followingUsers;
+    console.log(hasFollowings);
+    if ((hasFollowings === undefined) | (hasFollowings.length == 0)) {
+      return res
+        .status(404)
+        .send({ error: 'this user has no following users' });
+    }
     const user = await User.aggregate([
       {
         $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
