@@ -298,6 +298,9 @@ exports.deleteProfileImage = async (req, res) => {
 
 exports.deleteProfileBanner = async (req, res) => {
   try {
+    
+    if(!req.user.bannerImage) return res.status(400).send({error: "Bad Request, Banner already deleted"});
+
     await deleteMedia(req.user.bannerImage);
 
     req.user.bannerImage = null;

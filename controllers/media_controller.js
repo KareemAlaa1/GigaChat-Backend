@@ -67,7 +67,14 @@ exports.checkExistingUrl = async ([urlList]) => {
 }
 
 exports.deleteMedia = async (url) => {
-    const media = await Media.findOneAndDelete({ url: url });
-    const file = bucket.file(media.cloudStrogePath);
-    file.delete();
+    try {
+        if(!url) return
+        const media = await Media.findOneAndDelete({ url: url });
+        if(!media) return
+        console.log(media); 
+        const file = bucket.file(media.cloudStrogePath);
+        file.delete();        
+    } catch (error) {
+        
+    }
 }
