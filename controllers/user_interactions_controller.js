@@ -46,7 +46,7 @@ exports.follow = async (req, res) => {
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: error });
   }
 };
 
@@ -91,7 +91,7 @@ exports.unfollow = async (req, res) => {
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    res.status(500).send({ error: 'Internal Server Error' });
+    res.status(500).send({ error: error });
   }
 };
 
