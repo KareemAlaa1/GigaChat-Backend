@@ -2,7 +2,14 @@ const mongoose = require('mongoose');
 const messageSchema = new mongoose.Schema({
   description: {
     type: String,
-    required: true,
+  },
+  media: {
+    link: {
+      type: String,
+    },
+    type: {
+      type: String, // jpg , mp4 , gif
+    },
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,7 +18,6 @@ const messageSchema = new mongoose.Schema({
   },
   seen: {
     type: Boolean,
-    required: true,
     default: false,
   },
   sendTime: {
