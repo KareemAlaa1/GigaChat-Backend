@@ -300,13 +300,12 @@ exports.deleteProfileBanner = async (req, res) => {
   try {
     await deleteMedia(req.user.bannerImage);
 
-    req.user.bannerImage = DEFAULT_IMAGE_URL;
+    req.user.bannerImage = null;
 
     await req.user.save();
 
     const result = {
       status: 'image deleted successfully',
-      image_profile_url: DEFAULT_IMAGE_URL,
     };
 
     res.status(200).send(result);
