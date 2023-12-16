@@ -33,17 +33,39 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     const senderId = sockets_users[socket.id];
 
     // get the reciever User
-    const recieverUser = await User.findById(recieverId).select('_id');
+    const recieverUser =
+      await User.findById(recieverId).select('_id blockingUsers');
+    const senderUser =
+      await User.findById(senderId).select('_id blockingUsers');
 
     // user not found check
     if (!recieverUser) {
-      return socket.emit('failed_to_send_message', { error: 'User Not Found' });
+      return socket.emit('failed_to_send_message', {
+        error: 'User Not Found',
+        id: messageData.id,
+      });
     }
 
     // user cant talk to him/herself
     if (recieverId === senderId) {
       return socket.emit('failed_to_send_message', {
         error: 'user cant talk to him/herself',
+        id: messageData.id,
+      });
+    }
+
+    // if i am blocked by the other user or i block the other user send failed to send
+    if (senderUser.blockingUsers.includes(recieverUser._id)) {
+      return socket.emit('failed_to_send_message', {
+        error: 'you have blocked this user',
+        id: messageData.id,
+      });
+    }
+
+    if (recieverUser.blockingUsers.includes(senderUser._id)) {
+      return socket.emit('failed_to_send_message', {
+        error: 'this user has blocked you',
+        id: messageData.id,
       });
     }
 
@@ -55,6 +77,7 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     if (!description && !media)
       return socket.emit('failed_to_send_message', {
         error: 'message must not be empty',
+        id: messageData.id,
       });
 
     // get the chat id of certain user
@@ -161,6 +184,7 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     console.log(error);
     return socket.emit('failed_to_send_message', {
       error: error,
+      id: messageData.id,
     });
   }
 };
