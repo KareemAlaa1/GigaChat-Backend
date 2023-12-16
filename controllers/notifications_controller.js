@@ -91,7 +91,6 @@ exports.addMentionNotification = async (notifier, tweet) => {
   const mentions = getMentions(tweet);
   for(let i in mentions)  {
     if(i==notifier.username) continue;
-    console.log(i);
     const notified = await User.findOne({username:i});
     if(!notified) continue;
     const notification= await Notification.create({
@@ -103,7 +102,6 @@ exports.addMentionNotification = async (notifier, tweet) => {
       creation_time: Date.now(),
 
     });
-    console.log(notification);
   }
 }
 

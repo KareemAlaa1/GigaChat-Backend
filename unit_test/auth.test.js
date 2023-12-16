@@ -1041,7 +1041,6 @@ describe('auth', () => {
         .post('/api/user/updateEmail')
         .set('Authorization', `Bearer ${signToken(user._id)}`)
         .send({ email: 'newemail@example.com' });
-      console.log(response.body, 'tess');
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.data.message).toBe(

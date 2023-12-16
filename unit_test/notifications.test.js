@@ -102,7 +102,6 @@ describe('notifications', () => {
         notified: testNotified._id,
         creation_time: new Date()
       });
-      console.log(notification1,notification2);
       const response = await request(app)
         .get('/api/user/notifications')
         .set('Authorization', testNotified.token);
@@ -253,7 +252,6 @@ describe('notifications', () => {
     it('should create a like notification', async () => {
       // Call the function to add a like notification
       const notification = await notificationsController.addLikeNotification(testNotifier, testTweet);
-    console.log(notification)
       // Assert that the notification is created
       expect(notification).toBeTruthy();
       expect(notification.description).toBe(`${testNotifier.username} liked your tweet`);
