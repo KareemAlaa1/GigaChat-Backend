@@ -66,6 +66,8 @@ exports.getAllConversations = async (req, res) => {
         chat_members: 1,
         lastMessage: 1,
         _id: '$_id.id',
+        isFollowed: { $in: ['$_id.id', req.user.followingUsers] },
+        isBlocked: { $in: ['$_id.id', req.user.blockingUsers] },
       });
 
     try {
