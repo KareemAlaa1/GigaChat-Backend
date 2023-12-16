@@ -60,7 +60,12 @@ exports.getAllConversations = async (req, res) => {
           sendTime: 1,
           isDeleted: 1,
         },
-        _id: '$lastMessage.sender._id',
+        _id: { $arrayElemAt: ['$chat_members', 0] },
+      })
+      .project({
+        chat_members: 1,
+        lastMessage: 1,
+        _id: '$_id.id',
       });
 
     try {
