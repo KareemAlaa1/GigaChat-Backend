@@ -118,7 +118,6 @@ exports.signUp = catchAsync(async (req, res, next) => {
   await newUser.save({ validateBeforeSave: false });
 
   const message = `Your confirm Code is ${confirmCode}`;
-  console.log(confirmCode);
   // 3) Sending email
   try {
     await sendEmail({
@@ -149,7 +148,6 @@ exports.login = catchAsync(async (req, res, next) => {
   const { query, password } = req.body;
 
 
-  console.log(req.body);
   // 1) Check if email and password exist
   if (!password || !query) {
     return next(
@@ -736,8 +734,8 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           location: newUser.location,
           website: newUser.website,
           joinedAt: user.joinedAt,
-          followings_num: user.followingUsers.length,
-          followers_num: user.followersUsers.length,
+          followings_num: 0,
+          followers_num: 0,
         },
       },
     });
