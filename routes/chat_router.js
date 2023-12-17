@@ -5,6 +5,6 @@ const router = new express.Router();
 
 router.get('/all', protect, ChatController.getAllConversations);
 
-// router.get('/search', protect, ChatController.searchMessage);
+router.get('/search', protect, ChatController.searchMessage);
 
 module.exports = router;

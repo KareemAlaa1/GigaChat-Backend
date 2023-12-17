@@ -86,55 +86,151 @@ exports.getAllConversations = async (req, res) => {
   }
 };
 
-// exports.searchMessage = async (req, res) => {
-//   try {
-//     currentUser = req.user;
-//     const messages = await User.aggregate([
-//       {
-//         $match: {
-//           _id: currentUser._id,
-//         },
-//       },
-//       {
-//         $project: {
-//           chatList: 1,
-//         },
-//       },
-//       {
-//         $lookup: {
-//           from: 'chats',
-//           localField: 'chatList',
-//           foreignField: '_id',
-//           as: 'chats',
-//         },
-//       },
-//       {
-//         $unwind: '$chats',
-//       },
-//       {
-//         $project: {
-//           _id: '$chats.usersList',
-//           messagesList: '$chats.messagesList',
-//         },
-//       },
-//       {
-//         $addFields: {
-//           filteredTweetOwners: {
-//             $filter: {
-//               input: '$_id', // Assuming 'filteredTweetOwners' is the array field
-//               as: 'owner',
-//               cond: { $eq: ['$$owner._id', currentUser._id] },
-//             },
-//           },
-//         },
-//       },
-//     ]);
-//     return res.status(200).send({
-//       data: messages,
-//     });
-//   } catch (error) {
-//     // Handle and log errors
-//     console.log(error);
-//     return res.status(500).send({ error: error.message });
-//   }
-// };
+exports.searchMessage = async (req, res) => {
+  try {
+    console.log(req.query.word);
+    currentUser = req.user;
+    const messages = await User.aggregate([
+      {
+        $match: {
+          _id: currentUser._id,
+        },
+      },
+      {
+        $project: {
+          chatList: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: 'chats',
+          localField: 'chatList',
+          foreignField: '_id',
+          as: 'chats',
+        },
+      },
+      {
+        $unwind: '$chats',
+      },
+      {
+        $project: {
+          _id: '$chats.usersList',
+          messagesList: '$chats.messagesList',
+        },
+      },
+      {
+        $lookup: {
+          from: 'messages',
+          localField: 'messagesList',
+          foreignField: '_id',
+          as: 'messagesList',
+        },
+      },
+      {
+        $unwind: '$messagesList',
+      },
+      {
+        $project: {
+          usersList: '$_id',
+          messagesList: 1,
+          _id: 0,
+          text: '$messagesList.description',
+        },
+      },
+      {
+        $match: {
+          text: {
+            $regex: new RegExp(req.query.word, 'i'), // 'i' for case-insensitive matching
+          },
+        },
+      },
+      {
+        $unwind: '$usersList',
+      },
+      {
+        $match: {
+          usersList: { $ne: currentUser._id },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'usersList',
+          foreignField: '_id',
+          as: 'usersList',
+        },
+      },
+      {
+        $addFields: {
+          chat_id: { $arrayElemAt: ['$usersList', 0] },
+        },
+      },
+      {
+        $project: {
+          message: '$messagesList',
+          chat_id: {
+            nickname: '$chat_id.nickname',
+            username: '$chat_id.username',
+            profile_image: '$chat_id.profileImage',
+            id: '$chat_id._id',
+          },
+          isFollowed: { $in: ['$chat_id._id', currentUser.followingUsers] },
+          isBlocked: { $in: ['$chat_id._id', currentUser.blockingUsers] },
+          _id: '$chat_id._id',
+        },
+      },
+      {
+        $project: {
+          message: 1,
+          chat_members: ['$chat_id'],
+          isFollowed: 1,
+          isBlocked: 1,
+          _id: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'message.sender',
+          foreignField: '_id',
+          as: 'sender',
+        },
+      },
+      {
+        $addFields: {
+          sender: { $arrayElemAt: ['$sender', 0] },
+        },
+      },
+      {
+        $project: {
+          message: 1,
+          chat_members: 1,
+          isFollowed: 1,
+          isBlocked: 1,
+          _id: 1,
+          sender: '$sender.username',
+        },
+      },
+      {
+        $project: {
+          lastMessage: {
+            description: '$message.description',
+            seen: '$message.seen',
+            sendTime: '$message.sendTime',
+            isDeleted: '$message.isDeleted',
+            sender: '$sender',
+          },
+          chat_members: 1,
+          isFollowed: 1,
+          isBlocked: 1,
+          _id: 1,
+        },
+      },
+    ]);
+    return res.status(200).send({ status: 'success', data: messages });
+  } catch (error) {
+    // Handle and log errors
+    console.log(error);
+    return res.status(500).send({ error: error.message });
+  }
+};
