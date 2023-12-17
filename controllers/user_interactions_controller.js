@@ -32,6 +32,17 @@ exports.follow = async (req, res) => {
         .status(400)
         .send({ error: 'Bad request, User already followed' });
 
+    if (followedUser.blockingUsers.includes(currUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, User Blocked You' });
+
+    if (currUser.blockingUsers.includes(followedUser._id))
+      return res
+        .status(400)
+        .send({ error: 'Bad request, You Blocked This User' });
+
+
     followedUser.followersUsers.push(currUser._id);
     currUser.followingUsers.push(followedUser._id);
 
@@ -234,7 +245,7 @@ exports.getFollowers = async (req, res) => {
       })
       .match({
         'followersUsers.blockingUsers': { $nin: [currUser._id] },
-        _id : { $nin: targetUser.blockingUsers }
+        _id: { $nin: targetUser.blockingUsers }
       })
       .project({
         _id: 0,
@@ -316,7 +327,7 @@ exports.getFollowings = async (req, res) => {
       })
       .match({
         'followingUsers.blockingUsers': { $nin: [currUser._id] },
-        _id : { $nin: currUser.blockingUsers }
+        _id: { $nin: currUser.blockingUsers }
       })
       .project({
         _id: 0,
