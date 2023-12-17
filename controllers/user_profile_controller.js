@@ -41,8 +41,9 @@ exports.getUserTweets = async (req, res) => {
         'tweetList.tweet.tweet_owner.active': true,
         'tweetList.tweet.tweet_owner.isDeleted': false,
       })
-      // .skip(skip)
-      // .limit(limit)
+      .sort({
+        'tweetList._id': -1,
+      })
       .unwind('tweetList.tweet.tweet_owner')
       .project({
         tweetList: {
@@ -137,6 +138,9 @@ exports.getUserLikedTweets = async (req, res) => {
         'likedTweets.tweet_owner.active': true,
         'likedTweets.tweet_owner.isDeleted': false,
       })
+      .sort({
+        'likedTweets._id': -1,
+      })
       .unwind('likedTweets.tweet_owner')
       .project({
         likedTweets: {
@@ -148,7 +152,7 @@ exports.getUserLikedTweets = async (req, res) => {
           repostsNum: { $size: '$likedTweets.retweetList' },
           media: 1,
           type: 1,
-          creation_time: '$tweetList.tweet.createdAt',
+          creation_time: '$likedTweets.tweet.createdAt',
           tweet_owner: {
             id: '$likedTweets.userId',
             username: 1,
