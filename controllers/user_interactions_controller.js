@@ -232,6 +232,10 @@ exports.getFollowers = async (req, res) => {
         },
         'followersUsers.profile_image': '$followersUsers.profileImage',
       })
+      .match({
+        '$followersUsers._id': { $nin: currUser.blockingUsers}, 
+        _id : { $nin: targetUser.blockingUsers}
+      })
       .project({
         _id: 0,
         _id: '$followersUsers._id',
@@ -311,6 +315,10 @@ exports.getFollowings = async (req, res) => {
             $eq: [currUser._id, '$followingUsers._id'],
           },
           'followingUsers.profile_image': '$followingUsers.profileImage',
+        })
+        .match({
+          '$followingUsers._id': { $nin: currUser.blockingUsers}, 
+          _id : { $nin: targetUser.blockingUsers}
         })
         .project({
           _id: 0,
