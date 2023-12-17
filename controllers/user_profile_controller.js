@@ -42,7 +42,7 @@ exports.getUserTweets = async (req, res) => {
         'tweetList.tweet.tweet_owner.isDeleted': false,
       })
       .sort({
-        'tweetList.tweet.createdAt': -1,
+        'tweetList._id': -1,
       })
       .unwind('tweetList.tweet.tweet_owner')
       .project({
@@ -139,7 +139,7 @@ exports.getUserLikedTweets = async (req, res) => {
         'likedTweets.tweet_owner.isDeleted': false,
       })
       .sort({
-        'likedTweets.tweet.createdAt': -1,
+        'likedTweets._id': -1,
       })
       .unwind('likedTweets.tweet_owner')
       .project({

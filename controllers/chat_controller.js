@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const Chat = require('../models/chat_model');
+const User = require('../models/user_model');
+
 const { paginate } = require('../utils/api_features');
 
 exports.getAllConversations = async (req, res) => {
@@ -59,6 +61,7 @@ exports.getAllConversations = async (req, res) => {
           seen: 1,
           sendTime: 1,
           isDeleted: 1,
+          media: '$lastMessage.media',
         },
         _id: { $arrayElemAt: ['$chat_members', 0] },
       })
@@ -85,11 +88,43 @@ exports.getAllConversations = async (req, res) => {
 
 // exports.searchMessage = async (req, res) => {
 //   try {
+//     currentUser = req.user;
 //     const messages = await User.aggregate([
 //       {
 //         $match: {
-//           username: {
-//             $regex: new RegExp(escape(req.query.word), 'i'), // 'i' for case-insensitive matching
+//           _id: currentUser._id,
+//         },
+//       },
+//       {
+//         $project: {
+//           chatList: 1,
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: 'chats',
+//           localField: 'chatList',
+//           foreignField: '_id',
+//           as: 'chats',
+//         },
+//       },
+//       {
+//         $unwind: '$chats',
+//       },
+//       {
+//         $project: {
+//           _id: '$chats.usersList',
+//           messagesList: '$chats.messagesList',
+//         },
+//       },
+//       {
+//         $addFields: {
+//           filteredTweetOwners: {
+//             $filter: {
+//               input: '$_id', // Assuming 'filteredTweetOwners' is the array field
+//               as: 'owner',
+//               cond: { $eq: ['$$owner._id', currentUser._id] },
+//             },
 //           },
 //         },
 //       },
@@ -99,6 +134,7 @@ exports.getAllConversations = async (req, res) => {
 //     });
 //   } catch (error) {
 //     // Handle and log errors
+//     console.log(error);
 //     return res.status(500).send({ error: error.message });
 //   }
 // };
