@@ -233,8 +233,8 @@ exports.getFollowers = async (req, res) => {
         'followersUsers.profile_image': '$followersUsers.profileImage',
       })
       .match({
-        '$followersUsers._id': { $nin: currUser.blockingUsers}, 
-        _id : { $nin: targetUser.blockingUsers}
+        'followersUsers.blockingUsers': { $nin: [currUser._id] },
+        _id : { $nin: targetUser.blockingUsers }
       })
       .project({
         _id: 0,
@@ -276,65 +276,62 @@ exports.getFollowings = async (req, res) => {
     const targetUser = await User.findOne({ username });
 
     if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
-    if (
-      !targetUser.followingUsers ||
+    if (!targetUser.followingUsers ||
       targetUser.followingUsers === undefined ||
-      targetUser.followingUsers.length == 0
-    )
+      targetUser.followingUsers.length == 0)
       return res.status(200).send({
         status: 'success',
         users: [],
       });
 
-      const user = await User.aggregate([
-        {
-          $match: { username: username, isDeleted: false, active: true },
+    const user = await User.aggregate([
+      {
+        $match: { username: username, isDeleted: false, active: true },
+      },
+    ])
+      .lookup({
+        from: 'users',
+        localField: 'followingUsers',
+        foreignField: '_id',
+        as: 'followingUsers',
+      })
+      .project({
+        followingUsers: 1,
+      })
+      .unwind('followingUsers')
+      .addFields({
+        'followingUsers.isFollowed': {
+          $in: [currUser._id, '$followingUsers.followersUsers'],
         },
-      ])
-        .lookup({
-          from: 'users',
-          localField: 'followingUsers',
-          foreignField: '_id',
-          as: 'followingUsers',
-        })
-        .project({
-          followingUsers: 1,
-        })
-        .unwind('followingUsers')
-        .addFields({
-          'followingUsers.isFollowed': {
-            $in: [currUser._id, '$followingUsers.followersUsers'],
-          },
-          'followingUsers.followers_num': {
-            $size: '$followingUsers.followersUsers',
-          },
-          'followingUsers.followings_num': {
-            $size: '$followingUsers.followingUsers',
-          },
-          'followingUsers.is_curr_user': {
-            $eq: [currUser._id, '$followingUsers._id'],
-          },
-          'followingUsers.profile_image': '$followingUsers.profileImage',
-        })
-        .match({
-          '$followingUsers._id': { $nin: currUser.blockingUsers}, 
-          _id : { $nin: targetUser.blockingUsers}
-        })
-        .project({
-          _id: 0,
-          _id: '$followingUsers._id',
-          isFollowed: '$followingUsers.isFollowed',
-          bio: '$followingUsers.bio',
-          username: '$followingUsers.username',
-          profile_image: '$followingUsers.profile_image',
-          nickname: '$followingUsers.nickname',
-          followers_num: '$followingUsers.followers_num',
-          followings_num: '$followingUsers.followings_num',
-          is_curr_user: '$followingUsers.is_curr_user',
-        })
-        .skip(skip)
-        .limit(limit);
-  
+        'followingUsers.followers_num': {
+          $size: '$followingUsers.followersUsers',
+        },
+        'followingUsers.followings_num': {
+          $size: '$followingUsers.followingUsers',
+        },
+        'followingUsers.is_curr_user': {
+          $eq: [currUser._id, '$followingUsers._id'],
+        },
+        'followingUsers.profile_image': '$followingUsers.profileImage',
+      })
+      .match({
+        'followingUsers.blockingUsers': { $nin: [currUser._id] },
+        _id : { $nin: currUser.blockingUsers }
+      })
+      .project({
+        _id: 0,
+        _id: '$followingUsers._id',
+        isFollowed: '$followingUsers.isFollowed',
+        bio: '$followingUsers.bio',
+        username: '$followingUsers.username',
+        profile_image: '$followingUsers.profile_image',
+        nickname: '$followingUsers.nickname',
+        followers_num: '$followingUsers.followers_num',
+        followings_num: '$followingUsers.followings_num',
+        is_curr_user: '$followingUsers.is_curr_user',
+      })
+      .skip(skip)
+      .limit(limit);
 
     return res.status(200).send({
       status: 'success',
@@ -346,6 +343,7 @@ exports.getFollowings = async (req, res) => {
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.mute = async (req, res) => {
   try {
