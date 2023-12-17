@@ -71,10 +71,6 @@ exports.getAllConversations = async (req, res) => {
       });
 
     try {
-      if (chats.length == 0)
-        return res.status(404).send({ error: 'There is no chats' });
-      const paginatedchats = paginate(chats, req);
-
       // send result
       return res.status(200).send({ status: 'success', data: chats });
     } catch (error) {
@@ -86,3 +82,23 @@ exports.getAllConversations = async (req, res) => {
     return res.status(500).send({ error: error.message });
   }
 };
+
+// exports.searchMessage = async (req, res) => {
+//   try {
+//     const messages = await User.aggregate([
+//       {
+//         $match: {
+//           username: {
+//             $regex: new RegExp(escape(req.query.word), 'i'), // 'i' for case-insensitive matching
+//           },
+//         },
+//       },
+//     ]);
+//     return res.status(200).send({
+//       data: messages,
+//     });
+//   } catch (error) {
+//     // Handle and log errors
+//     return res.status(500).send({ error: error.message });
+//   }
+// };
