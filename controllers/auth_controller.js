@@ -725,6 +725,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
       active: true,
       profileImage: profileImage,
       birthDate: birthDate,
+      joinedAt: Date.now(),
     });
     const generatedUsername = await generateUserName(name);
     newUser.username = generatedUsername;
@@ -748,7 +749,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           bannerImage: newUser.bannerImage,
           location: newUser.location,
           website: newUser.website,
-          joinedAt: Date.now(),
+          joinedAt: newUser.joinedAt,
           followings_num: 0,
           followers_num: 0,
         },
