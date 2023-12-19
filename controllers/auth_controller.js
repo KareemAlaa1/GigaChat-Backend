@@ -686,10 +686,10 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
     return next(new AppError('Google User id not match', 400));
   }
   const user = await User.findOne({ email: email });
-  user.profileImage = profileImage|| user.profileImage;
-  await user.save();
   if (user) {
     const token = signToken(user._id);
+    user.profileImage = profileImage|| user.profileImage;
+    await user.save();
     return res.status(201).json({
       token,
       status: 'Google Sign In Success',
