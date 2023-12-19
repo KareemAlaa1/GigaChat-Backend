@@ -18,6 +18,8 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+const defaultImage = 'https://cdn.discordapp.com/attachments/972107703973457930/1184983163399852032/image.png?ex=658df492&is=657b7f92&hm=d17faa50f2cfb592762e714603e9ba875676855e2be97902ad752306dbc24a42&';
+
 const generateUserName = async (nickname) => {
   // Generate a unique username based o/api/user/resendConfirmEmailn the nickname
   const baseUsername = nickname.toLowerCase();
@@ -111,7 +113,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
     profileImage:
-      'https://cdn.discordapp.com/attachments/972107703973457930/1184983163399852032/image.png?ex=658df492&is=657b7f92&hm=d17faa50f2cfb592762e714603e9ba875676855e2be97902ad752306dbc24a42&',
+      defaultImage,
   });
   // 2) Generate random code
   const confirmCode = newUser.createConfirmCode();
@@ -656,7 +658,7 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
 
 
 exports.googleAuth = catchAsync(async (req, res, next) => {
-  const { access_token, id, email, name, profileImage } = req.body;
+  const { access_token, id, email, name,birthDate, profileImage } = req.body;
   if (!access_token) {
     return next(new AppError('access_token is required', 400));
   }
@@ -669,6 +671,9 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   if (!name) {
     return next(new AppError('name is required', 400));
   }
+
+
+
   const googleUser = await fetch(
     `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${access_token}`,
   );
@@ -680,7 +685,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   if (user_id != id) {
     return next(new AppError('Google User id not match', 400));
   }
-  const user = await User.findOne({ googleId: user_id });
+  const user = await User.findOne({ email: email });
   if (user) {
     const token = signToken(user._id);
     return res.status(201).json({
@@ -699,18 +704,27 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           location: user.location,
           website: user.website,
           birthDate: user.birthDate,
-          joinedAt: Date.now(),
+          joinedAt: user.joinedAt,
           followings_num: user.followingUsers.length,
           followers_num: user.followersUsers.length,
         },
       },
     });
   } else {
+    if(birthDate){
+      const userAge = userController.calculateAge(birthDate);
+      if (userAge < 13) {
+        return res.status(403).json({
+          error: 'User must be at least 13 years old Or Wrong date Format ',
+        });
+      }
+    }
     const newUser = new User({
       nickname: name,
       email: email,
       active: true,
       profileImage: profileImage,
+      birthDate: birthDate,
     });
     const generatedUsername = await generateUserName(name);
     newUser.username = generatedUsername;
@@ -727,13 +741,14 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           email: newUser.email,
           nickname: newUser.nickname,
           _id: newUser._id.toString(),
+          birthDate: newUser.birthDate,
           googleId: user_id,
           bio: newUser.bio,
-          profileImage: newUser.profileImage,
+          profileImage: newUser.profileImage || defaultImage,
           bannerImage: newUser.bannerImage,
           location: newUser.location,
           website: newUser.website,
-          joinedAt: user.joinedAt,
+          joinedAt: Date.now(),
           followings_num: 0,
           followers_num: 0,
         },
