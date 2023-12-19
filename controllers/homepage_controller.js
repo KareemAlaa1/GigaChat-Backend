@@ -274,3 +274,94 @@ exports.getFollowingTweets = async (req, res) => {
     return res.status(500).send({ error: 'Internal Server Error' });
   }
 };
+
+exports.getMentionTweets = async (req, res) => {
+  try {
+    const user = await User.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+      },
+    ])
+      .lookup({
+        from: 'tweets',
+        localField: 'mentionList',
+        foreignField: '_id',
+        as: 'mentions',
+      })
+      .unwind('mentions')
+      .match({
+        'mentions.isDeleted': false,
+        'mentions.type': 'tweet',
+      })
+      .lookup({
+        from: 'users',
+        localField: 'mentions.userId',
+        foreignField: '_id',
+        as: 'mentions.tweet_owner',
+      })
+      .unwind('mentions.tweet_owner')
+      .sort('-mentions._id')
+      .project({
+        mentions: {
+          id: '$mentions._id',
+          referredTweetId: 1,
+          description: 1,
+          likesNum: {
+            $size: '$mentions.likersList',
+          },
+          repliesNum: '$mentions.repliesCount',
+          repostsNum: {
+            $size: '$mentions.retweetList',
+          },
+          media: 1,
+          type: 1,
+          creation_time: '$mentions.createdAt',
+          tweet_owner: {
+            id: '$mentions.tweet_owner._id',
+            username: 1,
+            nickname: 1,
+            bio: 1,
+            profile_image: '$mentions.tweet_owner.profileImage',
+            followers_num: {
+              $size: '$mentions.tweet_owner.followingUsers',
+            },
+            following_num: {
+              $size: '$mentions.tweet_owner.followersUsers',
+            },
+            isFollowed: {
+              $in: [req.user._id, '$mentions.tweet_owner.followersUsers'],
+            },
+          },
+          isLiked: { $in: [req.user._id, '$mentions.likersList'] },
+          isRtweeted: {
+            $in: [req.user._id, '$mentions.retweetList'],
+          },
+        },
+      })
+      .group({
+        _id: '$_id',
+        data: {
+          $push: '$mentions',
+        },
+      });
+
+    let tweets = user[0].data;
+
+    try {
+      if (tweets == undefined || tweets.length == 0)
+        return res
+          .status(404)
+          .send({ error: 'This user wasnot mentioned in any tweet' });
+      const paginatedTweets = paginate(tweets, req);
+      return res
+        .status(200)
+        .send({ status: 'success', tweetList: paginatedTweets });
+    } catch (error) {
+      console.log(error.message);
+      return res.status(404).send({ error: error.message });
+    }
+    return res.send(user);
+  } catch (error) {
+    return res.status(500).send({ error: error.message });
+  }
+};

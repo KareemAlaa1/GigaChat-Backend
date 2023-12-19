@@ -5,4 +5,6 @@ const router = new express.Router();
 
 router.get('/following', protect, HomepageController.getFollowingTweets);
 
+router.get('/mention', protect, HomepageController.getMentionTweets);
+
 module.exports = router;
