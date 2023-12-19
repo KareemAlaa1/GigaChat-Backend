@@ -699,7 +699,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           _id: user._id.toString(),
           googleId: user.googleId,
           bio: user.bio,
-          profileImage: user.profileImage,
+          profileImage: profileImage || user.profileImage,
           bannerImage: user.bannerImage,
           location: user.location,
           website: user.website,
