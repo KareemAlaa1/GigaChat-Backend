@@ -686,6 +686,8 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
     return next(new AppError('Google User id not match', 400));
   }
   const user = await User.findOne({ email: email });
+  user.profileImage = profileImage|| user.profileImage;
+  await user.save();
   if (user) {
     const token = signToken(user._id);
     return res.status(201).json({
@@ -699,7 +701,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           _id: user._id.toString(),
           googleId: user.googleId,
           bio: user.bio,
-          profileImage: profileImage || user.profileImage,
+          profileImage: user.profileImage,
           bannerImage: user.bannerImage,
           location: user.location,
           website: user.website,
@@ -723,7 +725,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
       nickname: name,
       email: email,
       active: true,
-      profileImage: profileImage,
+      profileImage: profileImage||defaultImage,
       birthDate: birthDate,
       joinedAt: Date.now(),
     });
@@ -745,7 +747,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           birthDate: newUser.birthDate,
           googleId: user_id,
           bio: newUser.bio,
-          profileImage: newUser.profileImage || defaultImage,
+          profileImage: newUser.profileImage,
           bannerImage: newUser.bannerImage,
           location: newUser.location,
           website: newUser.website,
