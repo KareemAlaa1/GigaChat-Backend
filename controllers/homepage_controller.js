@@ -22,6 +22,11 @@ const getLatestUserTweet = async (reqUser) => {
       },
     ])
       .unwind('tweetList')
+      .match({
+        'tweetList.createdAt': {
+          $gte: new Date(twoHoursAgo.toISOString()),
+        },
+      })
       .lookup({
         from: 'tweets',
         localField: 'tweetList.tweetId',
@@ -30,7 +35,14 @@ const getLatestUserTweet = async (reqUser) => {
       })
       .unwind('tweetDetails')
       .match({
-        'tweetDetails.createdAt': { $gte: new Date(twoHoursAgo.toISOString()) },
+        $expr: {
+          $not: { $in: ['$tweetDetails.userId', '$mutedUsers'] },
+        },
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$tweetDetails.userId', '$blockingUsers'] },
+        },
       })
       .lookup({
         from: 'users',
@@ -39,6 +51,13 @@ const getLatestUserTweet = async (reqUser) => {
         as: 'tweetDetails.tweet_owner',
       })
       .unwind('tweetDetails.tweet_owner')
+      .match({
+        $expr: {
+          $not: {
+            $in: ['$_id', '$tweetDetails.tweet_owner.blockingUsers'],
+          },
+        },
+      })
       .project({
         _id: 0,
         type: '$tweetList.type',
@@ -75,6 +94,9 @@ const getLatestUserTweet = async (reqUser) => {
         },
         isFollowed: {
           $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'],
+        },
+        isFollowingMe: {
+          $in: ['$_id', '$tweetDetails.tweet_owner.followingUsers'],
         },
         isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
         isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
@@ -197,6 +219,9 @@ exports.getFollowingTweets = async (req, res) => {
         'tweetList.isFollowed': {
           $in: ['$_id', '$tweetList.tweetDetails.tweet_owner.followersUsers'],
         },
+        'tweetList.isFollowingMe': {
+          $in: ['$_id', '$tweetList.tweetDetails.tweet_owner.followingUsers'],
+        },
         'tweetList.isLiked': {
           $in: ['$_id', '$tweetList.tweetDetails.likersList'],
         },
@@ -240,6 +265,7 @@ exports.getFollowingTweets = async (req, res) => {
           isFollowed: 1,
           isLiked: 1,
           isRtweeted: 1,
+          isFollowingMe: 1,
         },
       })
       .sort({
@@ -291,7 +317,11 @@ exports.getMentionTweets = async (req, res) => {
       .unwind('mentions')
       .match({
         'mentions.isDeleted': false,
-        'mentions.type': 'tweet',
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$mentions.userId', '$blockingUsers'] },
+        },
       })
       .lookup({
         from: 'users',
@@ -300,6 +330,11 @@ exports.getMentionTweets = async (req, res) => {
         as: 'mentions.tweet_owner',
       })
       .unwind('mentions.tweet_owner')
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', '$mentions.tweet_owner.blockingUsers'] },
+        },
+      })
       .sort('-mentions._id')
       .project({
         mentions: {
@@ -330,6 +365,9 @@ exports.getMentionTweets = async (req, res) => {
             },
             isFollowed: {
               $in: [req.user._id, '$mentions.tweet_owner.followersUsers'],
+            },
+            isFollowingMe: {
+              $in: ['$_id', '$mentions.tweet_owner.followingUsers'],
             },
           },
           isLiked: { $in: [req.user._id, '$mentions.likersList'] },
