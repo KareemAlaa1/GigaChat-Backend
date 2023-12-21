@@ -35,7 +35,14 @@ const getLatestUserTweet = async (reqUser) => {
       })
       .unwind('tweetDetails')
       .match({
-        'tweetDetails.createdAt': { $gte: new Date(twoHoursAgo.toISOString()) },
+        $expr: {
+          $not: { $in: ['$tweetDetails.userId', '$mutedUsers'] },
+        },
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$tweetDetails.userId', '$blockingUsers'] },
+        },
       })
       .lookup({
         from: 'users',
@@ -44,6 +51,13 @@ const getLatestUserTweet = async (reqUser) => {
         as: 'tweetDetails.tweet_owner',
       })
       .unwind('tweetDetails.tweet_owner')
+      .match({
+        $expr: {
+          $not: {
+            $in: ['$_id', '$tweetDetails.tweet_owner.blockingUsers'],
+          },
+        },
+      })
       .project({
         _id: 0,
         type: '$tweetList.type',
