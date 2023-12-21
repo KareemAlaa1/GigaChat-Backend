@@ -95,6 +95,9 @@ const getLatestUserTweet = async (reqUser) => {
         isFollowed: {
           $in: ['$_id', '$tweetDetails.tweet_owner.followersUsers'],
         },
+        isFollowingMe: {
+          $in: ['$_id', '$tweetDetails.tweet_owner.followingUsers'],
+        },
         isLiked: { $in: ['$_id', '$tweetDetails.likersList'] },
         isRtweeted: { $in: ['$_id', '$tweetDetails.retweetList'] },
       })
@@ -216,6 +219,9 @@ exports.getFollowingTweets = async (req, res) => {
         'tweetList.isFollowed': {
           $in: ['$_id', '$tweetList.tweetDetails.tweet_owner.followersUsers'],
         },
+        'tweetList.isFollowingMe': {
+          $in: ['$_id', '$tweetList.tweetDetails.tweet_owner.followingUsers'],
+        },
         'tweetList.isLiked': {
           $in: ['$_id', '$tweetList.tweetDetails.likersList'],
         },
@@ -259,6 +265,7 @@ exports.getFollowingTweets = async (req, res) => {
           isFollowed: 1,
           isLiked: 1,
           isRtweeted: 1,
+          isFollowingMe: 1,
         },
       })
       .sort({
