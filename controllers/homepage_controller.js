@@ -22,6 +22,11 @@ const getLatestUserTweet = async (reqUser) => {
       },
     ])
       .unwind('tweetList')
+      .match({
+        'tweetList.createdAt': {
+          $gte: new Date(twoHoursAgo.toISOString()),
+        },
+      })
       .lookup({
         from: 'tweets',
         localField: 'tweetList.tweetId',
