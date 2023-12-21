@@ -317,7 +317,11 @@ exports.getMentionTweets = async (req, res) => {
       .unwind('mentions')
       .match({
         'mentions.isDeleted': false,
-        'mentions.type': 'tweet',
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$mentions.userId', '$blockingUsers'] },
+        },
       })
       .lookup({
         from: 'users',
@@ -326,6 +330,11 @@ exports.getMentionTweets = async (req, res) => {
         as: 'mentions.tweet_owner',
       })
       .unwind('mentions.tweet_owner')
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', '$mentions.tweet_owner.blockingUsers'] },
+        },
+      })
       .sort('-mentions._id')
       .project({
         mentions: {
