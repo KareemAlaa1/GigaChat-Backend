@@ -366,6 +366,9 @@ exports.getMentionTweets = async (req, res) => {
             isFollowed: {
               $in: [req.user._id, '$mentions.tweet_owner.followersUsers'],
             },
+            isFollowingMe: {
+              $in: ['$_id', '$mentions.tweet_owner.followingUsers'],
+            },
           },
           isLiked: { $in: [req.user._id, '$mentions.likersList'] },
           isRtweeted: {
