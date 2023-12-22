@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Hashtag = require('../models/hashtag_model');
 const { paginate } = require('../utils/api_features');
+const User = require('../models/user_model');
 
 exports.getAllHashtages = async (req, res) => {
   try {
@@ -34,6 +35,8 @@ exports.getAllHashtages = async (req, res) => {
 
 exports.getHastagTweets = async (req, res) => {
   try {
+    const me = await User.findById(req.user._id);
+
     const hashtagTitle = '#' + req.params.trend;
 
     const found = await Hashtag.findOne({ title: hashtagTitle });
@@ -63,6 +66,11 @@ exports.getHastagTweets = async (req, res) => {
         as: 'tweet_list',
       })
       .unwind('$tweet_list')
+      .match({
+        $expr: {
+          $not: { $in: ['$tweet_list.userId', me.blockingUsers] },
+        },
+      })
       .addFields({
         'tweet_list.likesNum': {
           $size: '$tweet_list.likersList',
@@ -83,6 +91,13 @@ exports.getHastagTweets = async (req, res) => {
         as: 'tweet_list.tweet_owner',
       })
       .unwind('$tweet_list.tweet_owner')
+      .match({
+        $expr: {
+          $not: {
+            $in: [req.user._id, '$tweet_list.tweet_owner.blockingUsers'],
+          },
+        },
+      })
       .addFields({
         'tweet_list.isFollowed': {
           $in: [req.user._id, '$tweet_list.tweet_owner.followersUsers'],
@@ -129,7 +144,11 @@ exports.getHastagTweets = async (req, res) => {
         tweet_list: { $push: '$tweet_list' },
       });
     try {
-      if (hashtag[0].tweet_list == 0)
+      if (
+        hashtag.length == 0 ||
+        hashtag[0].tweet_list == undefined ||
+        hashtag[0].tweet_list.length == 0
+      )
         return res
           .status(404)
           .send({ error: 'There is no tweets for this hashtag' });
