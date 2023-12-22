@@ -53,7 +53,6 @@ exports.getHastagTweets = async (req, res) => {
         message: 'No Tweets Found For This Hashtag',
       });
 
-
     const hashtag = await Hashtag.aggregate([
       { $match: { title: hashtagTitle } },
     ])
@@ -88,6 +87,9 @@ exports.getHastagTweets = async (req, res) => {
         'tweet_list.isFollowed': {
           $in: [req.user._id, '$tweet_list.tweet_owner.followersUsers'],
         },
+        'tweet_list.isFollowingMe': {
+          $in: [req.user._id, '$tweet_list.tweet_owner.followingUsers'],
+        },
         'tweet_list.isLiked': {
           $in: [req.user._id, '$tweet_list.likersList'],
         },
@@ -117,6 +119,7 @@ exports.getHastagTweets = async (req, res) => {
           },
         },
         'tweet_list.isFollowed': 1,
+        'tweet_list.isFollowingMe': 1,
         'tweet_list.isLiked': 1,
       })
       .group({
