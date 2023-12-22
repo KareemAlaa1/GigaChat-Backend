@@ -47,9 +47,9 @@ exports.search = async (req, res, next) => {
     }
 
     // paginate result
-
+    
     try {
-      if (result.length == 0)
+      if (result == undefined || result.length == 0)
         return res
           .status(404)
           .send({ error: 'There is no result for this search word' });
@@ -66,6 +66,6 @@ exports.search = async (req, res, next) => {
   } catch (error) {
     // Handle and log errors
     console.error(error.message);
-    return res.status(500).send({ error: 'Internal Server Error' });
+    return res.status(500).send({ error: error.message });
   }
 };

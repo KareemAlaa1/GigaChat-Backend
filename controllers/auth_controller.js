@@ -18,7 +18,8 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
-const defaultImage = 'https://cdn.discordapp.com/attachments/972107703973457930/1184983163399852032/image.png?ex=658df492&is=657b7f92&hm=d17faa50f2cfb592762e714603e9ba875676855e2be97902ad752306dbc24a42&';
+const defaultImage =
+  'https://cdn.discordapp.com/attachments/972107703973457930/1184983163399852032/image.png?ex=658df492&is=657b7f92&hm=d17faa50f2cfb592762e714603e9ba875676855e2be97902ad752306dbc24a42&';
 
 const generateUserName = async (nickname) => {
   // Generate a unique username based o/api/user/resendConfirmEmailn the nickname
@@ -56,7 +57,6 @@ exports.checkToken = async (token) => {
       return false;
     }
     return currentUser._id;
-
   } catch (error) {
     return false;
   }
@@ -112,8 +112,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
     nickname: req.body.nickname,
     birthDate: req.body.birthDate,
     joinedAt: Date.now(),
-    profileImage:
-      defaultImage,
+    profileImage: defaultImage,
   });
   // 2) Generate random code
   const confirmCode = newUser.createConfirmCode();
@@ -147,8 +146,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
 });
 
 exports.login = catchAsync(async (req, res, next) => {
-  const { query, password,push_token } = req.body;
-
+  const { query, password, push_token } = req.body;
 
   // 1) Check if email and password exist
   if (!password || !query) {
@@ -177,7 +175,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 3) If everything ok, send token to client
   const token = signToken(user._id);
-  user.set('push_token',push_token);
+  user.set('push_token', push_token);
   await user.save();
   res.status(200).json({
     token,
@@ -314,7 +312,7 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
     return res.status(400).json({ error: 'Invalid email format' });
   }
   const user = await User.findOne({ email });
-  if (!user || user.active) {
+  if (!user || !user.active) {
     return next(
       new AppError('There is no inactive user with  this email address.', 404),
     );
@@ -659,9 +657,9 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.googleAuth = catchAsync(async (req, res, next) => {
-  const { access_token, id, email, name,birthDate, profileImage,push_token } = req.body;
+  const { access_token, id, email, name, birthDate, profileImage, push_token } =
+    req.body;
   if (!access_token) {
     return next(new AppError('access_token is required', 400));
   }
@@ -674,8 +672,6 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   if (!name) {
     return next(new AppError('name is required', 400));
   }
-
-
 
   const googleUser = await fetch(
     `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${access_token}`,
@@ -691,7 +687,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email: email });
   if (user) {
     const token = signToken(user._id);
-    user.profileImage = profileImage|| user.profileImage;
+    user.profileImage = profileImage || user.profileImage;
     user.set('push_token', push_token);
     await user.save();
     return res.status(201).json({
@@ -718,7 +714,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
       },
     });
   } else {
-    if(birthDate){
+    if (birthDate) {
       const userAge = userController.calculateAge(birthDate);
       if (userAge < 13) {
         return res.status(403).json({
@@ -730,7 +726,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
       nickname: name,
       email: email,
       active: true,
-      profileImage: profileImage||defaultImage,
+      profileImage: profileImage || defaultImage,
       birthDate: birthDate,
       joinedAt: Date.now(),
     });
