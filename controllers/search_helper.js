@@ -155,6 +155,7 @@ exports.searchTweets = async (req, res, next) => {
           followers_num: { $size: '$tweet_owner.followingUsers' },
           following_num: { $size: '$tweet_owner.followersUsers' },
           isFollowed: { $in: ['$_id', '$tweet_owner.followersUsers'] },
+          isFollowingMe: { $in: ['$_id', '$tweet_owner.followingUsers'] },
         },
         isLiked: { $in: [req.user._id, '$likersList'] },
         isRtweeted: { $in: [req.user._id, '$retweetList'] },
