@@ -108,6 +108,12 @@ exports.getUserTweets = async (req, res) => {
                 '$tweetList.tweet.tweet_owner.followersUsers',
               ],
             },
+            isFollowingMe: {
+              $in: [
+                req.user._id,
+                '$tweetList.tweet.tweet_owner.followingUsers',
+              ],
+            },
           },
         },
       })
@@ -116,7 +122,7 @@ exports.getUserTweets = async (req, res) => {
         tweetList: { $push: '$tweetList.tweet' },
       });
     try {
-      if (tweets.length == 0)
+      if (tweets[0].tweetList == undefined || tweets[0].tweetList.length == 0)
         return res.status(404).send({ error: 'This user has no tweets' });
       const paginatedTweets = paginate(tweets[0].tweetList, req, res);
       return res.send({ status: 'success', posts: paginatedTweets });
@@ -228,6 +234,9 @@ exports.getUserLikedTweets = async (req, res) => {
           isFollowed: {
             $in: [req.user._id, '$likedTweets.tweet_owner.followersUsers'],
           },
+          isFollowingMe: {
+            $in: [req.user._id, '$likedTweets.tweet_owner.followingUsers'],
+          },
         },
       })
       .group({
@@ -236,10 +245,13 @@ exports.getUserLikedTweets = async (req, res) => {
       });
 
     try {
-      if (tweets.length == 0)
+      if (
+        tweets[0].likedTweets == undefined ||
+        tweets[0].likedTweets.length == 0
+      )
         return res.status(404).send({ error: 'This user has no liked tweets' });
       const paginatedTweets = paginate(tweets[0].likedTweets, req);
-      return res.send({ status: 'success', posts: tweets });
+      return res.send({ status: 'success', posts: paginatedTweets });
     } catch (error) {
       console.log(error.message);
       return res.status(404).send({ error: error.message });
