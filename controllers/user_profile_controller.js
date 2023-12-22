@@ -11,11 +11,27 @@ const { paginate } = require('../utils/api_features');
  */
 exports.getUserTweets = async (req, res) => {
   try {
+    const me = await User.findById(req.user._id);
+
     username = req.params.username;
 
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
+
+    if (me.blockingUsers.includes(user._id)) {
+      return res.status(200).send({
+        message:
+          "you block this user ! you can't see his tweets and he can't see your tweets",
+      });
+    }
+
+    if (user.blockingUsers.includes(me._id)) {
+      return res.status(200).send({
+        message:
+          "this user blocks you ! you can't see his tweets and he can't see your tweets",
+      });
+    }
 
     const tweets = await User.aggregate([
       {
@@ -30,6 +46,12 @@ exports.getUserTweets = async (req, res) => {
         as: 'tweetList.tweet',
       })
       .unwind('tweetList.tweet')
+      .match({
+        $expr: {
+          $not: { $in: ['$tweetList.tweet.userId', '$blockingUsers'] },
+          $not: { $in: ['$tweetList.tweet.userId', me.blockingUsers] },
+        },
+      })
       .lookup({
         from: 'users',
         localField: 'tweetList.tweet.userId',
@@ -45,6 +67,12 @@ exports.getUserTweets = async (req, res) => {
         'tweetList._id': -1,
       })
       .unwind('tweetList.tweet.tweet_owner')
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', '$tweetList.tweet.tweet_owner.blockingUsers'] },
+          $not: { $in: [me._id, '$tweetList.tweet.tweet_owner.blockingUsers'] },
+        },
+      })
       .project({
         tweetList: {
           tweet: {
@@ -112,6 +140,20 @@ exports.getUserLikedTweets = async (req, res) => {
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
+
+    if (me.blockingUsers.includes(user._id)) {
+      return res.status(200).send({
+        message:
+          "you block this user ! you can't see his tweets and he can't see your tweets",
+      });
+    }
+
+    if (user.blockingUsers.includes(me._id)) {
+      return res.status(200).send({
+        message:
+          "this user blocks you ! you can't see his tweets and he can't see your tweets",
+      });
+    }
 
     const tweets = await User.aggregate([
       {
