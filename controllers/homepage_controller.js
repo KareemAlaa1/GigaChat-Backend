@@ -202,6 +202,10 @@ exports.getFollowingTweets = async (req, res) => {
       .match({
         $expr: {
           $not: { $in: ['$tweetList.tweetDetails.userId', me.mutedUsers] },
+        },
+      })
+      .match({
+        $expr: {
           $not: { $in: ['$tweetList.tweetDetails.userId', me.blockingUsers] },
         },
       })

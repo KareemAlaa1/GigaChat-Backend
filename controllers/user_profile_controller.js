@@ -49,6 +49,10 @@ exports.getUserTweets = async (req, res) => {
       .match({
         $expr: {
           $not: { $in: ['$tweetList.tweet.userId', '$blockingUsers'] },
+        },
+      })
+      .match({
+        $expr: {
           $not: { $in: ['$tweetList.tweet.userId', me.blockingUsers] },
         },
       })
@@ -180,6 +184,10 @@ exports.getUserLikedTweets = async (req, res) => {
       .match({
         $expr: {
           $not: { $in: ['$likedTweets.userId', '$blockingUsers'] },
+        },
+      })
+      .match({
+        $expr: {
           $not: { $in: ['$likedTweets.userId', me.blockingUsers] },
         },
       })
@@ -198,6 +206,10 @@ exports.getUserLikedTweets = async (req, res) => {
       .match({
         $expr: {
           $not: { $in: ['$_id', '$likedTweets.tweet_owner.blockingUsers'] },
+        },
+      })
+      .match({
+        $expr: {
           $not: { $in: [me._id, '$likedTweets.tweet_owner.blockingUsers'] },
         },
       })
