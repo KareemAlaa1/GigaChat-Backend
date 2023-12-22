@@ -227,7 +227,7 @@ exports.getUserLikedTweets = async (req, res) => {
           repostsNum: { $size: '$likedTweets.retweetList' },
           media: 1,
           type: 1,
-          creation_time: '$likedTweets.tweet.createdAt',
+          creation_time: '$likedTweets.createdAt',
           tweet_owner: {
             id: '$likedTweets.userId',
             username: 1,
