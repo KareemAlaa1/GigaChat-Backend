@@ -207,15 +207,20 @@ exports.getCurrUserProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     // get the sent data from the request body
-    
+
     console.log(req.body);
 
     const { bio, location, website, nickname, birth_date } = req.body;
-  
-    if (bio === undefined && location === undefined && website === undefined && nickname === undefined && birth_date === undefined) {
+
+    if (
+      bio === undefined &&
+      location === undefined &&
+      website === undefined &&
+      nickname === undefined &&
+      birth_date === undefined
+    ) {
       return res.status(400).send({ error: 'Bad Request' });
     }
-
 
     if (bio !== undefined) req.user.bio = bio;
     if (location !== undefined) req.user.location = location;
@@ -302,8 +307,10 @@ exports.deleteProfileImage = async (req, res) => {
 
 exports.deleteProfileBanner = async (req, res) => {
   try {
-    
-    if(!req.user.bannerImage) return res.status(400).send({error: "Bad Request, Banner already deleted"});
+    if (!req.user.bannerImage)
+      return res
+        .status(400)
+        .send({ error: 'Bad Request, Banner already deleted' });
 
     await deleteMedia(req.user.bannerImage);
 
@@ -404,10 +411,6 @@ exports.getMessages = async (req, res) => {
           .skip(skip)
           .limit(size)
           .sort({ id: 1 });
-        res.status(200).json({
-          status: 'messages get success',
-          data: messages,
-        });
         // after sending respose all unseen messages in this chat of the another user not mine is now seen to me so update its state
         const messages2 = await Chat.aggregate([
           {
@@ -449,6 +452,10 @@ exports.getMessages = async (req, res) => {
             { $set: { seen: true } },
           );
         }
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
       } else {
         const messages = [];
         res.status(200).json({

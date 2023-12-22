@@ -71,6 +71,9 @@ exports.getAllConversations = async (req, res) => {
         _id: '$_id.id',
         isFollowed: { $in: ['$_id.id', req.user.followingUsers] },
         isBlocked: { $in: ['$_id.id', req.user.blockingUsers] },
+        isFollowingMe: {
+          $in: ['$_id.id', req.user.followersUsers],
+        },
       });
 
     try {
@@ -176,6 +179,9 @@ exports.searchMessage = async (req, res) => {
           },
           isFollowed: { $in: ['$chat_id._id', currentUser.followingUsers] },
           isBlocked: { $in: ['$chat_id._id', currentUser.blockingUsers] },
+          isFollowingMe: {
+            $in: ['$chat_id._id', req.user.followersUsers],
+          },
           _id: '$chat_id._id',
         },
       },
@@ -185,6 +191,7 @@ exports.searchMessage = async (req, res) => {
           chat_members: ['$chat_id'],
           isFollowed: 1,
           isBlocked: 1,
+          isFollowingMe: 1,
           _id: 1,
         },
       },
@@ -207,6 +214,7 @@ exports.searchMessage = async (req, res) => {
           chat_members: 1,
           isFollowed: 1,
           isBlocked: 1,
+          isFollowingMe: 1,
           _id: 1,
           sender: '$sender.username',
         },
@@ -223,6 +231,7 @@ exports.searchMessage = async (req, res) => {
           chat_members: 1,
           isFollowed: 1,
           isBlocked: 1,
+          isFollowingMe: 1,
           _id: 1,
         },
       },

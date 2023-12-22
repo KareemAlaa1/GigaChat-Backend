@@ -412,6 +412,7 @@ const TweetController = {
                 },
                 isDeleted: 1,
                 isFollowed: { $in: [req.user._id, '$followersUsers'] },
+                isFollowingMe: { $in: [req.user._id, '$followingUsers'] },
                 blockingUsers: 1,
               },
             },
@@ -502,6 +503,7 @@ const TweetController = {
                 },
                 isDeleted: 1,
                 isFollowed: { $in: [req.user._id, '$followersUsers'] },
+                isFollowingMe: { $in: [req.user._id, '$followingUsers'] },
                 blockingUsers: 1,
               },
             },
@@ -631,6 +633,7 @@ const TweetController = {
                       followers_num: { $size: '$followersUsers' },
                       following_num: { $size: '$followingUsers' },
                       isFollowed: { $in: [req.user._id, '$followersUsers'] },
+                      isFollowingMe: { $in: [req.user._id, '$followingUsers'] },
                       blockingUsers: 1,
                     },
                   },
@@ -746,6 +749,9 @@ const TweetController = {
                           following_num: { $size: '$followingUsers' },
                           isFollowed: {
                             $in: [req.user._id, '$followersUsers'],
+                          },
+                          isFollowingMe: {
+                            $in: [req.user._id, '$followingUsers'],
                           },
                         },
                       },
