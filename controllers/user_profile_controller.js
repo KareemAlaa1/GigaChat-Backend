@@ -105,6 +105,8 @@ exports.getUserTweets = async (req, res) => {
 
 exports.getUserLikedTweets = async (req, res) => {
   try {
+    const me = await User.findById(req.user._id);
+
     username = req.params.username;
 
     const user = await User.findOne({ username });
@@ -127,16 +129,29 @@ exports.getUserLikedTweets = async (req, res) => {
         as: 'likedTweets',
       })
       .unwind('likedTweets')
+      .match({
+        $expr: {
+          $not: { $in: ['$likedTweets.userId', '$blockingUsers'] },
+          $not: { $in: ['$likedTweets.userId', me.blockingUsers] },
+        },
+      })
       .lookup({
         from: 'users',
         localField: 'likedTweets.userId',
         foreignField: '_id',
         as: 'likedTweets.tweet_owner',
       })
+      .unwind('likedTweets.tweet_owner')
       .match({
         'likedTweets.isDeleted': false,
         'likedTweets.tweet_owner.active': true,
         'likedTweets.tweet_owner.isDeleted': false,
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', '$likedTweets.tweet_owner.blockingUsers'] },
+          $not: { $in: [me._id, '$likedTweets.tweet_owner.blockingUsers'] },
+        },
       })
       .sort({
         'likedTweets._id': -1,
