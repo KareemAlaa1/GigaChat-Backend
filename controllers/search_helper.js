@@ -28,16 +28,6 @@ exports.searchUser = async (req, res, next) => {
         },
       },
     ])
-      .match({
-        $expr: {
-          $not: { $in: ['$_id', me.blockingUsers] },
-        },
-      })
-      .match({
-        $expr: {
-          $not: { $in: [me._id, '$blockingUsers'] },
-        },
-      })
       .addFields({
         isFollowedbyMe: {
           $in: ['$_id', req.user.followingUsers],
