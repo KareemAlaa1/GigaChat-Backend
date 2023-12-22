@@ -18,6 +18,7 @@ const escape = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, ''); // $& mean
  */
 exports.searchUser = async (req, res, next) => {
   try {
+    const me = await User.findById(req.user._id);
     const users = await User.aggregate([
       {
         $match: {
@@ -27,6 +28,12 @@ exports.searchUser = async (req, res, next) => {
         },
       },
     ])
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', me.blockingUsers] },
+          $not: { $in: [me._id, '$blockingUsers'] },
+        },
+      })
       .addFields({
         isFollowedbyMe: {
           $in: ['$_id', req.user.followingUsers],
