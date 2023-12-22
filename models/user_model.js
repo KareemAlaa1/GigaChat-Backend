@@ -95,6 +95,10 @@ const userSchema = new mongoose.Schema(
             message: 'type must be tweet or retweet or quote or reply',
           },
         },
+        createdAt: {
+          type: Date,
+          default: Date.now(),
+        },
       },
     ],
     notificationList: [

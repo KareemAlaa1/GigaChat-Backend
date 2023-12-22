@@ -30,13 +30,20 @@ const TweetController = {
         });
       } else {
         let newTweet;
+        req.body.createdAt = Date.now();
         if (req.body.type == 'tweet') {
           newTweet = await Tweet.create(req.body);
           let retTweet = {};
           retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
           retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
           await User.findByIdAndUpdate(req.body.userId, {
-            $push: { tweetList: { tweetId: retTweet.id, type: req.body.type } },
+            $push: {
+              tweetList: {
+                tweetId: retTweet.id,
+                type: req.body.type,
+                createdAt: Date.now(),
+              },
+            },
           });
           let data = retTweet;
           await notificationController.addMentionNotification(req.user, data);
@@ -66,6 +73,7 @@ const TweetController = {
                 type: req.body.type,
                 referredTweetId: referredTweet.id,
                 referredReplyId: referredTweet.id,
+                createdAt: Date.now(),
               });
             } else {
               newTweet = await Tweet.create({
@@ -75,6 +83,7 @@ const TweetController = {
                 type: req.body.type,
                 referredTweetId: referredTweet.referredTweetId,
                 referredReplyId: referredTweet.id,
+                createdAt: Date.now(),
               });
             }
 
@@ -83,7 +92,11 @@ const TweetController = {
             retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
             await User.findByIdAndUpdate(req.body.userId, {
               $push: {
-                tweetList: { tweetId: retTweet.id, type: req.body.type },
+                tweetList: {
+                  tweetId: retTweet.id,
+                  type: req.body.type,
+                  createdAt: Date.now(),
+                },
               },
             });
             let data = retTweet;
@@ -163,7 +176,13 @@ const TweetController = {
               $push: { retweetList: req.user._id },
             });
             await User.findByIdAndUpdate(req.user._id, {
-              $push: { tweetList: { tweetId: tweet._id, type: 'retweet' } },
+              $push: {
+                tweetList: {
+                  tweetId: tweet._id,
+                  type: 'retweet',
+                  createdAt: Date.now(),
+                },
+              },
             });
             //region addRetweetNotification
             const notification =

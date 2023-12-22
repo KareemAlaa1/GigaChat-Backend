@@ -129,6 +129,9 @@ exports.getProfile = async (req, res) => {
           isWantedUserFollowed: {
             $in: [currUser._id, '$followersUsers'],
           },
+          isFollowingMe: {
+            $in: [currUser._id, '$followingUsers'],
+          },
         },
       },
     ]);
