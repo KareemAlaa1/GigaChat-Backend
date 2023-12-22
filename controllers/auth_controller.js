@@ -661,7 +661,7 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
 
 
 exports.googleAuth = catchAsync(async (req, res, next) => {
-  const { access_token, id, email, name,birthDate, profileImage } = req.body;
+  const { access_token, id, email, name,birthDate, profileImage,push_token } = req.body;
   if (!access_token) {
     return next(new AppError('access_token is required', 400));
   }
@@ -692,6 +692,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   if (user) {
     const token = signToken(user._id);
     user.profileImage = profileImage|| user.profileImage;
+    user.set('push_token', push_token);
     await user.save();
     return res.status(201).json({
       token,
@@ -701,6 +702,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           username: user.username,
           email: user.email,
           nickname: user.nickname,
+          push_token: user.push_token,
           _id: user._id.toString(),
           googleId: user.googleId,
           bio: user.bio,
@@ -736,6 +738,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
     newUser.username = generatedUsername;
 
     newUser.set('googleId', user_id);
+    newUser.set('push_token', push_token);
     await newUser.save();
     const token = signToken(newUser._id);
     return res.status(201).json({
@@ -746,6 +749,7 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           username: newUser.username,
           email: newUser.email,
           nickname: newUser.nickname,
+          push_token: newUser.push_token,
           _id: newUser._id.toString(),
           birthDate: newUser.birthDate,
           googleId: user_id,
