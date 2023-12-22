@@ -166,6 +166,7 @@ exports.getProfile = async (req, res) => {
       is_curr_user: isCurruser,
       num_of_posts: wantedUser.num_of_posts,
       num_of_likes: wantedUser.num_of_likes,
+      isFollowingMe: wantedUser.isFollowingMe,
     };
 
     return res.status(200).send(result);
