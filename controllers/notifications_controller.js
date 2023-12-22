@@ -8,7 +8,7 @@ dotenv.config({ path: './config/dev.env' });
 const pushNotificationEndpoint = "https://fcm.googleapis.com/fcm/send";
 
 
-async function pushNotification(notification, notifiedId,notifierProfileImage) {
+async function pushNotification(notification, notifiedId) {
   const user = await User.findById(notifiedId);
   const push_token=user.push_token;
   if(!push_token) {
@@ -60,14 +60,14 @@ exports.addFollowNotification = async (notifier, notified) => {
     description: `${notifier.username} started following you`,
     type: 'follow',
     notifierProfileImage: notifier.profileImage,
-    destination: notified.username,
+    destination: notifier._id,
     notifier: notifier._id,
     notified: notified._id,
     creation_time: Date.now(),
 
   });
 
-  await pushNotification(notification,notified._id,notifier.profileImage);
+  await pushNotification(notification,notified._id);
 
   return notification;
 
