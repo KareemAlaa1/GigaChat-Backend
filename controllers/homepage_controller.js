@@ -138,6 +138,8 @@ const getLatestUserTweet = async (reqUser) => {
 
 exports.getFollowingTweets = async (req, res) => {
   try {
+    const me = await User.findById(req.user._id);
+
     console.log(req.user._id);
     const user = await User.aggregate([
       {
@@ -152,7 +154,7 @@ exports.getFollowingTweets = async (req, res) => {
       })
       .unwind('followingUsers')
       .match({
-        $expr: { $not: { $in: ['$followingUsers._id', '$mutedUsers'] } },
+        $expr: { $not: { $in: ['$followingUsers._id', me.mutedUsers] } },
       })
       .unwind('followingUsers.tweetList')
       .addFields({
@@ -195,6 +197,12 @@ exports.getFollowingTweets = async (req, res) => {
           '$tweetList.tweetDetails.repliesCount',
         'tweetList.tweetDetails.repostsNum': {
           $size: '$tweetList.tweetDetails.retweetList',
+        },
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$tweetList.tweetDetails.userId', me.mutedUsers] },
+          $not: { $in: ['$tweetList.tweetDetails.userId', me.blockingUsers] },
         },
       })
       .lookup({
