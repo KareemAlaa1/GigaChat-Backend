@@ -118,11 +118,13 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
           type: media.type,
         },
         sender: new mongoose.Types.ObjectId(senderId),
+        sendTime: Date.now(),
       });
     } else if (description) {
       message = await Message.create({
         description: description,
         sender: new mongoose.Types.ObjectId(senderId),
+        sendTime: Date.now(),
       });
     } else {
       message = await Message.create({
@@ -131,6 +133,7 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
           type: media.type,
         },
         sender: new mongoose.Types.ObjectId(senderId),
+        sendTime: Date.now(),
       });
     }
     // if chat exist then send else create new chat and add its id to chatList of the users and send

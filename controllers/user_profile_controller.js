@@ -181,16 +181,6 @@ exports.getUserLikedTweets = async (req, res) => {
         as: 'likedTweets',
       })
       .unwind('likedTweets')
-      .match({
-        $expr: {
-          $not: { $in: ['$likedTweets.userId', '$blockingUsers'] },
-        },
-      })
-      .match({
-        $expr: {
-          $not: { $in: ['$likedTweets.userId', me.blockingUsers] },
-        },
-      })
       .lookup({
         from: 'users',
         localField: 'likedTweets.userId',
@@ -198,6 +188,16 @@ exports.getUserLikedTweets = async (req, res) => {
         as: 'likedTweets.tweet_owner',
       })
       .unwind('likedTweets.tweet_owner')
+      .match({
+        $expr: {
+          $not: { $in: [me._id, '$likedTweets.tweet_owner.blockingUsers'] },
+        },
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$likedTweets.userId', me.blockingUsers] },
+        },
+      })
       .match({
         'likedTweets.isDeleted': false,
         'likedTweets.tweet_owner.active': true,

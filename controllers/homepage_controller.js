@@ -75,7 +75,7 @@ const getLatestUserTweet = async (reqUser) => {
           media: 1,
           referredTweetId: 1,
           createdAt: 1,
-          likesNum: 1,
+          likesNum: { $size: '$tweetDetails.likersList' },
           repliesNum: '$tweetDetails.repliesCount',
           repostsNum: { $size: '$tweetDetails.retweetList' },
           tweet_owner: {
