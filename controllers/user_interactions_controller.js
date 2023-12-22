@@ -53,7 +53,6 @@ exports.follow = async (req, res) => {
       currUser,
       followedUser,
     );
-    console.log(notification);
     return res.status(204).end();
     //endregion
   } catch (error) {

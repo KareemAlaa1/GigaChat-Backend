@@ -147,7 +147,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
 });
 
 exports.login = catchAsync(async (req, res, next) => {
-  const { query, password } = req.body;
+  const { query, password,push_token } = req.body;
 
 
   // 1) Check if email and password exist
@@ -177,6 +177,8 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 3) If everything ok, send token to client
   const token = signToken(user._id);
+  user.set('push_token',push_token);
+  await user.save();
   res.status(200).json({
     token,
     status: 'success',
@@ -185,6 +187,7 @@ exports.login = catchAsync(async (req, res, next) => {
         username: user.username,
         email: user.email,
         nickname: user.nickname,
+        push_token: user.push_token,
         _id: user._id.toString(),
         bio: user.bio,
         profileImage: user.profileImage,
