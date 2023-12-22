@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/user_model');
 const Hashtag = require('../models/hashtag_model');
 const Tweet = require('../models/tweet_model');
-const escape = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, ''); // $& means the whole matched
+const escape = (string) => string.replace(/['".*+?^${}()|[\]\\]/g, ''); // $& means the whole matched
 
 /**
  * Description :
@@ -62,7 +62,7 @@ exports.searchUser = async (req, res, next) => {
     return users;
   } catch (error) {
     // Handle and log errors
-    return res.status(500).send({ error: error.message });
+    throw new Error(error.message);
   }
 };
 
@@ -90,7 +90,7 @@ exports.searchHashtag = async (req, res, next) => {
     return hashtags;
   } catch (error) {
     // Handle and log errors
-    return res.status(500).send({ error: error.message });
+    throw new Error(error.message);
   }
 };
 
@@ -107,6 +107,7 @@ exports.searchHashtag = async (req, res, next) => {
  * */
 exports.searchTweets = async (req, res, next) => {
   try {
+    const me = await User.findById(req.user._id);
     const tweets = await Tweet.aggregate([
       {
         $match: {
@@ -122,7 +123,19 @@ exports.searchTweets = async (req, res, next) => {
         foreignField: '_id',
         as: 'tweet_owner',
       })
+      .match({
+        $expr: {
+          $not: { $in: ['$userId', me.blockingUsers] },
+        },
+      })
       .unwind('tweet_owner')
+      .match({
+        $expr: {
+          $not: {
+            $in: [me._id, '$tweet_owner.blockingUsers'],
+          },
+        },
+      })
       .project({
         _id: 1,
         type: 1,
@@ -155,6 +168,7 @@ exports.searchTweets = async (req, res, next) => {
     return tweets;
   } catch (error) {
     // Handle and log errors
-    return res.status(500).send({ error: error.message });
+    console.log(error.message);
+    throw new Error(error.message);
   }
 };
