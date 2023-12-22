@@ -108,6 +108,9 @@ exports.getHastagTweets = async (req, res) => {
         'tweet_list.isLiked': {
           $in: [req.user._id, '$tweet_list.likersList'],
         },
+        'tweet_list.isRtweeted': {
+          $in: [req.user._id, '$tweet_list.retweetList'],
+        },
       })
       .project({
         tweet_list: {
@@ -136,6 +139,7 @@ exports.getHastagTweets = async (req, res) => {
         'tweet_list.isFollowed': 1,
         'tweet_list.isFollowingMe': 1,
         'tweet_list.isLiked': 1,
+        'tweet_list.isRtweeted': 1,
       })
       .group({
         _id: '$_id',
