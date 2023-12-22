@@ -43,6 +43,7 @@ userRouter.post('/login', authController.login);
 userRouter.post('/forgotpassword', authController.forgotPassword);
 
 userRouter.patch('/resetpassword', authController.resetPassword);
+userRouter.post('/checkPasswordResetToken', authController.checkPasswordResetToken);
 
 userRouter.get(
   '/profile/:username',
