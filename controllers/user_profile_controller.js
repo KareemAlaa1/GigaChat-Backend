@@ -11,11 +11,27 @@ const { paginate } = require('../utils/api_features');
  */
 exports.getUserTweets = async (req, res) => {
   try {
+    const me = await User.findById(req.user._id);
+
     username = req.params.username;
 
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
+
+    if (me.blockingUsers.includes(user._id)) {
+      return res.status(200).send({
+        message:
+          "you block this user ! you can't see his tweets and he can't see your tweets",
+      });
+    }
+
+    if (user.blockingUsers.includes(me._id)) {
+      return res.status(200).send({
+        message:
+          "this user blocks you ! you can't see his tweets and he can't see your tweets",
+      });
+    }
 
     const tweets = await User.aggregate([
       {
@@ -30,6 +46,12 @@ exports.getUserTweets = async (req, res) => {
         as: 'tweetList.tweet',
       })
       .unwind('tweetList.tweet')
+      .match({
+        $expr: {
+          $not: { $in: ['$tweetList.tweet.userId', '$blockingUsers'] },
+          $not: { $in: ['$tweetList.tweet.userId', me.blockingUsers] },
+        },
+      })
       .lookup({
         from: 'users',
         localField: 'tweetList.tweet.userId',
@@ -45,6 +67,12 @@ exports.getUserTweets = async (req, res) => {
         'tweetList._id': -1,
       })
       .unwind('tweetList.tweet.tweet_owner')
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', '$tweetList.tweet.tweet_owner.blockingUsers'] },
+          $not: { $in: [me._id, '$tweetList.tweet.tweet_owner.blockingUsers'] },
+        },
+      })
       .project({
         tweetList: {
           tweet: {
@@ -80,6 +108,12 @@ exports.getUserTweets = async (req, res) => {
                 '$tweetList.tweet.tweet_owner.followersUsers',
               ],
             },
+            isFollowingMe: {
+              $in: [
+                req.user._id,
+                '$tweetList.tweet.tweet_owner.followingUsers',
+              ],
+            },
           },
         },
       })
@@ -88,7 +122,7 @@ exports.getUserTweets = async (req, res) => {
         tweetList: { $push: '$tweetList.tweet' },
       });
     try {
-      if (tweets.length == 0)
+      if (tweets[0].tweetList == undefined || tweets[0].tweetList.length == 0)
         return res.status(404).send({ error: 'This user has no tweets' });
       const paginatedTweets = paginate(tweets[0].tweetList, req, res);
       return res.send({ status: 'success', posts: paginatedTweets });
@@ -105,11 +139,27 @@ exports.getUserTweets = async (req, res) => {
 
 exports.getUserLikedTweets = async (req, res) => {
   try {
+    const me = await User.findById(req.user._id);
+
     username = req.params.username;
 
     const user = await User.findOne({ username });
 
     if (!user) return res.status(404).send({ error: 'User Not Found' });
+
+    if (me.blockingUsers.includes(user._id)) {
+      return res.status(200).send({
+        message:
+          "you block this user ! you can't see his tweets and he can't see your tweets",
+      });
+    }
+
+    if (user.blockingUsers.includes(me._id)) {
+      return res.status(200).send({
+        message:
+          "this user blocks you ! you can't see his tweets and he can't see your tweets",
+      });
+    }
 
     const tweets = await User.aggregate([
       {
@@ -127,16 +177,29 @@ exports.getUserLikedTweets = async (req, res) => {
         as: 'likedTweets',
       })
       .unwind('likedTweets')
+      .match({
+        $expr: {
+          $not: { $in: ['$likedTweets.userId', '$blockingUsers'] },
+          $not: { $in: ['$likedTweets.userId', me.blockingUsers] },
+        },
+      })
       .lookup({
         from: 'users',
         localField: 'likedTweets.userId',
         foreignField: '_id',
         as: 'likedTweets.tweet_owner',
       })
+      .unwind('likedTweets.tweet_owner')
       .match({
         'likedTweets.isDeleted': false,
         'likedTweets.tweet_owner.active': true,
         'likedTweets.tweet_owner.isDeleted': false,
+      })
+      .match({
+        $expr: {
+          $not: { $in: ['$_id', '$likedTweets.tweet_owner.blockingUsers'] },
+          $not: { $in: [me._id, '$likedTweets.tweet_owner.blockingUsers'] },
+        },
       })
       .sort({
         'likedTweets._id': -1,
@@ -171,6 +234,9 @@ exports.getUserLikedTweets = async (req, res) => {
           isFollowed: {
             $in: [req.user._id, '$likedTweets.tweet_owner.followersUsers'],
           },
+          isFollowingMe: {
+            $in: [req.user._id, '$likedTweets.tweet_owner.followingUsers'],
+          },
         },
       })
       .group({
@@ -179,10 +245,13 @@ exports.getUserLikedTweets = async (req, res) => {
       });
 
     try {
-      if (tweets.length == 0)
+      if (
+        tweets[0].likedTweets == undefined ||
+        tweets[0].likedTweets.length == 0
+      )
         return res.status(404).send({ error: 'This user has no liked tweets' });
       const paginatedTweets = paginate(tweets[0].likedTweets, req);
-      return res.send({ status: 'success', posts: tweets });
+      return res.send({ status: 'success', posts: paginatedTweets });
     } catch (error) {
       console.log(error.message);
       return res.status(404).send({ error: error.message });
