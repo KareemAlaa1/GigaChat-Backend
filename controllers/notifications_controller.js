@@ -2,7 +2,46 @@ const Notification = require('../models/notification_model');
 const AppError = require('../utils/app_error');
 const catchAsync = require('../utils/catch_async');
 const User = require('../models/user_model');
+const dotenv = require('dotenv');
+dotenv.config({ path: './config/dev.env' });
 
+const pushNotificationEndpoint = "https://fcm.googleapis.com/fcm/send";
+
+
+async function pushNotification(notification, notifiedId,notifierProfileImage) {
+  const user = await User.findById(notifiedId);
+  const push_token=user.push_token;
+  if(!push_token) {
+    return console.log('No push token found');
+  }
+  let notificationBody = notification;
+  const requestBody = {
+    // Your FCM message payload goes here
+    // For example:
+    to: push_token,
+    notification:{
+      title: notification.description,
+      body: notification.description
+    },
+    data: {
+      notification:notificationBody
+    },
+  };
+
+
+  const options = {
+    method: "POST",
+    headers: {
+      'Authorization': `key=${process.env.FCM_SERVER_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody)
+  };
+  let x = process.env.FCM_SERVER_KEY
+  console.log(x,options);
+  //fetch using options
+  await fetch(pushNotificationEndpoint, options);
+}
 
 const getMentions=(tweet)=> {
   const mentions = {};
@@ -20,12 +59,15 @@ exports.addFollowNotification = async (notifier, notified) => {
   const notification = await Notification.create({
     description: `${notifier.username} started following you`,
     type: 'follow',
+    notifierProfileImage: notifier.profileImage,
     destination: notified.username,
     notifier: notifier._id,
     notified: notified._id,
     creation_time: Date.now(),
 
   });
+
+  await pushNotification(notification,notified._id,notifier.profileImage);
 
   return notification;
 
@@ -38,13 +80,15 @@ exports.addLikeNotification = async (notifier, tweet) => {
   const notification = await Notification.create({
     description: `${notifier.username} liked your tweet`,
     type: 'like',
+    notifierProfileImage: notifier.profileImage,
+
     destination: tweet._id,
     notifier: notifier._id,
     notified: tweet.userId,
     creation_time: Date.now(),
 
   });
-
+  await pushNotification(notification, tweet.userId);
   return notification;
 }
 
@@ -52,24 +96,29 @@ exports.addReplyNotification = async (notifier, notified, replyId) => {
   const notification = await Notification.create({
     description: `${notifier.username} replied to your tweet`,
     type: 'reply',
+    notifierProfileImage: notifier.profileImage,
     destination: replyId._id,
     notifier: notifier._id,
     notified: notified._id,
     creation_time: Date.now(),
 
   });
+  await pushNotification(notification, notified._id);
   return notification;
 }
 exports.addQuoteNotification = async (notifier, notified, quoteId) => {
   const notification = await Notification.create({
     description: `${notifier.username} quoted your tweet`,
     type: 'quote',
+    notifierProfileImage: notifier.profileImage,
+
     destination: quoteId._id,
     notifier: notifier._id,
     notified: notified._id,
     creation_time: Date.now(),
 
   });
+  await pushNotification(notification, notified._id);
   return notification;
 }
 
@@ -78,13 +127,15 @@ exports.addRetweetNotification = async (notifier, tweet,retweet) => {
   const notification = await Notification.create({
     description: `${notifier.username} retweeted your tweet`,
     type: 'retweet',
+    notifierProfileImage: notifier.profileImage,
+
     destination: tweet._id,
     notifier: notifier._id,
     notified: tweet.userId,
     creation_time: Date.now(),
 
   });
-
+  await pushNotification(notification, tweet.userId);
   return notification;
 }
 
@@ -97,13 +148,17 @@ exports.addMentionNotification = async (notifier, tweet) => {
     const notification= await Notification.create({
       description: `${notifier.username} mentioned you in a tweet`,
       type: 'mention',
+      notifierProfileImage: notifier.profileImage,
+
       destination: tweet.id,
       notifier: notifier._id,
       notified: notified._id,
       creation_time: Date.now(),
 
     });
+    await pushNotification(notification, notified._id);
   }
+
 }
 
 exports.getNotifications = async (req, res) => {
