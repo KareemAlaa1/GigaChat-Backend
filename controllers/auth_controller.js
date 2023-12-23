@@ -105,6 +105,13 @@ exports.signUp = catchAsync(async (req, res, next) => {
       .status(400)
       .json({ error: 'nickName is required in the request body' });
   }
+  //limit nickname 50 length
+  if (nickname.length > 50) {
+    return next(
+      new AppError('Nickname must not exceed 50 characters'),
+      400,
+    );
+  }
   const generatedUsername = await generateUserName(req.body.nickname);
   const newUser = await User.create({
     email: req.body.email,
@@ -314,7 +321,7 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
     return res.status(400).json({ error: 'Invalid email format' });
   }
   const user = await User.findOne({ email });
-  if (!user || !user.active) {
+  if (!user || user.active) {
     return next(
       new AppError('There is no inactive user with  this email address.', 404),
     );
