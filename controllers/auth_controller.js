@@ -356,6 +356,10 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   if (!username) {
     return next(new AppError(' Username is required', 400));
   }
+  //15 max characters
+  if (username.length > 15) {
+    return next(new AppError('Username must not exceed 15 characters', 400));
+  }
   // Verification token
   let token;
   if (
@@ -475,7 +479,12 @@ exports.updateUsername = catchAsync(async (req, res, next) => {
   if (!newUsername) {
     return next(new AppError('request should have newUsername', 400));
   }
-
+  //max 15 characters
+  if (newUsername.length > 15) {
+    return next(
+      new AppError('newUsername must not exceed 15 characters', 400),
+    );
+  }
   // 2) different from the oldUsername
   if (req.user.username === newUsername) {
     return next(
