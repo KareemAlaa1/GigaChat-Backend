@@ -816,6 +816,36 @@ const TweetController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
+  getTweetOwner: async (req, res) => {
+    try {
+      const tweet = await getTweetDatabyId(req.params.tweetId);
+      if (tweet === null) {
+        res.status(404);
+        res.json({
+          status: 'Fail',
+          message: 'Can not Find This Tweet',
+        });
+      } else {
+        const user = await getUserDatabyId(tweet.userId);
+        if (user === null) {
+          res.status(404);
+          res.json({
+            status: 'Fail',
+            message: 'Can not Find This Tweet Owner',
+          });
+        } else {
+          const tweet_owner = user.username;
+          res.status(200);
+          res.json({
+            status: 'Tweet Owner Get Success',
+            data: { tweet_owner },
+          });
+        }
+      }
+    } catch (err) {
+      res.status(500).send({ error: 'Internal Server Error' });
+    }
+  },
 };
 
 module.exports = TweetController;
