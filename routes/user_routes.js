@@ -1,6 +1,7 @@
 const express = require('express');
 const userRouter = express.Router();
 const userController = require('../controllers/user_controller');
+const chatController = require('../controllers/chat_controller');
 const authController = require('../controllers/auth_controller');
 const searchController = require('../controllers/search_controller');
 const userInteracrionsController = require('../controllers/user_interactions_controller');
@@ -43,7 +44,10 @@ userRouter.post('/login', authController.login);
 userRouter.post('/forgotpassword', authController.forgotPassword);
 
 userRouter.patch('/resetpassword', authController.resetPassword);
-userRouter.post('/checkPasswordResetToken', authController.checkPasswordResetToken);
+userRouter.post(
+  '/checkPasswordResetToken',
+  authController.checkPasswordResetToken,
+);
 
 userRouter.get(
   '/profile/:username',
@@ -79,6 +83,18 @@ userRouter.get(
   '/chat/:userId',
   authController.protect,
   userController.getMessages,
+);
+
+userRouter.get(
+  '/chat/messagesAfterCertainTime/:userId',
+  authController.protect,
+  chatController.getMessagesAfterCertainTime,
+);
+
+userRouter.get(
+  '/chat/messagesBeforeCertainTime/:userId',
+  authController.protect,
+  chatController.getMessagesBeforeCertainTime,
 );
 
 userRouter.post(

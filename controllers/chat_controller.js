@@ -91,6 +91,9 @@ exports.getAllConversations = async (req, res) => {
 
 exports.searchMessage = async (req, res) => {
   try {
+    const size = parseInt(req.query.count, 10) || 100;
+
+    const skip = ((req.query.page || 1) - 1) * size;
     console.log(req.query.word);
     currentUser = req.user;
     const messages = await User.aggregate([
@@ -235,11 +238,243 @@ exports.searchMessage = async (req, res) => {
           _id: 1,
         },
       },
-    ]);
+    ])
+      .skip(skip)
+      .limit(size);
     return res.status(200).send({ status: 'success', data: messages });
   } catch (error) {
     // Handle and log errors
     console.log(error);
     return res.status(500).send({ error: error.message });
+  }
+};
+
+exports.getMessagesAfterCertainTime = async (req, res) => {
+  try {
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
+
+    if (
+      recieverUser &&
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      // get the chat id of certain user
+
+      const chatId = await User.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+        },
+        {
+          $project: { chatList: 1 },
+        },
+      ])
+        .lookup({
+          from: 'chats',
+          localField: 'chatList',
+          foreignField: '_id',
+          as: 'chats',
+        })
+        .unwind('chats')
+        .project({ chats: 1, _id: 0 })
+        .addFields({
+          'chats.exist': {
+            $in: [
+              new mongoose.Types.ObjectId(req.params.userId),
+              '$chats.usersList',
+            ],
+          },
+        })
+        .project({ id: '$chats._id', exist: '$chats.exist' })
+        .match({
+          exist: true,
+        });
+      // if chat id exist get the messages in it else send empty array
+      // and also specify if the message is mine or not in the response
+      if (chatId.length > 0) {
+        const size = parseInt(req.query.count, 10) || 10;
+        const time = req.query.time;
+        console.log(time);
+        console.log(new Date(time).getTime());
+
+        const skip = ((req.query.page || 1) - 1) * size;
+        const messages = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .addFields({
+            'message.mine': {
+              $eq: [
+                new mongoose.Types.ObjectId(req.user._id),
+                '$message.sender',
+              ],
+            },
+          })
+          .project({
+            id: '$message._id',
+            description: '$message.description',
+            media: '$message.media',
+            isDeleted: '$message.isDeleted',
+            mine: '$message.mine',
+            seen: '$message.seen',
+            sendTime: '$message.sendTime',
+            compareTime: { $toLong: '$message.sendTime' },
+          })
+          .match({
+            compareTime: { $gt: new Date(time).getTime() },
+          })
+          .project({
+            compareTime: 0,
+          })
+          .sort({ id: -1 })
+          .skip(skip)
+          .limit(size)
+          .sort({ id: 1 });
+
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      } else {
+        const messages = [];
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
+exports.getMessagesBeforeCertainTime = async (req, res) => {
+  try {
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
+
+    if (
+      recieverUser &&
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      // get the chat id of certain user
+
+      const chatId = await User.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+        },
+        {
+          $project: { chatList: 1 },
+        },
+      ])
+        .lookup({
+          from: 'chats',
+          localField: 'chatList',
+          foreignField: '_id',
+          as: 'chats',
+        })
+        .unwind('chats')
+        .project({ chats: 1, _id: 0 })
+        .addFields({
+          'chats.exist': {
+            $in: [
+              new mongoose.Types.ObjectId(req.params.userId),
+              '$chats.usersList',
+            ],
+          },
+        })
+        .project({ id: '$chats._id', exist: '$chats.exist' })
+        .match({
+          exist: true,
+        });
+      // if chat id exist get the messages in it else send empty array
+      // and also specify if the message is mine or not in the response
+      if (chatId.length > 0) {
+        const size = parseInt(req.query.count, 10) || 10;
+        const time = req.query.time;
+        console.log(time);
+        console.log(new Date(time).getTime());
+
+        const skip = ((req.query.page || 1) - 1) * size;
+        const messages = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .addFields({
+            'message.mine': {
+              $eq: [
+                new mongoose.Types.ObjectId(req.user._id),
+                '$message.sender',
+              ],
+            },
+          })
+          .project({
+            id: '$message._id',
+            description: '$message.description',
+            media: '$message.media',
+            isDeleted: '$message.isDeleted',
+            mine: '$message.mine',
+            seen: '$message.seen',
+            sendTime: '$message.sendTime',
+            compareTime: { $toLong: '$message.sendTime' },
+          })
+          .match({
+            compareTime: { $lt: new Date(time).getTime() },
+          })
+          .project({
+            compareTime: 0,
+          })
+          .sort({ id: -1 })
+          .skip(skip)
+          .limit(size)
+          .sort({ id: 1 });
+
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      } else {
+        const messages = [];
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
   }
 };
