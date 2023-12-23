@@ -41,6 +41,7 @@ exports.searchUser = async (req, res, next) => {
         followers_num: { $size: '$followersUsers' },
         following_num: { $size: '$followingUsers' },
         profile_image: '$profileImage',
+        isBlocked: { $in: ['$_id', req.user.blockingUsers] },
       })
       .sort({
         searchOnMe: -1,
@@ -51,7 +52,7 @@ exports.searchUser = async (req, res, next) => {
       })
 
       .project(
-        'username nickname bio profile_image followers_num following_num isFollowedbyMe isFollowingMe',
+        'username nickname bio profile_image followers_num following_num isFollowedbyMe isFollowingMe isBlocked',
       );
     return users;
   } catch (error) {
