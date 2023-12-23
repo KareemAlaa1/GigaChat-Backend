@@ -74,6 +74,7 @@ const getLatestUserTweet = async (reqUser) => {
           description: 1,
           media: 1,
           referredTweetId: 1,
+          referredReplyId: 1,
           createdAt: 1,
           likesNum: { $size: '$tweetDetails.likersList' },
           repliesNum: '$tweetDetails.repliesCount',
@@ -260,6 +261,7 @@ exports.getFollowingTweets = async (req, res) => {
             description: 1,
             media: 1,
             referredTweetId: 1,
+            referredReplyId: 1,
             createdAt: 1,
             likesNum: 1,
             repliesNum: 1,
@@ -352,6 +354,7 @@ exports.getMentionTweets = async (req, res) => {
         mentions: {
           id: '$mentions._id',
           referredTweetId: 1,
+          referredReplyId: 1,  
           description: 1,
           likesNum: {
             $size: '$mentions.likersList',

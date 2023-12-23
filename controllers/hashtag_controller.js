@@ -118,6 +118,7 @@ exports.getHastagTweets = async (req, res) => {
           description: 1,
           media: 1,
           referredTweetId: 1,
+          referredReplyId: 1,
           createdAt: 1,
           likesNum: 1,
           repliesNum: 1,
