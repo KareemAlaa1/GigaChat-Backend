@@ -70,10 +70,10 @@ exports.addMessageNotification = async (notifier, notified, message) => {
     destination: notified._id,
     notifier: notifier._id,
     notified: notified._id,
-    creation_time: Date.now(),
-    
+    creation_time: Date.now()
+  })
+  return notification
 }
-
 exports.addFollowNotification = async (notifier, notified) => {
   if(notifier._id==notified._id)
   {
