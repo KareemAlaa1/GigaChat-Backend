@@ -105,6 +105,13 @@ exports.signUp = catchAsync(async (req, res, next) => {
       .status(400)
       .json({ error: 'nickName is required in the request body' });
   }
+  //limit nickname 50 length
+  if (nickname.length > 50) {
+    return next(
+      new AppError('Nickname must not exceed 50 characters'),
+      400,
+    );
+  }
   const generatedUsername = await generateUserName(req.body.nickname);
   const newUser = await User.create({
     email: req.body.email,
@@ -314,7 +321,7 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
     return res.status(400).json({ error: 'Invalid email format' });
   }
   const user = await User.findOne({ email });
-  if (!user || !user.active) {
+  if (!user || user.active) {
     return next(
       new AppError('There is no inactive user with  this email address.', 404),
     );
@@ -355,6 +362,10 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   const { username } = req.body;
   if (!username) {
     return next(new AppError(' Username is required', 400));
+  }
+  //15 max characters
+  if (username.length > 15) {
+    return next(new AppError('Username must not exceed 15 characters', 400));
   }
   // Verification token
   let token;
@@ -475,7 +486,12 @@ exports.updateUsername = catchAsync(async (req, res, next) => {
   if (!newUsername) {
     return next(new AppError('request should have newUsername', 400));
   }
-
+  //max 15 characters
+  if (newUsername.length > 15) {
+    return next(
+      new AppError('newUsername must not exceed 15 characters', 400),
+    );
+  }
   // 2) different from the oldUsername
   if (req.user.username === newUsername) {
     return next(
