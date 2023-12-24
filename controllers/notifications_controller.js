@@ -72,6 +72,8 @@ exports.addMessageNotification = async (notifier, notified, message) => {
     notified: notified._id,
     creation_time: Date.now()
   })
+
+  await pushNotification(notification,notified._id);
   return notification
 }
 exports.addFollowNotification = async (notifier, notified) => {
