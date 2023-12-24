@@ -6,6 +6,7 @@ const { paginate } = require('../utils/api_features');
 
 exports.getAllConversations = async (req, res) => {
   try {
+    console.log(req.user.username);
     console.log(req.user._id);
     const chats = await Chat.aggregate([
       {
@@ -64,6 +65,17 @@ exports.getAllConversations = async (req, res) => {
           media: '$lastMessage.media',
         },
         _id: { $arrayElemAt: ['$chat_members', 0] },
+      })
+      .addFields({
+        lastMessage: {
+          seen: {
+            $cond: {
+              if: { $eq: ['$lastMessage.sender', req.user.username] },
+              then: true,
+              else: '$lastMessage.seen',
+            },
+          },
+        },
       })
       .project({
         chat_members: 1,

@@ -83,7 +83,7 @@ exports.getTweetDatabyId = async (id) => {
   const tweetData = {};
   tweetData.id = tweet[0]._id;
   tweetData.userId = tweet[0].userId;
-  tweetData.referredTweetId = tweet[0].referredTweetId;
+  tweetData.referredTweetId = tweet[0].referredReplyId;
   tweetData.referredReplyId = tweet[0].referredReplyId;
   tweetData.description = tweet[0].description;
   tweetData.viewsNum = tweet[0].views;
@@ -101,7 +101,7 @@ exports.getRequiredTweetDatafromTweetObject = async (tweet) => {
   const tweetData = {};
   tweetData.id = tweet._id;
   tweetData.userId = tweet.userId;
-  tweetData.referredTweetId = tweet.referredTweetId;
+  tweetData.referredTweetId = tweet.referredReplyId;
   tweetData.referredReplyId = tweet.referredReplyId;
   tweetData.description = tweet.description;
   tweetData.viewsNum = tweet.views;
