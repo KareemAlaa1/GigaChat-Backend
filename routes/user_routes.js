@@ -53,6 +53,10 @@ userRouter.get(
   '/profile/:username',
   authController.protect,
   userController.getProfile,
+);userRouter.get(
+  '/profileById/:id',
+  authController.protect,
+  userController.getProfileById,
 );
 
 userRouter.get(

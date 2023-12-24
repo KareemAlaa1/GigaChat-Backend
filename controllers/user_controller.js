@@ -175,6 +175,85 @@ exports.getProfile = async (req, res) => {
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+};exports.getProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currUser = req.user;
+
+    if (!id) return res.status(400).send({ error: 'Bad Request' });
+
+    const aggregateResult = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id), active: true, isDeleted: false } },
+      {
+        $project: {
+          username: 1,
+          nickname: 1,
+          _id: 1,
+          bio: 1,
+          profileImage: 1,
+          bannerImage: 1,
+          location: 1,
+          website: 1,
+          birthDate: 1,
+          joinedAt: 1,
+          blockingUsers: 1,
+          mutedUsers: 1,
+          num_of_posts: { $size: '$tweetList' },
+          num_of_likes: { $size: '$likedTweets' },
+          followings_num: { $size: '$followingUsers' },
+          followers_num: { $size: '$followersUsers' },
+          isCurrUserBlocked: {
+            $in: [currUser._id, '$blockingUsers'],
+          },
+          isWantedUserFollowed: {
+            $in: [currUser._id, '$followersUsers'],
+          },
+          isFollowingMe: {
+            $in: [currUser._id, '$followingUsers'],
+          },
+        },
+      },
+    ]);
+    const wantedUser = aggregateResult[0];
+
+    if (!wantedUser) return res.status(404).send({ error: 'user not found' });
+
+    const isWantedUserBlocked = currUser.blockingUsers.includes(wantedUser._id);
+    const isWantedUserMuted = currUser.mutedUsers.includes(wantedUser._id);
+
+    const isCurruser = wantedUser._id.toString() === currUser._id.toString();
+
+    const result = {};
+    result.status = 'success';
+    result.user = {
+      username: wantedUser.username,
+      nickname: wantedUser.nickname,
+      _id: wantedUser._id,
+      bio: wantedUser.bio,
+      profile_image: wantedUser.profileImage,
+      banner_image: wantedUser.bannerImage,
+      location: wantedUser.location,
+      website: wantedUser.website,
+      birth_date: wantedUser.birthDate,
+      joined_date: wantedUser.joinedAt,
+      followings_num: wantedUser.followings_num,
+      followers_num: wantedUser.followers_num,
+      is_wanted_user_blocked: isWantedUserBlocked,
+      is_wanted_user_muted: isWantedUserMuted,
+      is_curr_user_blocked: wantedUser.isCurrUserBlocked,
+      is_wanted_user_followed: wantedUser.isWantedUserFollowed,
+      is_curr_user: isCurruser,
+      num_of_posts: wantedUser.num_of_posts,
+      num_of_likes: wantedUser.num_of_likes,
+      isFollowingMe: wantedUser.isFollowingMe,
+    };
+
+    return res.status(200).send(result);
+  } catch (error) {
+    // Handle and log errors
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
 };
 
 exports.getCurrUserProfile = async (req, res) => {
