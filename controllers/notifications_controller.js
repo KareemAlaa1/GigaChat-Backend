@@ -43,6 +43,9 @@ async function pushNotification(notification, notifiedId) {
   await fetch(pushNotificationEndpoint, options);
 }
 
+
+
+
 const getMentions=(tweet)=> {
   const mentions = {};
   const words = tweet.description.split(' ');
@@ -54,8 +57,28 @@ const getMentions=(tweet)=> {
   return mentions;
 }
 exports.getMentions = getMentions;
-exports.addFollowNotification = async (notifier, notified) => {
 
+
+
+
+exports.addMessageNotification = async (notifier, notified, message) => {
+
+  const notification = await Notification.create({
+    description: `${notifier.username} sent you a message`,
+    type: 'message',
+    notifierProfileImage: notifier.profileImage,
+    destination: notified._id,
+    notifier: notifier._id,
+    notified: notified._id,
+    creation_time: Date.now(),
+    
+}
+
+exports.addFollowNotification = async (notifier, notified) => {
+  if(notifier._id==notified._id)
+  {
+    return;
+  }
   const notification = await Notification.create({
     description: `${notifier.username} started following you`,
     type: 'follow',
@@ -76,7 +99,10 @@ exports.addFollowNotification = async (notifier, notified) => {
 //values: ['like', 'reply', 'mention', 'retweet', 'follow'],
 
 exports.addLikeNotification = async (notifier, tweet) => {
-
+  if(notifier._id==tweet.userId)
+  {
+    return;
+  }
   const notification = await Notification.create({
     description: `${notifier.username} liked your tweet`,
     type: 'like',
@@ -93,6 +119,10 @@ exports.addLikeNotification = async (notifier, tweet) => {
 }
 
 exports.addReplyNotification = async (notifier, notified, replyId) => {
+  if(notifier._id==notified._id)
+  {
+    return;
+  }
   const notification = await Notification.create({
     description: `${notifier.username} replied to your tweet`,
     type: 'reply',
@@ -107,6 +137,10 @@ exports.addReplyNotification = async (notifier, notified, replyId) => {
   return notification;
 }
 exports.addQuoteNotification = async (notifier, notified, quoteId) => {
+  if(notifier._id==notified._id)
+  {
+    return;
+  }
   const notification = await Notification.create({
     description: `${notifier.username} quoted your tweet`,
     type: 'quote',
@@ -123,7 +157,10 @@ exports.addQuoteNotification = async (notifier, notified, quoteId) => {
 }
 
 exports.addRetweetNotification = async (notifier, tweet,retweet) => {
-
+  if(notifier._id==tweet.userId)
+  {
+    return;
+  }
   const notification = await Notification.create({
     description: `${notifier.username} retweeted your tweet`,
     type: 'retweet',
@@ -140,6 +177,7 @@ exports.addRetweetNotification = async (notifier, tweet,retweet) => {
 }
 
 exports.addMentionNotification = async (notifier, tweet) => {
+
   const mentions = getMentions(tweet);
   for(let i in mentions)  {
     if(i==notifier.username) continue;

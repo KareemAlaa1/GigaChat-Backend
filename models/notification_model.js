@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: [true, 'A notification must have a type'],
     enum: {
-      values: ['like', 'reply','quote', 'mention', 'retweet', 'follow'],
+      values: ['like', 'reply','quote', 'mention', 'retweet', 'follow', 'message'],
       message:
         'notification type is either: like, reply, mention, retweet, follow',
     },
