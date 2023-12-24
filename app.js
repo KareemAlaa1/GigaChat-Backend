@@ -15,7 +15,7 @@ const chatRouter = require('./routes/chat_router');
 const googleRouter = require('./routes/google_router');
 const passportSetup = require('./google-passport');
 const passport = require('passport');
-require('./app_server');
+// require('./app_server');
 const express = require('express');
 const app = express();
 const http = require('http');

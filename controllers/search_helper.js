@@ -2,7 +2,13 @@ const mongoose = require('mongoose');
 const User = require('../models/user_model');
 const Hashtag = require('../models/hashtag_model');
 const Tweet = require('../models/tweet_model');
-const escape = (string) => string.replace(/[ '".*+?^${}()|[\]\\]/g, ''); // $& means the whole matched
+const escape = (string) =>
+  string
+    .replace(/['".*+?^${}()|[\]\\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split('')
+    .join('\\s*'); // $& means the whole matched
 
 /**
  * Description :
