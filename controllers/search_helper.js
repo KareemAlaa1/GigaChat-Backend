@@ -22,9 +22,18 @@ exports.searchUser = async (req, res, next) => {
     const users = await User.aggregate([
       {
         $match: {
-          username: {
-            $regex: new RegExp(escape(req.searchWord), 'i'), // 'i' for case-insensitive matching
-          },
+          $or: [
+            {
+              username: {
+                $regex: new RegExp(escape(req.searchWord), 'i'), // 'i' for case-insensitive matching
+              },
+            },
+            {
+              nickname: {
+                $regex: new RegExp(escape(req.searchWord), 'i'), // 'i' for case-insensitive matching
+              },
+            },
+          ],
         },
       },
     ])
