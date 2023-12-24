@@ -5,7 +5,7 @@ const deleteMentions = async (tweet) => {
   const tweetId = tweet.id;
   const tweetDescription = tweet.description;
   if (tweetDescription === undefined || tweetDescription === '') return;
-  const words = tweetDescription.split(' ');
+  const words = tweetDescription.split(/\s+|\n+/);
   const mentionWords = words.filter(
     (word, index, self) => /^@/.test(word) && self.indexOf(word) === index,
   );
