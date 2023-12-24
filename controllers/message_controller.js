@@ -4,6 +4,7 @@ const Chat = require('../models/chat_model');
 const Message = require('../models/message_model');
 const mongoose = require('mongoose');
 const { checkToken } = require('./auth_controller');
+const notificationController = require('./notifications_controller');
 
 const sockets_users = {};
 const users_sockets = {};
@@ -36,7 +37,7 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     const recieverUser =
       await User.findById(recieverId).select('_id blockingUsers');
     const senderUser =
-      await User.findById(senderId).select('_id blockingUsers');
+      await User.findById(senderId).select('_id blockingUsers username');
 
     // user not found check
     if (!recieverUser) {
@@ -176,6 +177,19 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
       socket.broadcast
         .to(users_sockets[recieverId])
         .emit('receive_message', { message: retMessage, chat_ID: senderId });
+
+    //region Notification
+    // Add code for notification here
+    try {
+      const notification = await notificationController.addMessageNotification(
+        senderUser, recieverUser, retMessage.description
+      );
+    }
+    catch (e){
+
+    }
+    //endregion
+
 
     retMessage.mine = true;
     socket.emit('receive_message', {

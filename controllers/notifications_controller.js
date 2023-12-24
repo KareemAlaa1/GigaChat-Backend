@@ -8,7 +8,7 @@ dotenv.config({ path: './config/dev.env' });
 const pushNotificationEndpoint = "https://fcm.googleapis.com/fcm/send";
 
 
-async function pushNotification(notification, notifiedId) {
+async function pushNotification(notification, notifiedId,description) {
   const user = await User.findById(notifiedId);
   const push_token=user.push_token;
   if(!push_token) {
@@ -21,7 +21,7 @@ async function pushNotification(notification, notifiedId) {
     to: push_token,
     notification:{
       title: notification.description,
-      body: notification.description
+      body: description|| notification.description
     },
     data: {
       notification:notificationBody
@@ -67,13 +67,13 @@ exports.addMessageNotification = async (notifier, notified, message) => {
     description: `${notifier.username} sent you a message`,
     type: 'message',
     notifierProfileImage: notifier.profileImage,
-    destination: notified._id,
+    destination: notifier._id,
     notifier: notifier._id,
     notified: notified._id,
     creation_time: Date.now()
   })
 
-  await pushNotification(notification,notified._id);
+  await pushNotification(notification,notified._id, message);
   return notification
 }
 exports.addFollowNotification = async (notifier, notified) => {
