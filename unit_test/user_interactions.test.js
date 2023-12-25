@@ -6,11 +6,9 @@ const { expect } = require('@jest/globals');
 const User = require('../models/user_model');
 const Tweet = require('../models/tweet_model');
 const app = require('../app');
-const fs = require('fs');
-
 const user0 = {
-    username: 'sara',
-    email: 'sara@gmail.com',
+    username: 'user0',
+    email: 'user0@gmail.com',
     bio: 'we are dead',
     birthDate: '6-4-2002',
     password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
@@ -23,6 +21,7 @@ const user0 = {
     website: 'www.wearedead.com',
     followersUsers: [],
     followingUsers: [],
+    blockingUsers: [],
     location: 'cairo',
     joinedAt: '12-9-2020',
     active: true,
@@ -32,8 +31,8 @@ const user0 = {
 };
 
 const user1 = {
-    username: 'Ahmed',
-    email: 'Ahmed@gmail.com',
+    username: 'user1',
+    email: 'user1@gmail.com',
     bio: 'we are dead',
     birthDate: '6-4-2002',
     password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
@@ -46,6 +45,30 @@ const user1 = {
     website: 'www.wearedead.com',
     followersUsers: [],
     followingUsers: [],
+    blockingUsers: [],
+    tweetList: [],
+    location: 'cairo',
+    joinedAt: '12-9-2020',
+    active: true,
+    isDeleted: false,
+};
+
+const user2 = {
+    username: 'swe',
+    email: 'swe@gmail.com',
+    bio: 'we are dead',
+    birthDate: '6-4-2002',
+    password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
+    bannerImage:
+        'https://pbs.twimg.com/profile_banners/1326868125124603904/1665947156/1500x500',
+    profileImage:
+        'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+    phone: '01147119716',
+    nickname: 'Kareem Alaa',
+    website: 'www.wearedead.com',
+    followersUsers: [],
+    followingUsers: [],
+    blockingUsers: [],
     tweetList: [],
     location: 'cairo',
     joinedAt: '12-9-2020',
@@ -98,11 +121,12 @@ const tweetOwner = {
 
 
 let token;
+let token2;
 let testUser0;
 let testUser1;
+let testUser2;
 let testTweetOwner;
 let testTweet;
-let testUserWithoutTweetList;
 
 async function createUser(userData) {
     let user = await new User(userData);
@@ -132,8 +156,12 @@ beforeAll(async () => {
         testTweet = await createTweet(tweet);
         testUser0 = await createUser(user0);
         testUser1 = await createUser(user1);
+        testUser2 = await createUser(user2);
 
         token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+            expiresIn: process.env.JWT_EXPIRES_IN,
+        });
+        token2 = jwt.sign({ id: testUser2._id.toString() }, process.env.JWT_SECRET, {
             expiresIn: process.env.JWT_EXPIRES_IN,
         });
     } catch (error) {
@@ -156,7 +184,6 @@ describe('Follow Endpoint', () => {
         const res = await request(app)
             .post(`/api/user/${testUser1.username}/follow`)
             .set('authorization', `Bearer ${token}`);
-
 
         expect(res.statusCode).toBe(204);
 
@@ -190,6 +217,27 @@ describe('Follow Endpoint', () => {
 
         expect(res.statusCode).toBe(400);
         expect(res.body.error).toBe("You Can't follow your self");
+    });
+
+    it('should handle case where the user tries to follow a blocked user', async () => {
+        testUser2.blockingUsers.push(testUser0._id);
+        await testUser2.save();
+        console.log(testUser2.blockingUsers);
+        const res = await request(app)
+            .post(`/api/user/${testUser0.username}/follow`)
+            .set('authorization', `Bearer ${token2}`);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe("Bad request, You Blocked This User");
+    });
+
+    it('should handle case where the user tries to follow user blocked you', async () => {
+        const res = await request(app)
+            .post(`/api/user/${testUser2.username}/follow`)
+            .set('authorization', `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe("Bad request, User Blocked You");
     });
 
     it('should handle case where the followed user does not exist', async () => {
