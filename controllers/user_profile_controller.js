@@ -33,6 +33,9 @@ exports.getUserTweets = async (req, res) => {
       });
     }
 
+    if (user.tweetList == undefined || user.tweetList.length == 0)
+      return res.status(404).send({ error: 'This user has no tweets' });
+
     const tweets = await User.aggregate([
       {
         $match: { _id: user._id },
@@ -165,6 +168,9 @@ exports.getUserLikedTweets = async (req, res) => {
           "this user blocks you ! you can't see his tweets and he can't see your tweets",
       });
     }
+
+    if (user.tweetList == undefined || user.tweetList.length == 0)
+      return res.status(404).send({ error: 'This user has no tweets' });
 
     const tweets = await User.aggregate([
       {

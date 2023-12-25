@@ -169,12 +169,11 @@ describe('GET /api/profile/{username}/tweets', () => {
     expect(response.body.error).toBe('User Not Found');
   });
 
-  it('responds with 200 and empty user tweets when user doesnot have tweets', async () => {
+  it('responds with error when user doesnot have tweets', async () => {
     const response = await request(app)
       .get('/api/profile/Ahmed/tweets')
       .set('Authorization', `Bearer ${token}`);
-    expect(response.status).toBe(200);
-    expect(response.body.posts.length).toBe(0);
+    expect(response.body.error).toBe('This user has no tweets');
   });
   it('responds with 500 when internal server error happens', async () => {
     jest
@@ -211,12 +210,11 @@ describe('GET /api/profile/{username}/likes', () => {
     expect(response.body.error).toBe('User Not Found');
   });
 
-  it('responds with 200 and empty user liked tweet', async () => {
+  it('responds with error and empty user liked tweet', async () => {
     const response = await request(app)
       .get('/api/profile/Ahmed/likes')
       .set('Authorization', `Bearer ${token}`);
-    expect(response.status).toBe(200);
-    expect(response.body.posts.length).toBe(0);
+    expect(response.body.error).toBe('This user has no tweets');
   });
   it('responds with 500 when internal server error happens', async () => {
     jest
