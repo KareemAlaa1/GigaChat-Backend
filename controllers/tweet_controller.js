@@ -246,6 +246,7 @@ const TweetController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
+  
   getTweet: async (req, res) => {
     try {
       const tweet = await getTweetDatabyId(req.params.tweetId);
@@ -595,6 +596,7 @@ const TweetController = {
                 referredReplyId: new mongoose.Types.ObjectId(
                   req.params.tweetId,
                 ),
+                isDeleted: false,
               },
             },
             {
@@ -710,6 +712,7 @@ const TweetController = {
                   $match: {
                     type: 'reply',
                     referredReplyId: new mongoose.Types.ObjectId(el.id),
+                    isDeleted: false,
                   },
                 },
                 {
@@ -816,6 +819,7 @@ const TweetController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
+
   getTweetOwner: async (req, res) => {
     try {
       const tweet = await getTweetDatabyId(req.params.tweetId);

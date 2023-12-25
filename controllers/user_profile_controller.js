@@ -81,7 +81,7 @@ exports.getUserTweets = async (req, res) => {
         tweetList: {
           tweet: {
             id: '$tweetList.tweet._id',
-            referredTweetId: 1,
+            referredTweetId: '$tweetList.tweet.referredReplyId',
             referredReplyId: 1,
             description: 1,
             likesNum: { $size: '$tweetList.tweet.likersList' },
@@ -221,7 +221,7 @@ exports.getUserLikedTweets = async (req, res) => {
       .project({
         likedTweets: {
           id: '$likedTweets._id',
-          referredTweetId: 1,
+          referredTweetId: '$likedTweets.referredReplyId',
           referredReplyId: 1,
           description: 1,
           likesNum: { $size: '$likedTweets.likersList' },

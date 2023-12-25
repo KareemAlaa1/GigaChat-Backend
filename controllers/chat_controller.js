@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Chat = require('../models/chat_model');
+const Message = require('../models/message_model');
 const User = require('../models/user_model');
 
 const { paginate } = require('../utils/api_features');
@@ -354,6 +355,16 @@ exports.getMessagesAfterCertainTime = async (req, res) => {
           .limit(size)
           .sort({ id: 1 });
 
+        const updatedMessages = await Message.updateMany(
+          {
+            sendTime: { $gte: new Date(time).getTime() },
+            sender: req.params.userId,
+            seen: false,
+          },
+          { seen: true },
+        );
+
+        console.log(updatedMessages);
         res.status(200).json({
           status: 'messages get success',
           data: messages,
@@ -468,7 +479,15 @@ exports.getMessagesBeforeCertainTime = async (req, res) => {
           .skip(skip)
           .limit(size)
           .sort({ id: 1 });
-
+        const updatedMessages = await Message.updateMany(
+          {
+            sendTime: { $lte: new Date(time).getTime() },
+            sender: req.params.userId,
+            seen: false,
+          },
+          { seen: true },
+        );
+        console.log(updatedMessages);
         res.status(200).json({
           status: 'messages get success',
           data: messages,
