@@ -37,7 +37,7 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     const recieverUser =
       await User.findById(recieverId).select('_id blockingUsers');
     const senderUser =
-      await User.findById(senderId).select('_id blockingUsers username');
+      await User.findById(senderId).select('_id blockingUsers username profileImage');
 
     // user not found check
     if (!recieverUser) {
