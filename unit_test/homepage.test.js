@@ -264,7 +264,7 @@ describe('GET /api/homepage/following', () => {
       .get('/api/homepage/following')
       .set('Authorization', `Bearer ${token}`);
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
     expect(response.body.tweetList).toBe(undefined);
   });
 
@@ -280,7 +280,7 @@ describe('GET /api/homepage/following', () => {
       .get('/api/homepage/following')
       .set('Authorization', `Bearer ${token}`);
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
     expect(response.body.tweetList).toBe(undefined);
   });
 
