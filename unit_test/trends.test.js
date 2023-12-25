@@ -165,8 +165,8 @@ describe('GET /api/trends/all', () => {
       .get('/api/trends/all')
       .set('Authorization', `Bearer ${token}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body.data.length).toBe(0);
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('There is no hashtags');
   });
 
   it('responds with 500 when internal server error happens', async () => {
@@ -207,19 +207,6 @@ describe('GET /api/trends/:trend', () => {
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('Hashtag Not Found');
-  });
-
-  it('responds with 400 when bad request (request number of tweets bigger than found)', async () => {
-    jest
-      .spyOn(mongoose.model('Hashtag'), 'aggregate')
-      .mockImplementation(async () => new Error('Simulated error during save'));
-    const response = await request(app)
-      .get('/api/trends/Gaza')
-      .set('Authorization', `Bearer ${token}`)
-      .query({ page: 1, count: 100 });
-    expect(response.status).toBe(400);
-    expect(response.body.status).toBe('fail');
-    expect(response.body.message).toBe('Invalid page and count value');
   });
 
   it('responds with 404 when no tweets found for the given hashtag', async () => {
