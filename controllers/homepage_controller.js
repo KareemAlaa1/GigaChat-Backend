@@ -34,6 +34,7 @@ const getLatestUserTweet = async (reqUser) => {
         as: 'tweetDetails',
       })
       .unwind('tweetDetails')
+      .match({ 'tweetDetails.isDeleted': false })
       .match({
         $expr: {
           $not: { $in: ['$tweetDetails.userId', '$mutedUsers'] },
@@ -73,7 +74,7 @@ const getLatestUserTweet = async (reqUser) => {
           _id: 1,
           description: 1,
           media: 1,
-          referredTweetId: 1,
+          referredTweetId: '$tweetDetails.referredReplyId',
           referredReplyId: 1,
           createdAt: 1,
           likesNum: { $size: '$tweetDetails.likersList' },
@@ -201,6 +202,9 @@ exports.getFollowingTweets = async (req, res) => {
         },
       })
       .match({
+        'tweetList.tweetDetails.isDeleted': false,
+      })
+      .match({
         $expr: {
           $not: { $in: ['$tweetList.tweetDetails.userId', me.mutedUsers] },
         },
@@ -260,7 +264,7 @@ exports.getFollowingTweets = async (req, res) => {
             _id: 1,
             description: 1,
             media: 1,
-            referredTweetId: 1,
+            referredTweetId: '$tweetList.tweetDetails.referredReplyId',
             referredReplyId: 1,
             createdAt: 1,
             likesNum: 1,
@@ -353,8 +357,8 @@ exports.getMentionTweets = async (req, res) => {
       .project({
         mentions: {
           id: '$mentions._id',
-          referredTweetId: 1,
-          referredReplyId: 1,  
+          referredTweetId: '$mentions.referredReplyId',
+          referredReplyId: 1,
           description: 1,
           likesNum: {
             $size: '$mentions.likersList',
