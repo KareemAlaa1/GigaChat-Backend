@@ -402,14 +402,16 @@ exports.getMentionTweets = async (req, res) => {
         },
       });
 
-    let tweets = user[0].data;
-
     try {
-      if (tweets == undefined || tweets.length == 0)
+      if (
+        user.length == 0 ||
+        user[0].data == undefined ||
+        user[0].data.length == 0
+      )
         return res
           .status(404)
           .send({ error: 'This user wasnot mentioned in any tweet' });
-      const paginatedTweets = paginate(tweets, req);
+      const paginatedTweets = paginate(user[0].data, req);
       return res
         .status(200)
         .send({ status: 'success', tweetList: paginatedTweets });
