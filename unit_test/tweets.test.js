@@ -75,7 +75,7 @@ const deletedUser = {
 };
 
 const validTweet = {
-  description: 'test add tweet 1 2 3 4 test',
+  description: 'test add tweet 1 2 3 4 test #lol #lesgooooo',
   media: [
     {
       data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',

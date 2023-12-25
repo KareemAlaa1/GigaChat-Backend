@@ -175,7 +175,8 @@ exports.getProfile = async (req, res) => {
     console.error(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
-};exports.getProfileById = async (req, res) => {
+};
+exports.getProfileById = async (req, res) => {
   try {
     const { id } = req.params;
     const currUser = req.user;
@@ -183,7 +184,13 @@ exports.getProfile = async (req, res) => {
     if (!id) return res.status(400).send({ error: 'Bad Request' });
 
     const aggregateResult = await User.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(id), active: true, isDeleted: false } },
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id),
+          active: true,
+          isDeleted: false,
+        },
+      },
       {
         $project: {
           username: 1,
