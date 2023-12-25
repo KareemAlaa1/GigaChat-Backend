@@ -34,7 +34,6 @@ const notificationSchema = new mongoose.Schema({
   },
   notifierProfileImage: {
     type: String,
-    default: defaultImage,
 
   },
   notified: {

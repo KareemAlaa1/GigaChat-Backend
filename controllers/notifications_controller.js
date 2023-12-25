@@ -77,7 +77,7 @@ exports.addMessageNotification = async (notifier, notified, message) => {
   return notification
 }
 exports.addFollowNotification = async (notifier, notified) => {
-  if(notifier._id==notified._id)
+  if(notifier._id.toString()==notified._id.toString())
   {
     return;
   }
@@ -101,8 +101,11 @@ exports.addFollowNotification = async (notifier, notified) => {
 //values: ['like', 'reply', 'mention', 'retweet', 'follow'],
 
 exports.addLikeNotification = async (notifier, tweet) => {
-  if(notifier._id==tweet.userId)
+  console.log(notifier._id.toString())
+  console.log(tweet.userId.toString())
+  if(notifier._id.toString()===tweet.userId.toString())
   {
+    console.log('help')
     return;
   }
   const notification = await Notification.create({
@@ -121,7 +124,7 @@ exports.addLikeNotification = async (notifier, tweet) => {
 }
 
 exports.addReplyNotification = async (notifier, notified, replyId) => {
-  if(notifier._id==notified._id)
+  if(notifier._id.toString()==notified._id.toString())
   {
     return;
   }
@@ -139,7 +142,7 @@ exports.addReplyNotification = async (notifier, notified, replyId) => {
   return notification;
 }
 exports.addQuoteNotification = async (notifier, notified, quoteId) => {
-  if(notifier._id==notified._id)
+  if(notifier._id.toString()==notified._id.toString())
   {
     return;
   }
@@ -159,7 +162,7 @@ exports.addQuoteNotification = async (notifier, notified, quoteId) => {
 }
 
 exports.addRetweetNotification = async (notifier, tweet,retweet) => {
-  if(notifier._id==tweet.userId)
+  if(notifier._id.toString()==tweet.userId.toString())
   {
     return;
   }
