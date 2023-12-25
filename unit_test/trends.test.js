@@ -169,6 +169,14 @@ describe('GET /api/trends/all', () => {
     expect(response.body.error).toBe('There is no hashtags');
   });
 
+  it('responds with status code 500 if given page or count more than the hashtags number', async () => {
+    const response = await request(app)
+      .get('/api/trends/all?page=100&count=500')
+      .set('Authorization', `Bearer ${token}`);
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe('No content is found in this page ');
+  });
+
   it('responds with 500 when internal server error happens', async () => {
     jest
       .spyOn(mongoose.model('Hashtag'), 'aggregate')

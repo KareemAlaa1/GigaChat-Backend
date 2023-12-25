@@ -47,15 +47,15 @@ const TweetController = {
           });
           let data = retTweet;
           await notificationController.addMentionNotification(req.user, data);
+          if (req.body.description) {
+            await extractHashtags(newTweet);
+            await extractMentions(newTweet);
+          }
           res.status(201);
           res.json({
             status: 'Tweet Add Success',
             data,
           });
-          if (req.body.description) {
-            extractHashtags(newTweet);
-            extractMentions(newTweet);
-          }
         } else {
           const referredTweet = await getTweetDatabyId(
             req.body.referredTweetId,
@@ -123,15 +123,15 @@ const TweetController = {
             }
             await notificationController.addMentionNotification(req.user, data);
             //endregion
+            if (req.body.description) {
+              await extractHashtags(newTweet);
+              await extractMentions(newTweet);
+            }
             res.status(201);
             res.json({
               status: 'Tweet Add Success',
               data,
             });
-            if (req.body.description) {
-              extractHashtags(newTweet);
-              extractMentions(newTweet);
-            }
           } else {
             res.status(400);
             res.json({
@@ -246,7 +246,7 @@ const TweetController = {
       res.status(500).send({ error: 'Internal Server Error' });
     }
   },
-  
+
   getTweet: async (req, res) => {
     try {
       const tweet = await getTweetDatabyId(req.params.tweetId);
@@ -361,8 +361,8 @@ const TweetController = {
             });
 
             if (tweet.description) {
-              deleteHashtags(tweet);
-              deleteMentions(tweet);
+              await deleteHashtags(tweet);
+              await deleteMentions(tweet);
             }
 
             res.status(204).json({
