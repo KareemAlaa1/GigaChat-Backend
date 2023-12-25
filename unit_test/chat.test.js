@@ -166,11 +166,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoose.connection.close();
   await User.deleteMany();
   await Chat.deleteMany();
   await Message.deleteMany();
+  await mongoose.disconnect();
+  await mongoose.connection.close();
 });
 
 describe('Get /api/user/chat/:userId', () => {

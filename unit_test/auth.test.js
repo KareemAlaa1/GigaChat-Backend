@@ -49,7 +49,7 @@ describe('auth', () => {
         email: 'test@test.com',
         nickname: 'testtest',
         birthDate: '2000-01-01',
-        username:'suggestedUsername',
+        username: 'suggestedUsername',
         confirmEmailCode:
           '548a2bb0611b27e503ce5cb8b2123bf341a3ae18c3e7ba98620196572a3bab48',
         confirmEmailExpires: '2024-01-01',
@@ -59,7 +59,7 @@ describe('auth', () => {
         confirmEmailCode: '219589745',
         email: 'test@test.com',
       });
-      console.log(response.body.data)
+      console.log(response.body.data);
       expect(response.status).toBe(201);
       expect(response.body.status).toBe('success');
       expect(response.body.token).toBeDefined();
@@ -141,7 +141,7 @@ describe('auth', () => {
     it('should return 409 when email already exists and is active', async () => {
       const existingUser = new User({
         email: 'existing@example.com',
-        username:'existinguser',
+        username: 'existinguser',
         nickname: 'existinguser',
         birthDate: '1990-01-01',
         active: true,
@@ -160,7 +160,7 @@ describe('auth', () => {
     it('should return 200 when email already exists but is inactive', async () => {
       const existingUser = new User({
         email: 'existing@example.com',
-        username:'existinguser',
+        username: 'existinguser',
 
         nickname: 'existinguser',
         birthDate: '1990-01-01',
@@ -605,7 +605,7 @@ describe('auth', () => {
 
     it('should return 400 when the new username is already taken', async () => {
       const existingUser = new User({
-        username: 'existingxusername',
+        username: 'existing',
         email: 'another@example.com',
       });
       await existingUser.save();
@@ -614,7 +614,7 @@ describe('auth', () => {
         .patch('/api/user/AssignUsername')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          username: 'existingxusername',
+          username: 'existing',
         });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('The username is already taken.');

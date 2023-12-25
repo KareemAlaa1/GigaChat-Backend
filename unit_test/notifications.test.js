@@ -20,8 +20,6 @@ beforeAll(async () => {
 
   //create a tweet
 
-
-
   // Create a user who will be the notifier
   testNotifier = await User.create({
     email: 'notifier@example.com',
@@ -29,13 +27,13 @@ beforeAll(async () => {
     active: true,
   });
 
-
   // Create another user who will be the notified
   testNotified = await User.create({
     email: 'notified@example.com',
     username: 'notified',
     active: true,
-  });testNotified2 = await User.create({
+  });
+  testNotified2 = await User.create({
     email: 'notified2@example.com',
     username: 'notified2',
     active: true,
@@ -45,7 +43,7 @@ beforeAll(async () => {
     userId: testNotified._id,
     type: 'tweet',
     isDeleted: false,
-  })
+  });
   testReply = await Tweet.create({
     content: 'This is a test reply',
     userId: testNotifier._id,
@@ -53,7 +51,8 @@ beforeAll(async () => {
 
     referredTweetId: testTweet._id,
     isDeleted: false,
-  }); testQuote = await Tweet.create({
+  });
+  testQuote = await Tweet.create({
     content: 'This is a test quote',
     userId: testNotifier._id,
     type: 'quote',
@@ -76,14 +75,13 @@ afterAll(async () => {
   await mongoose.disconnect();
 });
 
-
 describe('notifications', () => {
   afterEach(async () => {
     // Delete all notifications after each test
     await Notification.deleteMany({ notified: testNotified._id });
   });
 
-//###################### getNotifications ######################
+  //###################### getNotifications ######################
   describe('GET /api/user/notifications', () => {
     it('should return 200 and notifications data', async () => {
       let notification1 = await Notification.create({
@@ -92,7 +90,7 @@ describe('notifications', () => {
         destination: testTweet._id,
         notifier: testNotifier._id,
         notified: testNotified._id,
-        creation_time: new Date()
+        creation_time: new Date(),
       });
       const notification2 = await Notification.create({
         description: 'Test notification',
@@ -100,7 +98,7 @@ describe('notifications', () => {
         destination: testTweet._id,
         notifier: testNotifier._id,
         notified: testNotified._id,
-        creation_time: new Date()
+        creation_time: new Date(),
       });
       const response = await request(app)
         .get('/api/user/notifications')
@@ -110,8 +108,12 @@ describe('notifications', () => {
       expect(response.body.status).toBe('success');
       expect(response.body.data.notifications.length).toBe(2);
 
-      expect(response.body.data.notifications[0]._id).toEqual(String(notification2._id));
-      expect(response.body.data.notifications[1]._id).toEqual(String(notification1._id));
+      expect(response.body.data.notifications[0]._id).toEqual(
+        String(notification2._id),
+      );
+      expect(response.body.data.notifications[1]._id).toEqual(
+        String(notification1._id),
+      );
 
       await Notification.deleteOne({ _id: notification1._id });
       await Notification.deleteOne({ _id: notification2._id });
@@ -128,7 +130,7 @@ describe('notifications', () => {
     });
   });
 
-//###################### count ######################
+  //###################### count ######################
   describe('GET /api/user/notifications/unseenCount', () => {
     it('should return 200 and notifications count', async () => {
       // Create two notifications for the user
@@ -139,7 +141,7 @@ describe('notifications', () => {
         notifier: testNotifier._id,
         notified: testNotified._id,
         creation_time: new Date(),
-        seen: false
+        seen: false,
       });
 
       await Notification.create({
@@ -149,7 +151,7 @@ describe('notifications', () => {
         notifier: testNotifier._id,
         notified: testNotified._id,
         creation_time: new Date(),
-        seen: false
+        seen: false,
       });
       const response = await request(app)
         .get('/api/user/notifications/unseenCount')
@@ -169,7 +171,7 @@ describe('notifications', () => {
         notifier: testNotifier._id,
         notified: testNotified._id,
         creation_time: new Date(),
-        seen: true
+        seen: true,
       });
 
       const response = await request(app)
@@ -184,7 +186,7 @@ describe('notifications', () => {
     // Add more test cases as needed
   });
 
-//###################### markAllAsSeen ######################
+  //###################### markAllAsSeen ######################
   describe('POST /api/user/notifications/markAllAsSeen', () => {
     it('should mark all notifications as seen', async () => {
       // Create two unseen notifications for the user
@@ -195,7 +197,7 @@ describe('notifications', () => {
         notifier: testNotifier._id,
         notified: testNotified._id,
         creation_time: new Date(),
-        seen: false
+        seen: false,
       });
 
       const notification2 = await Notification({
@@ -205,7 +207,7 @@ describe('notifications', () => {
         notifier: testNotifier._id,
         notified: testNotified._id,
         creation_time: new Date(),
-        seen: false
+        seen: false,
       });
       notification1.save();
       notification2.save();
@@ -219,8 +221,12 @@ describe('notifications', () => {
       expect(response.body.data.notifications.modifiedCount).toBe(2); // Assuming both notifications are marked as seen
 
       // Check if the notifications are actually marked as seen in the database
-      const updatedNotification1 = await Notification.findById(notification1._id);
-      const updatedNotification2 = await Notification.findById(notification2._id);
+      const updatedNotification1 = await Notification.findById(
+        notification1._id,
+      );
+      const updatedNotification2 = await Notification.findById(
+        notification2._id,
+      );
 
       expect(updatedNotification1.seen).toBe(true);
       expect(updatedNotification2.seen).toBe(true);
@@ -228,17 +234,23 @@ describe('notifications', () => {
 
     // Add more test cases as needed
   });
-//###################### addFollowNotification ######################
+  //###################### addFollowNotification ######################
   describe('addFollowNotification', () => {
     it('should create a follow notification', async () => {
       // Call the function to add a follow notification
-      const notification = await notificationsController.addFollowNotification(testNotifier, testNotified);
+      const notification = await notificationsController.addFollowNotification(
+        testNotifier,
+        testNotified,
+      );
 
       // Assert that the notification is created
+
       expect(notification).toBeTruthy();
-      expect(notification.description).toBe(`${testNotifier.username} started following you`);
+      expect(notification.description).toBe(
+        `${testNotifier.username} started following you`,
+      );
       expect(notification.type).toBe('follow');
-      expect(notification.destination).toBe(testNotified.username);
+      expect(notification.destination).toEqual(testNotifier._id.toString());
       expect(notification.notifier).toEqual(testNotifier._id);
       expect(notification.notified).toEqual(testNotified._id);
     });
@@ -246,17 +258,21 @@ describe('notifications', () => {
     // Add more test cases as needed
   });
 
-
-//###################### addLikeNotification ######################
+  //###################### addLikeNotification ######################
   describe('addLikeNotification', () => {
     it('should create a like notification', async () => {
       // Call the function to add a like notification
-      const notification = await notificationsController.addLikeNotification(testNotifier, testTweet);
+      const notification = await notificationsController.addLikeNotification(
+        testNotifier,
+        testTweet,
+      );
       // Assert that the notification is created
       expect(notification).toBeTruthy();
-      expect(notification.description).toBe(`${testNotifier.username} liked your tweet`);
+      expect(notification.description).toBe(
+        `${testNotifier.username} liked your tweet`,
+      );
       expect(notification.type).toBe('like');
-      expect(notification.destination).toEqual((testTweet._id).toString());
+      expect(notification.destination).toEqual(testTweet._id.toString());
       expect(notification.notifier).toEqual(testNotifier._id);
       expect(notification.notified).toEqual(testNotified._id);
     });
@@ -264,15 +280,21 @@ describe('notifications', () => {
     // Add more test cases as needed
   });
 
-//###################### addReplyNotification ######################
+  //###################### addReplyNotification ######################
   describe('addReplyNotification', () => {
     it('should create a reply notification', async () => {
       // Call the function to add a reply notification
-      const notification = await notificationsController.addReplyNotification(testNotifier, testNotified, testReply);
+      const notification = await notificationsController.addReplyNotification(
+        testNotifier,
+        testNotified,
+        testReply,
+      );
 
       // Assert that the notification is created
       expect(notification).toBeTruthy();
-      expect(notification.description).toBe(`${testNotifier.username} replied to your tweet`);
+      expect(notification.description).toBe(
+        `${testNotifier.username} replied to your tweet`,
+      );
       expect(notification.type).toBe('reply');
       expect(notification.destination).toEqual(testReply._id.toString());
       expect(notification.notifier).toEqual(testNotifier._id);
@@ -282,15 +304,21 @@ describe('notifications', () => {
     // Add more test cases as needed
   });
 
-//###################### addQuoteNotification ######################
+  //###################### addQuoteNotification ######################
   describe('addQuoteNotification', () => {
     it('should create a quote notification', async () => {
       // Call the function to add a quote notification
-      const notification = await notificationsController.addQuoteNotification(testNotifier, testNotified, testQuote);
+      const notification = await notificationsController.addQuoteNotification(
+        testNotifier,
+        testNotified,
+        testQuote,
+      );
 
       // Assert that the notification is created
       expect(notification).toBeTruthy();
-      expect(notification.description).toBe(`${testNotifier.username} quoted your tweet`);
+      expect(notification.description).toBe(
+        `${testNotifier.username} quoted your tweet`,
+      );
       expect(notification.type).toBe('quote');
       expect(notification.destination).toEqual(testQuote._id.toString());
       expect(notification.notifier).toEqual(testNotifier._id);
@@ -299,7 +327,7 @@ describe('notifications', () => {
 
     // Add more test cases as needed
   });
-//###################### getMentions ######################
+  //###################### getMentions ######################
   describe('getMentions', () => {
     it('should extract mentions from a tweet', () => {
       const tweet = {
@@ -344,16 +372,19 @@ describe('notifications', () => {
     // Add more test cases as needed
   });
 
-
-
-//###################### addMentionNotification ######################
+  //###################### addMentionNotification ######################
   describe('addMentionNotification', () => {
     it('should create mention notifications for mentioned users', async () => {
       // Call the function to add mention notifications
-      await notificationsController.addMentionNotification(testNotifier, testTweet);
+      await notificationsController.addMentionNotification(
+        testNotifier,
+        testTweet,
+      );
 
       // Retrieve notifications created in the database
-      const notifications = await Notification.find({ notifier: testNotifier._id });
+      const notifications = await Notification.find({
+        notifier: testNotifier._id,
+      });
 
       // Assert that the notifications are created
       expect(notifications).toHaveLength(2); // Assuming there are two mentions in the test tweet
@@ -363,10 +394,16 @@ describe('notifications', () => {
 
     it('should not create mention notifications for the notifier', async () => {
       // Call the function to add mention notifications
-      await notificationsController.addMentionNotification(testNotifier, testTweet);
+      await notificationsController.addMentionNotification(
+        testNotifier,
+        testTweet,
+      );
 
       // Retrieve notifications created in the database
-      const notifications = await Notification.find({ notifier: testNotifier._id, notified: testNotifier._id });
+      const notifications = await Notification.find({
+        notifier: testNotifier._id,
+        notified: testNotifier._id,
+      });
 
       // Assert that the notifications are not created for the notifier
       expect(notifications).toHaveLength(0);
@@ -374,19 +411,22 @@ describe('notifications', () => {
 
     it('should not create mention notifications for non-existing users', async () => {
       // Modify the test tweet to include a non-existing mention
-      const modifiedTestTweet = await Tweet.findByIdAndUpdate(
-        testTweet._id,
-        { description: 'This is a test tweet mentioning @nonexistinguser' },
-
-      );
+      const modifiedTestTweet = await Tweet.findByIdAndUpdate(testTweet._id, {
+        description: 'This is a test tweet mentioning @nonexistinguser',
+      });
 
       await Notification.deleteMany({ notifier: testNotifier._id });
-      const testxTweet = await Tweet.findById(   testTweet._id)
+      const testxTweet = await Tweet.findById(testTweet._id);
       // Call the function to add mention notifications
-      await notificationsController.addMentionNotification(testNotifier, testxTweet);
-    console.log(testxTweet);
+      await notificationsController.addMentionNotification(
+        testNotifier,
+        testxTweet,
+      );
+      console.log(testxTweet);
       // Retrieve notifications created in the database
-      const notifications = await Notification.find({ notifier: testNotifier._id });
+      const notifications = await Notification.find({
+        notifier: testNotifier._id,
+      });
 
       // Assert that the notifications are not created for non-existing users
       expect(notifications).toHaveLength(0);
@@ -394,6 +434,4 @@ describe('notifications', () => {
 
     // Add more test cases as needed
   });
-
 });
-

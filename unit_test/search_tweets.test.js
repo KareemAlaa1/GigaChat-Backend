@@ -248,42 +248,36 @@ describe('GET /api/tweet/search', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('Search request must have a search word in query');
+    expect(response.body.error).toBe(
+      'Search request must have a search word in query',
+    );
   });
-    it('responds with 400 when type of search is missed', async () => {
-      token = jwt.sign(
-        { id: testUser0._id.toString() },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: process.env.JWT_EXPIRES_IN,
-        },
-      );
-
-      const response = await request(app)
-        .get('/api/tweets/search?word=dfd')
-        .set('Authorization', `Bearer ${token}`);
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe(
-        'Search request must have a type in query one of these values [ user , tweet , hashtag ] ',
-      );
+  it('responds with 400 when type of search is missed', async () => {
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
     });
-   it('responds with 400 when type of search is unvalid', async () => {
-     token = jwt.sign(
-       { id: testUser0._id.toString() },
-       process.env.JWT_SECRET,
-       {
-         expiresIn: process.env.JWT_EXPIRES_IN,
-       },
-     );
 
-     const response = await request(app)
-       .get('/api/tweets/search?word=dfd&type=sd')
-       .set('Authorization', `Bearer ${token}`);
+    const response = await request(app)
+      .get('/api/tweets/search?word=dfd')
+      .set('Authorization', `Bearer ${token}`);
 
-     expect(response.status).toBe(400);
-     expect(response.body.error).toBe(
-       'Only these values [ user , tweet , hashtag ] are allowed in type of search request',
-     );
-   });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe(
+      'Search request must have a type in query one of these values [ user , tweet , hashtag ] ',
+    );
+  });
+  it('responds with 400 when type of search is unvalid', async () => {
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    const response = await request(app)
+      .get('/api/tweets/search?word=dfd&type=sd')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe(
+      'Only these values [ user , tweet , hashtag ] are allowed in type of search request',
+    );
+  });
 });
