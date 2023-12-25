@@ -36,8 +36,9 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     // get the reciever User
     const recieverUser =
       await User.findById(recieverId).select('_id blockingUsers');
-    const senderUser =
-      await User.findById(senderId).select('_id blockingUsers username profileImage');
+    const senderUser = await User.findById(senderId).select(
+      '_id blockingUsers username profileImage',
+    );
 
     // user not found check
     if (!recieverUser) {
@@ -48,7 +49,8 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     }
 
     // user cant talk to him/herself
-    if (recieverId === senderId) {
+
+    if (recieverId.toString() === senderId.toString()) {
       return socket.emit('failed_to_send_message', {
         error: 'user cant talk to him/herself',
         id: messageData.id,
@@ -182,14 +184,12 @@ exports.sendMessage = async (socket, recieverId, messageData) => {
     // Add code for notification here
     try {
       const notification = await notificationController.addMessageNotification(
-        senderUser, recieverUser, retMessage.description
+        senderUser,
+        recieverUser,
+        retMessage.description,
       );
-    }
-    catch (e){
-
-    }
+    } catch (e) {}
     //endregion
-
 
     retMessage.mine = true;
     socket.emit('receive_message', {

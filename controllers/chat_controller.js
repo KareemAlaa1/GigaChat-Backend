@@ -154,6 +154,7 @@ exports.searchMessage = async (req, res) => {
           messagesList: 1,
           _id: 0,
           text: '$messagesList.description',
+          media: '$messagesList.media',
         },
       },
       {
@@ -243,6 +244,7 @@ exports.searchMessage = async (req, res) => {
             sendTime: '$message.sendTime',
             isDeleted: '$message.isDeleted',
             sender: '$sender',
+            media: '$message.media',
           },
           chat_members: 1,
           isFollowed: 1,

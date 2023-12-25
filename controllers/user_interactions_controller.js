@@ -33,15 +33,12 @@ exports.follow = async (req, res) => {
         .send({ error: 'Bad request, User already followed' });
 
     if (followedUser.blockingUsers.includes(currUser._id))
-      return res
-        .status(400)
-        .send({ error: 'Bad request, User Blocked You' });
+      return res.status(400).send({ error: 'Bad request, User Blocked You' });
 
     if (currUser.blockingUsers.includes(followedUser._id))
       return res
         .status(400)
         .send({ error: 'Bad request, You Blocked This User' });
-
 
     followedUser.followersUsers.push(currUser._id);
     currUser.followingUsers.push(followedUser._id);
@@ -57,7 +54,7 @@ exports.follow = async (req, res) => {
     //endregion
   } catch (error) {
     // Handle and log errors
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: error });
   }
 };
@@ -102,7 +99,7 @@ exports.unfollow = async (req, res) => {
     return res.status(204).end();
   } catch (error) {
     // Handle and log errors
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: error });
   }
 };
@@ -136,13 +133,14 @@ exports.like = async (req, res) => {
     await currUser.save();
     //region addLikeNotification
     const notification = await notificationController.addLikeNotification(
-      currUser, likedTweet
-    )
+      currUser,
+      likedTweet,
+    );
     //endregion
     return res.status(204).end();
   } catch (error) {
     // Handle and log errors
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -182,7 +180,7 @@ exports.unlike = async (req, res) => {
     return res.status(204).end();
   } catch (error) {
     // Handle and log errors
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -198,7 +196,11 @@ exports.getFollowers = async (req, res) => {
     if (!username)
       return res.status(400).send({ error: 'Bad request, send username' });
 
-    const targetUser = await User.findOne({ username: username, isDeleted: false, active: true });
+    const targetUser = await User.findOne({
+      username: username,
+      isDeleted: false,
+      active: true,
+    });
 
     if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
 
@@ -244,7 +246,7 @@ exports.getFollowers = async (req, res) => {
       })
       .match({
         'followersUsers.blockingUsers': { $nin: [currUser._id] },
-        _id: { $nin: targetUser.blockingUsers }
+        _id: { $nin: targetUser.blockingUsers },
       })
       .project({
         _id: 0,
@@ -263,11 +265,11 @@ exports.getFollowers = async (req, res) => {
 
     return res.status(200).send({
       status: 'success',
-      users: user
+      users: user,
     });
   } catch (error) {
     // Handle and log errors
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -286,9 +288,11 @@ exports.getFollowings = async (req, res) => {
     const targetUser = await User.findOne({ username });
 
     if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
-    if (!targetUser.followingUsers ||
+    if (
+      !targetUser.followingUsers ||
       targetUser.followingUsers === undefined ||
-      targetUser.followingUsers.length == 0)
+      targetUser.followingUsers.length == 0
+    )
       return res.status(200).send({
         status: 'success',
         users: [],
@@ -326,7 +330,7 @@ exports.getFollowings = async (req, res) => {
       })
       .match({
         'followingUsers.blockingUsers': { $nin: [currUser._id] },
-        _id: { $nin: currUser.blockingUsers }
+        _id: { $nin: currUser.blockingUsers },
       })
       .project({
         _id: 0,
@@ -345,15 +349,14 @@ exports.getFollowings = async (req, res) => {
 
     return res.status(200).send({
       status: 'success',
-      users: user
+      users: user,
     });
   } catch (error) {
     // Handle and log errors
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
-
 
 exports.mute = async (req, res) => {
   try {
@@ -383,7 +386,7 @@ exports.mute = async (req, res) => {
 
     return res.status(204).end();
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -419,7 +422,7 @@ exports.unmute = async (req, res) => {
 
     return res.status(204).end();
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -469,7 +472,7 @@ exports.block = async (req, res) => {
 
     return res.status(204).end();
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -505,7 +508,7 @@ exports.unblock = async (req, res) => {
 
     return res.status(204).end();
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -551,7 +554,7 @@ exports.getBlockList = async (req, res) => {
       data: blockList,
     });
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
@@ -598,7 +601,7 @@ exports.getMuteList = async (req, res) => {
       data: muteList,
     });
   } catch (error) {
-    console.error(error.message);
+    console.log(error.message);
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
