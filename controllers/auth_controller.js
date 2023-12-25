@@ -728,6 +728,8 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
           joinedAt: user.joinedAt,
           followings_num: user.followingUsers.length,
           followers_num: user.followersUsers.length,
+          numOfPosts: user.tweetList.length,
+          numOfLikes: user.likedTweets.length,
         },
       },
     });
