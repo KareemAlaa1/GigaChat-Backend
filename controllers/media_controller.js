@@ -68,13 +68,13 @@ exports.checkExistingUrl = async ([urlList]) => {
 
 exports.deleteMedia = async (url) => {
     try {
-        if(!url) return
+        if (!url) return {error: "no url provided"};
         const media = await Media.findOneAndDelete({ url: url });
-        if(!media) return
-        console.log(media); 
+        if (!media) return {error: "no media"};
         const file = bucket.file(media.cloudStrogePath);
-        file.delete();        
+        file.delete();
+        return {status: "deleted succefully"};
     } catch (error) {
-        
+        return {error: "Internal server error"};
     }
 }

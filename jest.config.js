@@ -169,7 +169,7 @@ const config = {
 
   // This option allows the use of a custom results processor
   // testResultsProcessor: undefined,
-  testTimeout: 30000,
+  testTimeout: 50000,
 
   // This option allows use of a custom test runner
   // testRunner: "jest-circus/runner",

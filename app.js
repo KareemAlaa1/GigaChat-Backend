@@ -26,9 +26,9 @@ app.use(express.json());
 
 // MIDDLEWARES
 
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// if (process.env.NODE_ENV === 'development') {
+//   app.use(morgan('dev'));
+// }
 // app.use(express.static(`${__dirname}/public`));// for static data in public
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();

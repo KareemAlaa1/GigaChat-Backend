@@ -52,6 +52,49 @@ const user1 = {
   isDeleted: false,
 };
 
+const user2 = {
+  username: 'saraaa',
+  email: 'saraaa@gmail.com',
+  bio: 'we are dead',
+  birthDate: '6-4-2002',
+  password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
+  bannerImage:
+    'https://pbs.twimg.com/profile_banners/1326868125124603904/1665947156/1500x500',
+  profileImage:
+    'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+  phone: '01147119716',
+  nickname: 'Kareem Alaa',
+  website: 'www.wearedead.com',
+  followersUsers: [],
+  followingUsers: [],
+  location: 'cairo',
+  joinedAt: '12-9-2020',
+  active: true,
+  isDeleted: false,
+};
+
+const user3 = {
+  username: 'karreeemmm_',
+  email: 'kareemmmalaa555@gmail.com',
+  bio: 'we are dead',
+  birthDate: '6-4-2002',
+  password: '$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS',
+  bannerImage:
+    'https://pbs.twimg.com/profile_banners/1326868125124603904/1665947156/1500x500',
+  profileImage:
+    'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+  phone: '01147119716',
+  nickname: 'Kareem Alaa',
+  website: 'www.wearedead.com',
+  followersUsers: [],
+  followingUsers: [],
+  tweetList: [],
+  location: 'cairo',
+  joinedAt: '12-9-2020',
+  active: true,
+  isDeleted: false,
+};
+
 const deletedUser = {
   username: 'karreeem222',
   email: 'kareemalaad555@gmail.com',
@@ -76,6 +119,30 @@ const deletedUser = {
 
 const validTweet = {
   description: 'test add tweet 1 2 3 4 test #lol #lesgooooo',
+  media: [
+    {
+      data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+      type: 'jpg',
+      _id: '654c193b688f342c88a547e9',
+    },
+  ],
+  type: 'tweet',
+};
+
+const validTweet2 = {
+  description: 'test add tweet 1 2 3 4 test #lol #lesgooooo @saraaa @karreeem_',
+  media: [
+    {
+      data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
+      type: 'jpg',
+      _id: '654c193b688f342c88a547e9',
+    },
+  ],
+  type: 'tweet',
+};
+
+const validTweet3 = {
+  description: 'test add tweet 1 2 3 4 test #lol',
   media: [
     {
       data: 'https://userpic.codeforces.org/2533580/title/1904ded19f91a6d0.jpg',
@@ -117,6 +184,8 @@ const inValidTweet = {
 let token;
 let testUser0;
 let testUser1;
+let testUser2;
+let testUser3;
 let deletedTestUser1;
 
 async function createUser(userData) {
@@ -484,6 +553,75 @@ describe('Get /api/tweets/:tweetId', () => {
   });
 });
 
+describe('Get /tweetOwner/:tweetId', () => {
+  it('responds with 200 when user exists and tweet exists', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/tweetOwner/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    // console.log(response2._body);
+    expect(response2.status).toBe(200);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet doesnt', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const response2 = await request(app)
+      .get(`/api/tweets/tweetOwner/654c193b688f342c88a547e8`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+
+  it('responds with 404 when user exists and tweet exists but deleted', async () => {
+    testUser0 = await createUser(user0);
+
+    token = jwt.sign({ id: testUser0._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response1 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet);
+
+    const addedTweet = (await Tweet.find())[0];
+    const updatedTweet = {};
+    updatedTweet.isDeleted = true;
+    await Tweet.findByIdAndUpdate(addedTweet._id, updatedTweet);
+    const response2 = await request(app)
+      .get(`/api/tweets/tweetOwner/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(404);
+    await Tweet.deleteMany();
+    await User.deleteMany();
+  });
+});
+
 describe('Get /api/tweets/likers/:tweetId', () => {
   it('responds with 200 when user exists and tweet exists', async () => {
     testUser0 = await createUser(user0);
@@ -587,9 +725,26 @@ describe('Get /api/tweets/replies/:tweetId', () => {
       .set('Authorization', `Bearer ${token}`)
       .send(validTweet);
 
-    const addedTweet = (await Tweet.find())[0];
+    const response3 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        description: 'reply 1',
+        type: 'reply',
+        referredTweetId: response1._body.data.id,
+      });
+
+    const response4 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        description: 'reply 2',
+        type: 'reply',
+        referredTweetId: response3._body.data.id,
+      });
+
     const response2 = await request(app)
-      .get(`/api/tweets/replies/${addedTweet._id}`)
+      .get(`/api/tweets/replies/${response1._body.data.id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(response2.status).toBe(200);
@@ -985,5 +1140,46 @@ describe('Patch /api/tweets/unretweet/:tweetId', () => {
     expect(response2.status).toBe(401);
     await Tweet.deleteMany();
     await User.deleteMany();
+  });
+});
+
+describe('Post/Delete /api/tweets/ for mentions/hashtags', () => {
+  it('responds with 201 when user exists with valid tweet', async () => {
+    testUser2 = await createUser(user2);
+    testUser3 = await createUser(user3);
+
+    token = jwt.sign({ id: testUser2._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet2);
+
+    const addedTweet = (await Tweet.find())[0];
+    addedTweet.media[0]._id = addedTweet.media[0]._id.toString();
+    const temp = response._body.data.creation_time;
+    delete response._body.data.creation_time;
+    response._body.data.creation_time = stringify(temp);
+
+    expect(response.status).toBe(201);
+  });
+
+  it('responds with 204 when user exists and tweet exists and user is the owner of the tweet', async () => {
+    token = jwt.sign({ id: testUser2._id.toString() }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    const response3 = await request(app)
+      .post('/api/tweets/')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validTweet3);
+
+    const addedTweet = (await Tweet.find())[0];
+
+    const response2 = await request(app)
+      .delete(`/api/tweets/${addedTweet._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response2.status).toBe(204);
   });
 });
