@@ -96,7 +96,7 @@ describe("add media test", () => {
 
     it('should return 400 as 4 media is maximum ', async () => {
 
-        const imagePath = '/home/malek/Downloads/linus.jpg';
+        const imagePath = '../unit_test_files/linus.jpg';
         const imageBuffer = fs.readFileSync(imagePath);
 
         const response = await request(app)
@@ -124,7 +124,7 @@ describe("add media test", () => {
 
     it('should return 400 as unSupported file (file.zip)', async () => {
 
-        const imagePath = '/home/malek/Downloads/Team_13_phase1_report.docx';
+        const imagePath = '../unit_test_files/Team_13_phase1_report.docx';
         const imageBuffer = fs.readFileSync(imagePath);
 
         const response = await request(app)
@@ -138,7 +138,7 @@ describe("add media test", () => {
 
     it('should return 500 as internal server error', async () => {
 
-        const imagePath = '/home/malek/Downloads/Team_13_phase1_report.docx';
+        const imagePath = '../unit_test_files/linus.jpg';
         const imageBuffer = fs.readFileSync(imagePath);
 
         const response = await request(app)
