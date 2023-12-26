@@ -247,6 +247,9 @@ function generateUsers() {
       isDeleted: false,
       active: true,
       tweetList: [],
+      bio: faker.lorem.sentence(),
+      location: faker.lorem.sentence(),
+      website: faker.lorem.sentence(),
     });
   }
   return users;
