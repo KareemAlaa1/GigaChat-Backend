@@ -274,6 +274,7 @@ function generateReplies(tweets, users) {
       quoteRetweetList: [],
       type: 'reply',
       referredReplyId: tweets[random_number]._id,
+      referredTweetId: tweets[random_number]._id,
       createdAt: {
         $date: current_date,
       },

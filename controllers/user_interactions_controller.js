@@ -205,17 +205,20 @@ exports.getFollowers = async (req, res) => {
     const page = req.query.page * 1 || 1;
     const limit = req.query.count * 1 || 1;
     const skip = (page - 1) * limit;
-
+    console.log('line1');
     if (!username)
       return res.status(400).send({ error: 'Bad request, send username' });
+    console.log('line2');
 
     const targetUser = await User.findOne({
       username: username,
       isDeleted: false,
       active: true,
     });
+    console.log('line3');
 
     if (!targetUser) return res.status(404).send({ error: 'User Not Found' });
+    console.log('line4');
 
     if (
       !targetUser.followersUsers ||
@@ -226,6 +229,7 @@ exports.getFollowers = async (req, res) => {
         status: 'success',
         users: [],
       });
+    console.log('line5');
 
     const user = await User.aggregate([
       {
@@ -275,6 +279,8 @@ exports.getFollowers = async (req, res) => {
       })
       .skip(skip)
       .limit(limit);
+    console.log('line6');
+    console.log(user);
 
     return res.status(200).send({
       status: 'success',

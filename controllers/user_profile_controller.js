@@ -169,8 +169,8 @@ exports.getUserLikedTweets = async (req, res) => {
       });
     }
 
-    if (user.tweetList == undefined || user.tweetList.length == 0)
-      return res.status(404).send({ error: 'This user has no tweets' });
+    // if (user.tweetList == undefined || user.tweetList.length == 0)
+    //   return res.status(404).send({ error: 'This user has no tweets' });
 
     const tweets = await User.aggregate([
       {
