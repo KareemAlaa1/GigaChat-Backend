@@ -38,7 +38,6 @@ async function pushNotification(notification, notifiedId,description) {
     body: JSON.stringify(requestBody)
   };
   let x = process.env.FCM_SERVER_KEY
-  console.log(x,options);
   //fetch using options
   await fetch(pushNotificationEndpoint, options);
 }
@@ -101,11 +100,9 @@ exports.addFollowNotification = async (notifier, notified) => {
 //values: ['like', 'reply', 'mention', 'retweet', 'follow'],
 
 exports.addLikeNotification = async (notifier, tweet) => {
-  console.log(notifier._id.toString())
-  console.log(tweet.userId.toString())
+
   if(notifier._id.toString()===tweet.userId.toString())
   {
-    console.log('help')
     return;
   }
   const notification = await Notification.create({

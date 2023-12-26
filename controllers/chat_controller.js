@@ -7,8 +7,6 @@ const { paginate } = require('../utils/api_features');
 
 exports.getAllConversations = async (req, res) => {
   try {
-    console.log(req.user.username);
-    console.log(req.user._id);
     const chats = await Chat.aggregate([
       {
         $match: { usersList: { $in: [req.user._id] } },
@@ -107,7 +105,6 @@ exports.searchMessage = async (req, res) => {
     const size = parseInt(req.query.count, 10) || 100;
 
     const skip = ((req.query.page || 1) - 1) * size;
-    console.log(req.query.word);
     currentUser = req.user;
     const messages = await User.aggregate([
       {
@@ -308,8 +305,6 @@ exports.getMessagesAfterCertainTime = async (req, res) => {
       if (chatId.length > 0) {
         const size = parseInt(req.query.count, 10) || 10;
         const time = req.query.time;
-        console.log(time);
-        console.log(new Date(time).getTime());
 
         const skip = ((req.query.page || 1) - 1) * size;
         const messages = await Chat.aggregate([
@@ -366,7 +361,6 @@ exports.getMessagesAfterCertainTime = async (req, res) => {
           { seen: true },
         );
 
-        console.log(updatedMessages);
         res.status(200).json({
           status: 'messages get success',
           data: messages,
@@ -433,8 +427,8 @@ exports.getMessagesBeforeCertainTime = async (req, res) => {
       if (chatId.length > 0) {
         const size = parseInt(req.query.count, 10) || 10;
         const time = req.query.time;
-        console.log(time);
-        console.log(new Date(time).getTime());
+
+    
 
         const skip = ((req.query.page || 1) - 1) * size;
         const messages = await Chat.aggregate([
@@ -489,7 +483,6 @@ exports.getMessagesBeforeCertainTime = async (req, res) => {
           },
           { seen: true },
         );
-        console.log(updatedMessages);
         res.status(200).json({
           status: 'messages get success',
           data: messages,

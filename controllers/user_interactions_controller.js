@@ -109,34 +109,47 @@ exports.like = async (req, res) => {
     const tweetId = req.params.tweetId;
     const currUser = req.user;
 
+    console.log('line1');
     if (!tweetId)
       return res.status(400).send({ error: 'Bad request, send ID' });
+    console.log('line2');
 
     const likedTweet = await Tweet.findById(tweetId);
+    console.log(likedTweet, 'line3');
 
     if (!likedTweet || likedTweet.isDeleted)
       return res.status(404).send({ error: 'tweet not found' });
+    console.log('line4');
 
     if (likedTweet.likersList.includes(currUser._id))
       return res
         .status(400)
         .send({ error: 'Bad request, User already like this tweet' });
+    console.log('line5');
+
     if (currUser.likedTweets.includes(likedTweet._id))
       return res
         .status(400)
         .send({ error: 'Bad request, User already like this tweet' });
+    console.log('line6');
 
     likedTweet.likersList.push(currUser._id);
     currUser.likedTweets.push(likedTweet._id);
+    console.log('line7');
 
     await likedTweet.save();
     await currUser.save();
+    console.log('line8');
+
     //region addLikeNotification
+
     const notification = await notificationController.addLikeNotification(
       currUser,
       likedTweet,
     );
     //endregion
+    console.log('line9');
+
     return res.status(204).end();
   } catch (error) {
     // Handle and log errors

@@ -801,7 +801,6 @@ const TweetController = {
                 },
               ]);
               el.reply = replyOfReply.length > 0 ? replyOfReply[0] : {};
-              console.log(replyOfReply);
               return el;
             }),
           );
