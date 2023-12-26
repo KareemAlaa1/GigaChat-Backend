@@ -194,16 +194,14 @@ function generateObjectId() {
 function getRandomMediaProfile(users) {
   for (let i = 0; i < 1000; i++) {
     const random_media = Math.floor(Math.random() * mediaProfile.length);
-    const random_user = Math.floor(Math.random() * users.length);
-    users[random_user].profileImage = mediaProfile[random_media];
+    users[i].profileImage = mediaProfile[random_media];
   }
 }
 
 function getRandomMediaBanner(users) {
   for (let i = 0; i < 1000; i++) {
     const random_media = Math.floor(Math.random() * mediaBanner.length);
-    const random_user = Math.floor(Math.random() * users.length);
-    users[random_user].bannerImage = mediaBanner[random_media];
+    users[i].bannerImage = mediaBanner[random_media];
   }
 }
 
@@ -443,8 +441,8 @@ followEachOthers(users);
 blockEachOthers(users);
 muteEachOthers(users);
 
-fs.writeFileSync('.\\temp\\users.json', JSON.stringify(users, null, 2));
-fs.writeFileSync('.\\temp\\tweets.json', JSON.stringify(tweets, null, 2));
-fs.writeFileSync('.\\temp\\hashtags.json', JSON.stringify(hashtags, null, 2));
+fs.writeFileSync('.\\users.json', JSON.stringify(users, null, 2));
+fs.writeFileSync('.\\tweets.json', JSON.stringify(tweets, null, 2));
+fs.writeFileSync('.\\hashtags.json', JSON.stringify(hashtags, null, 2));
 
 console.log('Data generated! 10000 new users and tweets created.');

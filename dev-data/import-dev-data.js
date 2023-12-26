@@ -24,27 +24,27 @@ mongoose
 
 // READ JSON FILE
 const users = JSON.parse(fs.readFileSync(`${__dirname}/users.json`, 'utf-8'));
-const chats = JSON.parse(fs.readFileSync(`${__dirname}/chats.json`, 'utf-8'));
+// const chats = JSON.parse(fs.readFileSync(`${__dirname}/chats.json`, 'utf-8'));
 const hashtags = JSON.parse(
   fs.readFileSync(`${__dirname}/hashtags.json`, 'utf-8'),
 );
-const messages = JSON.parse(
-  fs.readFileSync(`${__dirname}/messages.json`, 'utf-8'),
-);
+// const messages = JSON.parse(
+//   fs.readFileSync(`${__dirname}/messages.json`, 'utf-8'),
+// );
 const tweets = JSON.parse(fs.readFileSync(`${__dirname}/tweets.json`, 'utf-8'));
-const notifications = JSON.parse(
-  fs.readFileSync(`${__dirname}/notifications.json`, 'utf-8'),
-);
+// const notifications = JSON.parse(
+//   fs.readFileSync(`${__dirname}/notifications.json`, 'utf-8'),
+// );
 
 // IMPORT DATA INTO DB
 const importData = async () => {
   try {
     const usersPromise = await User.create(users);
-    const chatsPromise = await Chat.create(chats);
+    // const chatsPromise = await Chat.create(chats);
     const hashtagsPromise = await Hashtag.create(hashtags);
-    const messagesPromise = await Message.create(messages);
+    // const messagesPromise = await Message.create(messages);
     const tweetsPromise = await Tweet.create(tweets);
-    const notificationsPromise = await Notification.create(notifications);
+    // const notificationsPromise = await Notification.create(notifications);p
 
     console.log('Data successfully loaded!');
   } catch (err) {
