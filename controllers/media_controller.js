@@ -2,6 +2,26 @@ const express = require('express');
 const Media = require('../models/media_model');
 const { bucket, uuidv4 } = require('../utils/firebase');
 
+/**
+Controller for handling media.
+@module controllers/media
+*/
+
+/**
+ * Upload media files to cloud storage and store their information in the database.
+ * Supports image and video file types.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Object} - Response object indicating the status of the file upload.
+ *
+ * @throws {Error} - Throws an error if file upload fails or if the file types are unsupported.
+ *
+ * @example
+ * // Example usage in an Express route
+ * app.post('/upload-media', addMedia);
+ */
 exports.addMedia = async (req, res) => {
     try {
         const files = req.files;

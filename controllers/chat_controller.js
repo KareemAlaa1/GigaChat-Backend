@@ -4,6 +4,8 @@ const Message = require('../models/message_model');
 const User = require('../models/user_model');
 
 const { paginate } = require('../utils/api_features');
+
+
 exports.getMessages = async (req, res) => {
   try {
     const recieverUser = await User.findById(req.params.userId).select('_id');

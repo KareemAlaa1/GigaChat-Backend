@@ -32,6 +32,150 @@ const Message = require('../models/message_model');
 const User = require('../models/user_model');
 
 const { paginate } = require('../utils/api_features');
+exports.getMessages = async (req, res) => {
+  try {
+    const recieverUser = await User.findById(req.params.userId).select('_id');
+    // user cant talk to him/herself
+
+    if (
+      recieverUser &amp;&amp;
+      recieverUser._id.toString() !== req.user._id.toString()
+    ) {
+      // get the chat id of certain user
+
+      const chatId = await User.aggregate([
+        {
+          $match: { _id: new mongoose.Types.ObjectId(req.user._id) },
+        },
+        {
+          $project: { chatList: 1 },
+        },
+      ])
+        .lookup({
+          from: 'chats',
+          localField: 'chatList',
+          foreignField: '_id',
+          as: 'chats',
+        })
+        .unwind('chats')
+        .project({ chats: 1, _id: 0 })
+        .addFields({
+          'chats.exist': {
+            $in: [
+              new mongoose.Types.ObjectId(req.params.userId),
+              '$chats.usersList',
+            ],
+          },
+        })
+        .project({ id: '$chats._id', exist: '$chats.exist' })
+        .match({
+          exist: true,
+        });
+      // if chat id exist get the messages in it else send empty array
+      // and also specify if the message is mine or not in the response
+      if (chatId.length > 0) {
+        const size = parseInt(req.query.count, 10) || 10;
+
+        const skip = ((req.query.page || 1) - 1) * size;
+        const messages = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .addFields({
+            'message.mine': {
+              $eq: [
+                new mongoose.Types.ObjectId(req.user._id),
+                '$message.sender',
+              ],
+            },
+          })
+          .project({
+            id: '$message._id',
+            description: '$message.description',
+            media: '$message.media',
+            isDeleted: '$message.isDeleted',
+            mine: '$message.mine',
+            seen: '$message.seen',
+            sendTime: '$message.sendTime',
+          })
+          .sort({ id: -1 })
+          .skip(skip)
+          .limit(size)
+          .sort({ id: 1 });
+        // after sending respose all unseen messages in this chat of the another user not mine is now seen to me so update its state
+        const messages2 = await Chat.aggregate([
+          {
+            $match: { _id: chatId[0].id },
+          },
+          {
+            $project: { messagesList: 1, _id: 0 },
+          },
+        ])
+          .lookup({
+            from: 'messages',
+            localField: 'messagesList',
+            foreignField: '_id',
+            as: 'message',
+          })
+          .unwind('message')
+          .project({ message: 1 })
+          .project({
+            id: '$message._id',
+            sender: '$message.sender',
+            seen: '$message.seen',
+          })
+          .match({
+            sender: { $ne: new mongoose.Types.ObjectId(req.user._id) },
+            seen: { $eq: false },
+          })
+          .project({ id: 1 })
+          .group({
+            _id: null,
+            arrayOfIds: { $push: '$id' },
+          })
+          .project({
+            arrayOfIds: 1,
+            _id: 0,
+          });
+        if (messages2.length > 0) {
+          await Message.updateMany(
+            { _id: { $in: messages2[0].arrayOfIds } },
+            { $set: { seen: true } },
+          );
+        }
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      } else {
+        const messages = [];
+        res.status(200).json({
+          status: 'messages get success',
+          data: messages,
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: 'This User Doesnt exist',
+      });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
 
 /**
  * This function retrieves all conversations of a specific user.
@@ -557,13 +701,13 @@ exports.getMessagesBeforeCertainTime = async (req, res) => {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#generateUserName">generateUserName</a></li><li><a href="global.html#getAllConversations">getAllConversations</a></li><li><a href="global.html#getAllHashtags">getAllHashtags</a></li><li><a href="global.html#getFollowingTweets">getFollowingTweets</a></li><li><a href="global.html#getHashtagTweets">getHashtagTweets</a></li><li><a href="global.html#getLatestUserTweet">getLatestUserTweet</a></li><li><a href="global.html#getMentionTweets">getMentionTweets</a></li><li><a href="global.html#getUserLikedTweets">getUserLikedTweets</a></li><li><a href="global.html#getUserTweets">getUserTweets</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#searchHashtag">searchHashtag</a></li><li><a href="global.html#searchTweets">searchTweets</a></li><li><a href="global.html#searchUser">searchUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-controllers_auth_controller.html">controllers/auth_controller</a></li><li><a href="module-controllers_notifications_controller.html">controllers/notifications_controller</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getAllConversations">getAllConversations</a></li><li><a href="global.html#getAllHashtags">getAllHashtags</a></li><li><a href="global.html#getFollowingTweets">getFollowingTweets</a></li><li><a href="global.html#getHashtagTweets">getHashtagTweets</a></li><li><a href="global.html#getLatestUserTweet">getLatestUserTweet</a></li><li><a href="global.html#getMentionTweets">getMentionTweets</a></li><li><a href="global.html#getUserLikedTweets">getUserLikedTweets</a></li><li><a href="global.html#getUserTweets">getUserTweets</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#searchHashtag">searchHashtag</a></li><li><a href="global.html#searchTweets">searchTweets</a></li><li><a href="global.html#searchUser">searchUser</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Wed Dec 27 2023 20:37:36 GMT+0200 (Eastern European Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Wed Dec 27 2023 21:53:08 GMT+0200 (Eastern European Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

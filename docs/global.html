@@ -104,199 +104,6 @@
     
 
     
-    <h4 class="name" id="generateUserName"><span class="type-signature">(async) </span>generateUserName<span class="signature">(nickname)</span><span class="type-signature"> &rarr; {Promise.&lt;string>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Generates a unique username based on the provided nickname.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>nickname</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The nickname used as the base for generating the username.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="auth_controller.js.html">auth_controller.js</a>, <a href="auth_controller.js.html#line36">line 36</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        Throws an error if there is an issue during the username generation process.
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    A promise that resolves with the generated unique username.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;string></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-    <h5>Example</h5>
-    
-    <pre class="prettyprint"><code>const username = await generateUserName("john_doe");console.log(username); // Output: john_doe or john_doe-123 (if john_doe is taken)</code></pre>
-
-
-
-        
-            
-
-    
-
-    
     <h4 class="name" id="getAllConversations"><span class="type-signature">(async) </span>getAllConversations<span class="signature">(req, res)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
@@ -305,7 +112,9 @@
 
 
 <div class="description">
-    This function retrieves all conversations of a specific user.It checks if the current user has blocked the other user in the conversation or if the other user has blocked the current user.If the current user and the other user have not blocked each other, the function retrieves the conversation.
+    This function retrieves all conversations of a specific user.
+It checks if the current user has blocked the other user in the conversation or if the other user has blocked the current user.
+If the current user and the other user have not blocked each other, the function retrieves the conversation.
 </div>
 
 
@@ -421,7 +230,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="chat_controller.js.html">chat_controller.js</a>, <a href="chat_controller.js.html#line8">line 8</a>
+        <a href="chat_controller.js.html">chat_controller.js</a>, <a href="chat_controller.js.html#line152">line 152</a>
     </li></ul></dd>
     
 
@@ -713,7 +522,10 @@
 
 
 <div class="description">
-    This function retrieves the tweets of the users that the current user is following.It also retrieves the latest tweets of the user within 2 hours and does not retrieve the tweets of muted users.The tweets are ranked based on the user's latest tweets, creation time, number of likes, number of replies, and number of reposts.The function also applies pagination to the results.
+    This function retrieves the tweets of the users that the current user is following.
+It also retrieves the latest tweets of the user within 2 hours and does not retrieve the tweets of muted users.
+The tweets are ranked based on the user's latest tweets, creation time, number of likes, number of replies, and number of reposts.
+The function also applies pagination to the results.
 </div>
 
 
@@ -1121,7 +933,9 @@
 
 
 <div class="description">
-    This function retrieves the latest tweets of a user within the last 2 hours.It does not retrieve the tweets of muted users.The tweets are ranked based on the creation time, number of likes, number of replies, and number of reposts.
+    This function retrieves the latest tweets of a user within the last 2 hours.
+It does not retrieve the tweets of muted users.
+The tweets are ranked based on the creation time, number of likes, number of replies, and number of reposts.
 </div>
 
 
@@ -1496,7 +1310,9 @@
 
 
 <div class="description">
-    This function retrieves the tweets that a specific user has liked.It checks if the current user has blocked the specified user or if the specified user has blocked the current user.If the current user and the specified user have not blocked each other, the function retrieves the tweets that the specified user has liked.
+    This function retrieves the tweets that a specific user has liked.
+It checks if the current user has blocked the specified user or if the specified user has blocked the current user.
+If the current user and the specified user have not blocked each other, the function retrieves the tweets that the specified user has liked.
 </div>
 
 
@@ -1700,7 +1516,9 @@
 
 
 <div class="description">
-    This function retrieves the tweets of a specific user.It checks if the current user has blocked the specified user or if the specified user has blocked the current user.If the current user and the specified user have not blocked each other, the function retrieves the tweets of the specified user.
+    This function retrieves the tweets of a specific user.
+It checks if the current user has blocked the specified user or if the specified user has blocked the current user.
+If the current user and the specified user have not blocked each other, the function retrieves the tweets of the specified user.
 </div>
 
 
@@ -1904,7 +1722,8 @@
 
 
 <div class="description">
-    This function performs a search based on the type specified in the request query.It can search for words in tweets, search for users with usernames or with part of their username, or search for hashtags.
+    This function performs a search based on the type specified in the request query.
+It can search for words in tweets, search for users with usernames or with part of their username, or search for hashtags.
 </div>
 
 
@@ -2151,7 +1970,8 @@
 
 
 <div class="description">
-    This function retrieves hashtags that match the search word. It can match hashtags fully or partially.The hashtags are ranked based on their popularity (how often they are used).
+    This function retrieves hashtags that match the search word. It can match hashtags fully or partially.
+The hashtags are ranked based on their popularity (how often they are used).
 </div>
 
 
@@ -2368,7 +2188,8 @@
 
 
 <div class="description">
-    This function retrieves tweets that contain words matching the search word. It can match words fully or partially.The tweets are ranked based on their creation time, number of likes, number of replies, and number of reposts.
+    This function retrieves tweets that contain words matching the search word. It can match words fully or partially.
+The tweets are ranked based on their creation time, number of likes, number of replies, and number of reposts.
 </div>
 
 
@@ -2585,7 +2406,8 @@
 
 
 <div class="description">
-    This function retrieves users that match the search word. It can match users fully or partially.The users are ranked based on whether the user itself matches the query, whether the users follow the current user, whether the current user follows the users, the number of followers the users have, and the number of users the users follow.
+    This function retrieves users that match the search word. It can match users fully or partially.
+The users are ranked based on whether the user itself matches the query, whether the users follow the current user, whether the current user follows the users, the number of followers the users have, and the number of users the users follow.
 </div>
 
 
@@ -2804,13 +2626,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#generateUserName">generateUserName</a></li><li><a href="global.html#getAllConversations">getAllConversations</a></li><li><a href="global.html#getAllHashtags">getAllHashtags</a></li><li><a href="global.html#getFollowingTweets">getFollowingTweets</a></li><li><a href="global.html#getHashtagTweets">getHashtagTweets</a></li><li><a href="global.html#getLatestUserTweet">getLatestUserTweet</a></li><li><a href="global.html#getMentionTweets">getMentionTweets</a></li><li><a href="global.html#getUserLikedTweets">getUserLikedTweets</a></li><li><a href="global.html#getUserTweets">getUserTweets</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#searchHashtag">searchHashtag</a></li><li><a href="global.html#searchTweets">searchTweets</a></li><li><a href="global.html#searchUser">searchUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-controllers_auth_controller.html">controllers/auth_controller</a></li><li><a href="module-controllers_notifications_controller.html">controllers/notifications_controller</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getAllConversations">getAllConversations</a></li><li><a href="global.html#getAllHashtags">getAllHashtags</a></li><li><a href="global.html#getFollowingTweets">getFollowingTweets</a></li><li><a href="global.html#getHashtagTweets">getHashtagTweets</a></li><li><a href="global.html#getLatestUserTweet">getLatestUserTweet</a></li><li><a href="global.html#getMentionTweets">getMentionTweets</a></li><li><a href="global.html#getUserLikedTweets">getUserLikedTweets</a></li><li><a href="global.html#getUserTweets">getUserTweets</a></li><li><a href="global.html#search">search</a></li><li><a href="global.html#searchHashtag">searchHashtag</a></li><li><a href="global.html#searchTweets">searchTweets</a></li><li><a href="global.html#searchUser">searchUser</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Wed Dec 27 2023 20:37:36 GMT+0200 (Eastern European Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Wed Dec 27 2023 21:53:08 GMT+0200 (Eastern European Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

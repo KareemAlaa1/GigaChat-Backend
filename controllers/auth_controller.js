@@ -963,6 +963,7 @@ exports.checkPasswordResetToken = catchAsync(async (req, res, next) => {
     });
   }
 });
+
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) check input data valididty
   const { password, passwordResetToken } = req.body;

@@ -12,6 +12,8 @@ const catchAsync = require('../utils/catch_async');
 const DEFAULT_IMAGE_URL =
   'https://firebasestorage.googleapis.com/v0/b/gigachat-img.appspot.com/o/56931877-1025-4348-a329-663dadd37bba-black.jpg?alt=media&token=fca10f39-2996-4086-90db-0cd492a570f2';
 
+
+  
 exports.checkBirthDate = async (req, res) => {
   const { birthDate } = req.body;
   if (!birthDate) {
