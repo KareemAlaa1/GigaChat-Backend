@@ -53,7 +53,8 @@ userRouter.get(
   '/profile/:username',
   authController.protect,
   userController.getProfile,
-);userRouter.get(
+);
+userRouter.get(
   '/profileById/:id',
   authController.protect,
   userController.getProfileById,
@@ -86,7 +87,7 @@ userRouter.patch(
 userRouter.get(
   '/chat/:userId',
   authController.protect,
-  userController.getMessages,
+  chatController.getMessages,
 );
 
 userRouter.get(
