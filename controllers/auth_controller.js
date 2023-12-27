@@ -118,7 +118,22 @@ exports.checkToken = async (token) => {
 };
 
 /**
- * @ignore
+ * Signs up a new user, sends a confirmation code via email, and handles the verification process.
+ *
+ * @function signUp
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the signup process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/signup', authController.signUp);
+ *
+ * __________________________________________________________________________________________
  */
 exports.signUp = catchAsync(async (req, res, next) => {
   // 1) Check data recieved
@@ -206,9 +221,27 @@ exports.signUp = catchAsync(async (req, res, next) => {
     );
   }
 });
+
+
 /**
- * @ignore
+ * Logs in a user, validates the credentials, and returns an authentication token.
+ *
+ * @function login
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the login process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/login', authController.login);
+ *
+ * __________________________________________________________________________________________
  */
+
 exports.login = catchAsync(async (req, res, next) => {
   const { query, password, push_token } = req.body;
 
@@ -266,8 +299,24 @@ exports.login = catchAsync(async (req, res, next) => {
     },
   });
 });
+
 /**
- * @ignore
+ * Protects routes by checking for a valid authentication token.
+ *
+ * @function protect
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if the user is not authenticated or the token is invalid.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.get('/protected-route', authController.protect, (req, res) => { /* protected route logic * / });
+ *
+ * __________________________________________________________________________________________
  */
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check of it's there
@@ -318,8 +367,25 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+
+
 /**
- * @ignore
+ * Confirms the user's email address using the provided confirmation code.
+ *
+ * @function confirmEmail
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the email confirmation process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/confirm-email', authController.confirmEmail);
+ *
+ * __________________________________________________________________________________________
  */
 exports.confirmEmail = catchAsync(async (req, res, next) => {
   const { confirmEmailCode, email } = req.body;
@@ -425,7 +491,21 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
 });
 
 /**
- * @ignore
+ * Controller for assigning a username to the current user.
+ *
+ * @function AssignUsername
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @throws {AppError} Throws an error if there is an issue during the username assignment process.
+ *
+ * @example
+ * // Example usage in a route
+ * app.post('/assign-username', authController.AssignUsername);
  */
 exports.AssignUsername = catchAsync(async (req, res, next) => {
   const { username } = req.body;
@@ -487,8 +567,24 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
 });
 
 /**
- * @ignore
+ * Assigns a password to the current user.
+ *
+ * @function AssignPassword
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the password assignment process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/assign-password', authController.AssignPassword);
+ *
+ * __________________________________________________________________________________________
  */
+
 exports.AssignPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
   if (!password) {
@@ -553,7 +649,22 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
   });
 });
 /**
- * @ignore
+ * Updates the username for the current user.
+ *
+ * @function updateUsername
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the username update process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/update-username', authController.updateUsername);
+ *
+ * __________________________________________________________________________________________
  */
 exports.updateUsername = catchAsync(async (req, res, next) => {
   // 1) check data validity
@@ -591,7 +702,24 @@ exports.updateUsername = catchAsync(async (req, res, next) => {
     },
   });
 });
-
+/**
+ * Updates the password for the current user.
+ *
+ * @function updatePassword
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the password update process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/update-password', authController.updatePassword);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.updatePassword = catchAsync(async (req, res, next) => {
   // 1) check data validity
   const { oldPassword, newPassword } = req.body;
@@ -638,7 +766,23 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
     },
   });
 });
-
+/**
+ * Retrieves the email of the current user.
+ *
+ * @function userEmail
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.get('/user-email', authController.userEmail);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.userEmail = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
@@ -647,7 +791,24 @@ exports.userEmail = catchAsync(async (req, res, next) => {
     },
   });
 });
-
+/**
+ * Updates the email for the current user.
+ *
+ * @function updateEmail
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the email update process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/update-email', authController.updateEmail);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.updateEmail = catchAsync(async (req, res, next) => {
   const { email } = req.body;
   const currentUser = req.user;
@@ -703,7 +864,24 @@ exports.updateEmail = catchAsync(async (req, res, next) => {
     );
   }
 });
-
+/**
+ * Verifies the user's email address using the provided verification code.
+ *
+ * @function verifyEmail
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the email verification process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/verify-email', authController.verifyEmail);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.verifyEmail = catchAsync(async (req, res, next) => {
   const { verifyEmailCode, email } = req.body;
   const currentUser = req.user;
@@ -748,6 +926,25 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
   });
 });
 
+
+/**
+ * Handles Google authentication for users.
+ *
+ * @function googleAuth
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during Google authentication.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/google-auth', authController.googleAuth);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.googleAuth = catchAsync(async (req, res, next) => {
   const { access_token, id, email, name, birthDate, profileImage, push_token } =
     req.body;
@@ -856,6 +1053,24 @@ exports.googleAuth = catchAsync(async (req, res, next) => {
   }
 });
 
+/**
+ * Confirms the user's password.
+ *
+ * @function confirmPassword
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if the provided password is incorrect.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/confirm-password', authController.confirmPassword);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.confirmPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
   let user = await User.findById(req.user._id).select('+password');
@@ -871,6 +1086,24 @@ exports.confirmPassword = catchAsync(async (req, res, next) => {
   }
 });
 
+/**
+ * Initiates the process of resetting the user's password.
+ *
+ * @function forgotPassword
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the password reset process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/forgot-password', authController.forgotPassword);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   // 1) get the input data and check the validity
   let { query } = req.body;
@@ -937,6 +1170,24 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
+/**
+ * Checks the validity of the password reset token.
+ *
+ * @function checkPasswordResetToken
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if the provided password reset token is invalid or has expired.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/check-password-reset-token', authController.checkPasswordResetToken);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.checkPasswordResetToken = catchAsync(async (req, res, next) => {
   const { passwordResetToken } = req.body;
   if (!passwordResetToken) {
@@ -964,6 +1215,24 @@ exports.checkPasswordResetToken = catchAsync(async (req, res, next) => {
   }
 });
 
+/**
+ * Resets the user's password after successful validation of the password reset token.
+ *
+ * @function resetPassword
+ * @memberof module:controllers/auth_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {function} next - Express next middleware function.
+ * @throws {AppError} Throws an error if there is an issue during the password reset process.
+ * @returns {Promise<void>} A promise that resolves after processing the request.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.post('/reset-password', authController.resetPassword);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) check input data valididty
   const { password, passwordResetToken } = req.body;

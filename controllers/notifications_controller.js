@@ -373,7 +373,23 @@ exports.addMentionNotification = async (notifier, tweet) => {
   }
 
 }
-
+/**
+ * Retrieves notifications for the authenticated user with optional pagination.
+ *
+ * @function getNotifications
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Error} Throws an error if there is an issue during the retrieval of notifications.
+ * @returns {Promise<void>} A promise that resolves with the retrieved notifications.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.get('/notifications', authController.protect, notificationController.getNotifications);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.getNotifications = async (req, res) => {
   //get Notifications using Pages and limit from query
   const page = req.query.page * 1 || 1;
@@ -404,6 +420,24 @@ exports.getNotifications = async (req, res) => {
 //   });
 // }
 
+
+/**
+ * Marks all notifications for the authenticated user as seen.
+ *
+ * @function markAllNotificationsAsSeen
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Error} Throws an error if there is an issue while marking notifications as seen.
+ * @returns {Promise<void>} A promise that resolves after marking notifications as seen.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.put('/notifications/mark-as-seen', authController.protect, notificationController.markAllNotificationsAsSeen);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.markAllNotificationsAsSeen = async (req, res) => {
   //update until one is not seen
   const notifications = await Notification.updateMany({ notified: req.user._id, seen: false }, { seen: true });
@@ -416,6 +450,24 @@ exports.markAllNotificationsAsSeen = async (req, res) => {
   })
 }
 
+
+/**
+ * Retrieves the count of unread notifications for the authenticated user.
+ *
+ * @function getNotificationsCount
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Error} Throws an error if there is an issue during the retrieval of notifications count.
+ * @returns {Promise<void>} A promise that resolves with the count of unread notifications.
+ *
+ * @example
+ * // Example usage in a route:
+ * // app.get('/notifications/count', authController.protect, notificationController.getNotificationsCount);
+ *
+ * __________________________________________________________________________________________
+ */
 exports.getNotificationsCount = async (req, res) => {
 
   const notifications = await Notification.find({ notified: req.user._id, seen: false });
