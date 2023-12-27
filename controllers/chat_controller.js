@@ -85,6 +85,9 @@ exports.getAllConversations = async (req, res) => {
         isFollowingMe: {
           $in: ['$_id.id', req.user.followersUsers],
         },
+      })
+      .sort({
+        'lastMessage.sendTime': -1,
       });
 
     try {
@@ -427,8 +430,6 @@ exports.getMessagesBeforeCertainTime = async (req, res) => {
       if (chatId.length > 0) {
         const size = parseInt(req.query.count, 10) || 10;
         const time = req.query.time;
-
-    
 
         const skip = ((req.query.page || 1) - 1) * size;
         const messages = await Chat.aggregate([
