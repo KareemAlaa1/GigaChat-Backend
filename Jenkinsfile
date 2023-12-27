@@ -23,7 +23,7 @@ pipeline {
             steps {  
                   sh  'docker compose -f docker-compose-dev.yml build'
                   sh  'docker compose -f docker-compose-dev.yml push'
-                  sh  'docker-compose up -d && docker-compose rm -fsv'
+                  sh  'docker compose up -d && docker compose rm -fsv'
                   sh  'docker system prune --force'
 
              }
