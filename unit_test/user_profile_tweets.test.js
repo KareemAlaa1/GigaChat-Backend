@@ -214,7 +214,7 @@ describe('GET /api/profile/{username}/likes', () => {
     const response = await request(app)
       .get('/api/profile/Ahmed/likes')
       .set('Authorization', `Bearer ${token}`);
-    expect(response.body.error).toBe('This user has no tweets');
+    expect(response.body.error).toBe('This user has no liked tweets');
   });
   it('responds with 500 when internal server error happens', async () => {
     jest

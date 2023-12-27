@@ -266,6 +266,7 @@ exports.getUserLikedTweets = async (req, res) => {
 
     try {
       if (
+        tweets.length == 0 ||
         tweets[0].likedTweets == undefined ||
         tweets[0].likedTweets.length == 0
       )

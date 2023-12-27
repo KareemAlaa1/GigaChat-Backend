@@ -15,7 +15,15 @@ const chatRouter = require('./routes/chat_router');
 const googleRouter = require('./routes/google_router');
 const passportSetup = require('./google-passport');
 const passport = require('passport');
-require('./app_server');
+
+if (process.argv.includes('--dev')) {
+  try {
+    require('./app_server');
+  } catch (error) {
+    console.error('Error loading app_server', error.message);
+  }
+}
+
 const express = require('express');
 const app = express();
 const http = require('http');

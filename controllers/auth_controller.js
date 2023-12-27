@@ -107,10 +107,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
   }
   //limit nickname 50 length
   if (nickname.length > 50) {
-    return next(
-      new AppError('Nickname must not exceed 50 characters'),
-      400,
-    );
+    return next(new AppError('Nickname must not exceed 50 characters'), 400);
   }
   const generatedUsername = await generateUserName(req.body.nickname);
   const newUser = await User.create({
@@ -488,9 +485,7 @@ exports.updateUsername = catchAsync(async (req, res, next) => {
   }
   //max 15 characters
   if (newUsername.length > 15) {
-    return next(
-      new AppError('newUsername must not exceed 15 characters', 400),
-    );
+    return next(new AppError('newUsername must not exceed 15 characters', 400));
   }
   // 2) different from the oldUsername
   if (req.user.username === newUsername) {
@@ -864,10 +859,9 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-
 exports.checkPasswordResetToken = catchAsync(async (req, res, next) => {
   const { passwordResetToken } = req.body;
-  if(!passwordResetToken){
+  if (!passwordResetToken) {
     return next(new AppError('passwordResetToken is required', 400));
   }
   const hashedToken = crypto
@@ -884,15 +878,13 @@ exports.checkPasswordResetToken = catchAsync(async (req, res, next) => {
     return next(
       new AppError('passwordResetToken is invalid or has expired', 400),
     );
-  }
-  else{
+  } else {
     return res.status(200).json({
       status: 'success',
       message: 'passwordResetToken is valid',
     });
   }
-
-})
+});
 exports.resetPassword = catchAsync(async (req, res, next) => {
   // 1) check input data valididty
   const { password, passwordResetToken } = req.body;
