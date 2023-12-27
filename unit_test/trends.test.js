@@ -8,7 +8,6 @@
 // const Tweet = require('../models/tweet_model');
 // const { expect } = require('@jest/globals');
 
-
 // const user = {
 //   username: 'sara',
 //   email: 'sara@gmail.com',

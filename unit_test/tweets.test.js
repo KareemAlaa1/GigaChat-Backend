@@ -215,10 +215,11 @@ async function deleteTweet(tweetData) {
 //   }
 // });
 
-// afterAll(async () => {
-//   await mongoose.disconnect();
-//   await mongoose.connection.close();
-// });
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoose.connection.close();
+  return 1;
+});
 
 describe('Post /api/tweets/', () => {
   it('responds with 201 when user exists with valid tweet', async () => {
