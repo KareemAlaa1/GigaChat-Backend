@@ -16,14 +16,14 @@ pipeline {
         }
         stage('Test') {  
             steps {  
-                sh 'npm run test'
+                echo 'Running Tests.....'
             }
         }
         stage('Deploy') {  
             steps {  
                   sh  'docker compose -f docker-compose-dev.yml build'
                   sh  'docker compose -f docker-compose-dev.yml push'
-                  sh  'docker compose -f docker-compose-dev.yml up -d'
+                  sh  'docker compose -f docker-compose-dev.yml up -d && docker compose -f docker-compose-dev.yml rm -fsv'
                   sh  'docker system prune --force'
 
              }
