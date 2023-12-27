@@ -1,0 +1,8 @@
+{
+  "source": {
+    "include": ["./controllers","./utils"]
+  },
+  "opts": {
+    "destination": "./docs"
+  }
+}

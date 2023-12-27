@@ -8,7 +8,9 @@
     "start:prod": "env-cmd -f ./config/prod.env NODE_ENV=production nodemon server.js",
     "debug": "ndb server.js",
     "start:test": "jest",
-    "test": "jest"
+    "test": "jest",
+    "docs": "jsdoc -c jsdoc.json"
+
   },
   "author": "BackEnd Team",
   "license": "ISC",
@@ -23,6 +25,7 @@
     "faker": "^5.5.3",
     "file-type": "^18.7.0",
     "firebase-admin": "^11.11.0",
+    "jsdoc": "^4.0.2",
     "jsonwebtoken": "^9.0.2",
     "mime": "^4.0.0",
     "moment": "^2.29.4",

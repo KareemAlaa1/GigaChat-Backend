@@ -21,6 +21,18 @@ const signToken = (id) =>
 const defaultImage =
   'https://cdn.discordapp.com/attachments/972107703973457930/1184983163399852032/image.png?ex=658df492&is=657b7f92&hm=d17faa50f2cfb592762e714603e9ba875676855e2be97902ad752306dbc24a42&';
 
+
+/**
+ * Generates a unique username based on the provided nickname.
+ *
+ * @param {string} nickname - The nickname used as the base for generating the username.
+ * @returns {Promise<string>} A promise that resolves with the generated unique username.
+ * @throws {Error} Throws an error if there is an issue during the username generation process.
+ *
+ * @example
+ * const username = await generateUserName("john_doe");
+ * console.log(username); // Output: john_doe or john_doe-123 (if john_doe is taken)
+ */
 const generateUserName = async (nickname) => {
   // Generate a unique username based o/api/user/resendConfirmEmailn the nickname
   const baseUsername = nickname.toLowerCase();
