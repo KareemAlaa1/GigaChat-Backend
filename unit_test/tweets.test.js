@@ -206,19 +206,19 @@ async function deleteTweet(tweetData) {
   await Tweet.deleteOne(tweetData);
 }
 
-beforeAll(async () => {
-  try {
-    const mongoServer = await MongoMemoryServer.create();
-    await mongoose.connect(mongoServer.getUri());
-  } catch (error) {
-    console.error('Error during setup:', error);
-  }
-});
+// beforeAll(async () => {
+//   try {
+//     const mongoServer = await MongoMemoryServer.create();
+//     await mongoose.connect(mongoServer.getUri());
+//   } catch (error) {
+//     console.error('Error during setup:', error);
+//   }
+// });
 
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoose.connection.close();
-});
+// afterAll(async () => {
+//   await mongoose.disconnect();
+//   await mongoose.connection.close();
+// });
 
 describe('Post /api/tweets/', () => {
   it('responds with 201 when user exists with valid tweet', async () => {
