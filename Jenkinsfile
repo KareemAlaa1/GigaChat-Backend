@@ -9,14 +9,14 @@ pipeline {
                sh 'npm i'
             }
         }  
-        stage('Test') {  
-            steps {  
-                echo 'Testing'
-            }
-        }
         stage('Build') {  
             steps {  
-                echo 'Building'
+                sh 'npm build'
+            }
+        }
+        stage('Test') {  
+            steps {  
+                sh 'npm run test'
             }
         }
         stage('Deploy') {  
@@ -31,7 +31,7 @@ pipeline {
     }  
     post {   
         success {  
-            echo 'This will run only if successful'  
+            echo 'Everything went smoothly!'  
         }  
         failure {  
             echo 'Failure'
