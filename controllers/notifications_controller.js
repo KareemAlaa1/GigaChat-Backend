@@ -7,7 +7,29 @@ dotenv.config({ path: './config/dev.env' });
 
 const pushNotificationEndpoint = "https://fcm.googleapis.com/fcm/send";
 
+/**
+ * Controller for handling tweet-related operations.
+ * @module controllers/notifications_controller
+ */
 
+/**
+ * Sends a push notification to a user.
+ *
+ * @function pushNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notification - The notification object.
+ * @param {string} notifiedId - The ID of the user to whom the notification is sent.
+ * @param {string} [description] - The description content of the notification (optional).
+ * @returns {Promise<void>} A promise that resolves when the push notification is sent.
+ *
+ * @example
+ * const notification = { /notification information / };
+* const notifiedId = '123';
+* const description = 'New notification received!';
+* await notificationsController.pushNotification(notification, notifiedId, description);
+* __________________________________________________________________________________________
+  */
 async function pushNotification(notification, notifiedId,description) {
   const user = await User.findById(notifiedId);
   const push_token=user.push_token;
@@ -45,6 +67,25 @@ async function pushNotification(notification, notifiedId,description) {
 
 
 
+
+/**
+ * Extracts mentions from a tweet description.
+ *
+ * @function getMentions
+ * @memberof module:controllers/notifications_controller
+ * @param {Object} tweet - The tweet object containing the description.
+ * @param {string} tweet.description - The description of the tweet containing mentions.
+ * @returns {Object} An object containing unique mentions found in the tweet.
+ *
+ * @example
+ * const tweet = {
+ *   description: "Hey, @user1! Check out this tweet mentioning @user2 and @user3."
+ * };
+ * const mentions = notificationsController.getMentions(tweet);
+ * console.log(mentions);
+ * // Output: { user1: true, user2: true, user3: true }
+ * __________________________________________________________________________________________
+ */
 const getMentions=(tweet)=> {
   const mentions = {};
   const words = tweet.description.split(' ');
@@ -59,7 +100,25 @@ exports.getMentions = getMentions;
 
 
 
-
+/**
+ * Adds a message notification for a user.
+ *
+ * @function addMessageNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who sent the message.
+ * @param {Object} notified - The user who receives the message.
+ * @param {string} message - The content of the message.
+ * @returns {Promise<Object>} A promise that resolves with the created notification.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'sender', profileImage: 'sender.jpg' };
+ * const notified = { _id: '456' };
+ * const message = 'Hello!';
+ * const notification = await notificationsController.addMessageNotification(notifier, notified, message);
+ * console.log(notification);
+ * __________________________________________________________________________________________
+ */
 exports.addMessageNotification = async (notifier, notified, message) => {
 
   const notification = await Notification.create({
@@ -75,6 +134,24 @@ exports.addMessageNotification = async (notifier, notified, message) => {
   await pushNotification(notification,notified._id, message);
   return notification
 }
+
+/**
+ * Adds a follow notification for a user.
+ *
+ * @function addFollowNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who started following.
+ * @param {Object} notified - The user who got followed.
+ * @returns {Promise<Object>} A promise that resolves with the created notification.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'follower', profileImage: 'follower.jpg' };
+ * const notified = { _id: '456' };
+ * const notification = await notificationsController.addFollowNotification(notifier, notified);
+ * console.log(notification);
+ * __________________________________________________________________________________________
+ */
 exports.addFollowNotification = async (notifier, notified) => {
   if(notifier._id.toString()==notified._id.toString())
   {
@@ -99,6 +176,24 @@ exports.addFollowNotification = async (notifier, notified) => {
 
 //values: ['like', 'reply', 'mention', 'retweet', 'follow'],
 
+
+/**
+ * Adds a like notification for a tweet.
+ *
+ * @function addLikeNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who liked the tweet.
+ * @param {Object} tweet - The tweet that got liked.
+ * @returns {Promise<Object>} A promise that resolves with the created notification.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'liker', profileImage: 'liker.jpg' };
+ * const tweet = { _id: '789', userId: '456' };
+ * const notification = await notificationsController.addLikeNotification(notifier, tweet);
+ * console.log(notification);
+ * __________________________________________________________________________________________
+ */
 exports.addLikeNotification = async (notifier, tweet) => {
 
   if(notifier._id.toString()===tweet.userId.toString())
@@ -120,6 +215,26 @@ exports.addLikeNotification = async (notifier, tweet) => {
   return notification;
 }
 
+/**
+ * Adds a reply notification for a user's tweet.
+ *
+ * @function addReplyNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who replied to the tweet.
+ * @param {Object} notified - The user who owns the tweet being replied to.
+ * @param {Object} replyId - The ID of the reply.
+ * @returns {Promise<Object>} A promise that resolves with the created notification.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'replier', profileImage: 'replier.jpg' };
+ * const notified = { _id: '456' };
+ * const replyId = { _id: '789' };
+ * const notification = await notificationsController.addReplyNotification(notifier, notified, replyId);
+ * console.log(notification);
+ * __________________________________________________________________________________________
+ */
+
 exports.addReplyNotification = async (notifier, notified, replyId) => {
   if(notifier._id.toString()==notified._id.toString())
   {
@@ -138,6 +253,26 @@ exports.addReplyNotification = async (notifier, notified, replyId) => {
   await pushNotification(notification, notified._id);
   return notification;
 }
+
+/**
+ * Adds a quote notification for a user's tweet.
+ *
+ * @function addQuoteNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who quoted the tweet.
+ * @param {Object} notified - The user who owns the tweet being quoted.
+ * @param {Object} quoteId - The ID of the quoted tweet.
+ * @returns {Promise<Object>} A promise that resolves with the created notification.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'quoter', profileImage: 'quoter.jpg' };
+ * const notified = { _id: '456' };
+ * const quoteId = { _id: '789' };
+ * const notification = await notificationsController.addQuoteNotification(notifier, notified, quoteId);
+ * console.log(notification);
+ * __________________________________________________________________________________________
+ */
 exports.addQuoteNotification = async (notifier, notified, quoteId) => {
   if(notifier._id.toString()==notified._id.toString())
   {
@@ -158,6 +293,27 @@ exports.addQuoteNotification = async (notifier, notified, quoteId) => {
   return notification;
 }
 
+
+
+/**
+ * Adds a retweet notification for a user's tweet.
+ *
+ * @function addRetweetNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who retweeted the tweet.
+ * @param {Object} tweet - The original tweet that got retweeted.
+ * @param {Object} retweet - The retweet information.
+ * @returns {Promise<Object>} A promise that resolves with the created notification.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'retweeter', profileImage: 'retweeter.jpg' };
+ * const tweet = { _id: '456', userId: '789' };
+ * const retweet = { / retweet information / };
+* const notification = await notificationsController.addRetweetNotification(notifier, tweet, retweet);
+* console.log(notification);
+* __________________________________________________________________________________________
+ */
 exports.addRetweetNotification = async (notifier, tweet,retweet) => {
   if(notifier._id.toString()==tweet.userId.toString())
   {
@@ -178,6 +334,23 @@ exports.addRetweetNotification = async (notifier, tweet,retweet) => {
   return notification;
 }
 
+
+/**
+ * Adds a mention notification for users mentioned in a tweet.
+ *
+ * @function addMentionNotification
+ * @memberof module:controllers/notifications_controller
+ * @async
+ * @param {Object} notifier - The user who mentioned others in the tweet.
+ * @param {Object} tweet - The tweet containing mentions.
+ * @returns {Promise<void>} A promise that resolves when all mention notifications are created.
+ *
+ * @example
+ * const notifier = { _id: '123', username: 'mentioner', profileImage: 'mentioner.jpg' };
+ * const tweet = { id: '456', /tweet information with mentions / };
+* await notificationsController.addMentionNotification(notifier, tweet);
+* __________________________________________________________________________________________
+  */
 exports.addMentionNotification = async (notifier, tweet) => {
 
   const mentions = getMentions(tweet);

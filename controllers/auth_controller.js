@@ -13,6 +13,27 @@ const dotenv = require('dotenv');
 const { querystring } = require('@firebase/util');
 dotenv.config({ path: './config/dev.env' });
 
+
+
+/**
+ * Controller for handling auth-related operations.
+ * @module controllers/auth_controller
+ */
+
+/**
+ * Signs a JWT token with the provided user ID.
+ * @category Authentication
+ * @function signToken
+ * @memberof module:controllers/auth_controller
+ * @param {string} id - The user ID to be included in the token payload.
+ * @returns {string} The signed JWT token.
+ *
+ * @example
+ * const userId = '123';
+ * const token = signToken(userId);
+ * // token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyJ9.7BoYfvK3fXVbGzZcxQDE...'
+ * __________________________________________________________________________________________
+ */
 const signToken = (id) =>
   jwt.sign({ id: id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -23,8 +44,9 @@ const defaultImage =
 
 
 /**
- * Generates a unique username based on the provided nickname.
- *
+ * Controller for handling auth-related operations.
+ * @function generateUsername
+ * @memberof module:controllers/auth_controller
  * @param {string} nickname - The nickname used as the base for generating the username.
  * @returns {Promise<string>} A promise that resolves with the generated unique username.
  * @throws {Error} Throws an error if there is an issue during the username generation process.
@@ -32,6 +54,7 @@ const defaultImage =
  * @example
  * const username = await generateUserName("john_doe");
  * console.log(username); // Output: john_doe or john_doe-123 (if john_doe is taken)
+ * __________________________________________________________________________________________
  */
 const generateUserName = async (nickname) => {
   // Generate a unique username based o/api/user/resendConfirmEmailn the nickname
@@ -48,6 +71,26 @@ const generateUserName = async (nickname) => {
   return finalUsername;
 };
 
+
+
+/**
+ * Checks the validity of a JWT token.
+ * @category Authentication
+ * @function checkToken
+ * @memberof module:controllers/auth_controller
+ * @param {string} token - The JWT token to be checked.
+ * @returns {Promise<string|boolean>} A promise that resolves with the user ID if the token is valid, or `false` otherwise.
+ *
+ * @example
+ * const token = '...'; // JWT token
+ * const isValidToken = await checkToken(token);
+ * if (isValidToken) {
+ *   // Token is valid, perform actions with isValidToken
+ * } else {
+ *   // Token is invalid or expired
+ * }
+ * __________________________________________________________________________________________
+ */
 exports.checkToken = async (token) => {
   try {
     // 2) Verification token
@@ -74,6 +117,9 @@ exports.checkToken = async (token) => {
   }
 };
 
+/**
+ * @ignore
+ */
 exports.signUp = catchAsync(async (req, res, next) => {
   // 1) Check data recieved
   const { email, nickname, birthDate } = req.body;
@@ -160,7 +206,9 @@ exports.signUp = catchAsync(async (req, res, next) => {
     );
   }
 });
-
+/**
+ * @ignore
+ */
 exports.login = catchAsync(async (req, res, next) => {
   const { query, password, push_token } = req.body;
 
@@ -218,7 +266,9 @@ exports.login = catchAsync(async (req, res, next) => {
     },
   });
 });
-
+/**
+ * @ignore
+ */
 exports.protect = catchAsync(async (req, res, next) => {
   // 1) Getting token and check of it's there
   // in postman in headers we set key to Authorization and value to "Barer tokenValue"
@@ -268,6 +318,9 @@ exports.protect = catchAsync(async (req, res, next) => {
   next();
 });
 
+/**
+ * @ignore
+ */
 exports.confirmEmail = catchAsync(async (req, res, next) => {
   const { confirmEmailCode, email } = req.body;
   if (!email || !confirmEmailCode) {
@@ -319,6 +372,10 @@ exports.confirmEmail = catchAsync(async (req, res, next) => {
   });
 });
 
+
+/**
+ * @ignore
+ */
 exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
   const { email } = req.body;
   if (!email) {
@@ -367,6 +424,9 @@ exports.resendConfirmEmail = catchAsync(async (req, res, next) => {
   }
 });
 
+/**
+ * @ignore
+ */
 exports.AssignUsername = catchAsync(async (req, res, next) => {
   const { username } = req.body;
   if (!username) {
@@ -426,6 +486,9 @@ exports.AssignUsername = catchAsync(async (req, res, next) => {
   });
 });
 
+/**
+ * @ignore
+ */
 exports.AssignPassword = catchAsync(async (req, res, next) => {
   const { password } = req.body;
   if (!password) {
@@ -489,6 +552,9 @@ exports.AssignPassword = catchAsync(async (req, res, next) => {
     },
   });
 });
+/**
+ * @ignore
+ */
 exports.updateUsername = catchAsync(async (req, res, next) => {
   // 1) check data validity
   const { newUsername } = req.body;
