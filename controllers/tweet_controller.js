@@ -61,10 +61,6 @@ const TweetController = {
             req.body.referredTweetId,
           );
           if (referredTweet) {
-            const updatedTweet = {};
-            updatedTweet.repliesCount = referredTweet.repliesNum + 1;
-            await Tweet.findByIdAndUpdate(referredTweet.id, updatedTweet);
-
             if (referredTweet.type == 'tweet') {
               newTweet = await Tweet.create({
                 userId: req.body.userId,
@@ -127,6 +123,10 @@ const TweetController = {
               await extractHashtags(newTweet);
               await extractMentions(newTweet);
             }
+
+            const updatedTweet = {};
+            updatedTweet.repliesCount = referredTweet.repliesNum + 1;
+            await Tweet.findByIdAndUpdate(referredTweet.id, updatedTweet);
             res.status(201);
             res.json({
               status: 'Tweet Add Success',
@@ -365,6 +365,14 @@ const TweetController = {
               await deleteMentions(tweet);
             }
 
+            if (tweet.type == 'reply') {
+              const referredTweet = await getTweetDatabyId(
+                tweet.referredReplyId,
+              );
+              const updatedTweet = {};
+              updatedTweet.repliesCount = referredTweet.repliesNum - 1;
+              await Tweet.findByIdAndUpdate(referredTweet.id, updatedTweet);
+            }
             res.status(204).json({
               status: 'Tweet Delete Success',
             });
