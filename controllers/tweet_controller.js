@@ -15,24 +15,92 @@ const {
   getRequiredTweetDatafromTweetObject,
 } = require('./tweet_helper');
 
-// handling hashtags and media
-const TweetController = {
-  addTweet: async (req, res) => {
-    try {
-      // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
-      req.body.userId = req.user._id;
+/**
+Controller for handling user tweets.
+@module controllers/tweetController
+*/
 
-      if (req.body.media == undefined && req.body.description == undefined) {
-        res.status(400);
+
+/**
+ * Add a new tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 400 - Bad Request if no media and no description are provided.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response indicating the status of the tweet addition.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.post('/addTweet', TweetController.addTweet);
+ */
+exports.addTweet = async (req, res) => {
+  try {
+    // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
+    req.body.userId = req.user._id;
+
+    if (req.body.media == undefined && req.body.description == undefined) {
+      res.status(400);
+      res.json({
+        status: 'bad request',
+        message: 'no media and no description',
+      });
+    } else {
+      let newTweet;
+      req.body.createdAt = Date.now();
+      if (req.body.type == 'tweet') {
+        newTweet = await Tweet.create(req.body);
+        let retTweet = {};
+        retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
+        retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
+        await User.findByIdAndUpdate(req.body.userId, {
+          $push: {
+            tweetList: {
+              tweetId: retTweet.id,
+              type: req.body.type,
+              createdAt: Date.now(),
+            },
+          },
+        });
+        let data = retTweet;
+        await notificationController.addMentionNotification(req.user, data);
+        if (req.body.description) {
+          await extractHashtags(newTweet);
+          await extractMentions(newTweet);
+        }
+        res.status(201);
         res.json({
-          status: 'bad request',
-          message: 'no media and no description',
+          status: 'Tweet Add Success',
+          data,
         });
       } else {
-        let newTweet;
-        req.body.createdAt = Date.now();
-        if (req.body.type == 'tweet') {
-          newTweet = await Tweet.create(req.body);
+        const referredTweet = await getTweetDatabyId(
+          req.body.referredTweetId,
+        );
+        if (referredTweet) {
+          if (referredTweet.type == 'tweet') {
+            newTweet = await Tweet.create({
+              userId: req.body.userId,
+              description: req.body.description,
+              media: req.body.media,
+              type: req.body.type,
+              referredTweetId: referredTweet.id,
+              referredReplyId: referredTweet.id,
+              createdAt: Date.now(),
+            });
+          } else {
+            newTweet = await Tweet.create({
+              userId: req.body.userId,
+              description: req.body.description,
+              media: req.body.media,
+              type: req.body.type,
+              referredTweetId: referredTweet.referredTweetId,
+              referredReplyId: referredTweet.id,
+              createdAt: Date.now(),
+            });
+          }
+
           let retTweet = {};
           retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
           retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
@@ -46,108 +114,73 @@ const TweetController = {
             },
           });
           let data = retTweet;
+          let notification;
+          //region addNotification
+          if (data.type != 'tweet') {
+            if (data.type == 'reply') {
+              notification =
+                await notificationController.addReplyNotification(
+                  req.user,
+                  referredTweet.userId,
+                  data.referredReplyId,
+                );
+            } else if (data.type == 'quote') {
+              console.log(req.user);
+
+              notification =
+                await notificationController.addQuoteNotification(
+                  req.user,
+                  referredTweet.userId,
+                  data.referredReplyId,
+                );
+            }
+          }
           await notificationController.addMentionNotification(req.user, data);
+          //endregion
           if (req.body.description) {
             await extractHashtags(newTweet);
             await extractMentions(newTweet);
           }
+
+          const updatedTweet = {};
+          updatedTweet.repliesCount = referredTweet.repliesNum + 1;
+          await Tweet.findByIdAndUpdate(referredTweet.id, updatedTweet);
           res.status(201);
           res.json({
             status: 'Tweet Add Success',
             data,
           });
         } else {
-          const referredTweet = await getTweetDatabyId(
-            req.body.referredTweetId,
-          );
-          if (referredTweet) {
-            if (referredTweet.type == 'tweet') {
-              newTweet = await Tweet.create({
-                userId: req.body.userId,
-                description: req.body.description,
-                media: req.body.media,
-                type: req.body.type,
-                referredTweetId: referredTweet.id,
-                referredReplyId: referredTweet.id,
-                createdAt: Date.now(),
-              });
-            } else {
-              newTweet = await Tweet.create({
-                userId: req.body.userId,
-                description: req.body.description,
-                media: req.body.media,
-                type: req.body.type,
-                referredTweetId: referredTweet.referredTweetId,
-                referredReplyId: referredTweet.id,
-                createdAt: Date.now(),
-              });
-            }
-
-            let retTweet = {};
-            retTweet = await getRequiredTweetDatafromTweetObject(newTweet._doc);
-            retTweet.tweet_owner = await getUserDatabyId(req.body.userId);
-            await User.findByIdAndUpdate(req.body.userId, {
-              $push: {
-                tweetList: {
-                  tweetId: retTweet.id,
-                  type: req.body.type,
-                  createdAt: Date.now(),
-                },
-              },
-            });
-            let data = retTweet;
-            let notification;
-            //region addNotification
-            if (data.type != 'tweet') {
-              if (data.type == 'reply') {
-                notification =
-                  await notificationController.addReplyNotification(
-                    req.user,
-                    referredTweet.userId,
-                    data.referredReplyId,
-                  );
-              } else if (data.type == 'quote') {
-                console.log(req.user);
-
-                notification =
-                  await notificationController.addQuoteNotification(
-                    req.user,
-                    referredTweet.userId,
-                    data.referredReplyId,
-                  );
-              }
-            }
-            await notificationController.addMentionNotification(req.user, data);
-            //endregion
-            if (req.body.description) {
-              await extractHashtags(newTweet);
-              await extractMentions(newTweet);
-            }
-
-            const updatedTweet = {};
-            updatedTweet.repliesCount = referredTweet.repliesNum + 1;
-            await Tweet.findByIdAndUpdate(referredTweet.id, updatedTweet);
-            res.status(201);
-            res.json({
-              status: 'Tweet Add Success',
-              data,
-            });
-          } else {
-            res.status(400);
-            res.json({
-              status: 'bad request',
-              message: 'no referred Tweet Id',
-            });
-          }
+          res.status(400);
+          res.json({
+            status: 'bad request',
+            message: 'no referred Tweet Id',
+          });
         }
       }
-    } catch (err) {
-      console.log(err);
-      res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
 
-  retweetTweet: async (req, res) => {
+/**
+   * Retweet a tweet.
+   * @async
+   * @function
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @throws {Object} 404 - Not Found if the tweet or tweet owner is not found.
+   * @throws {Object} 400 - Bad Request if the user has already retweeted this tweet.
+   * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+   * @returns {Object} - JSON response indicating the status of the retweet.
+   *
+   * @example
+   * // Example usage in Express route
+   * app.post('/retweet/:tweetId', TweetController.retweetTweet);
+   */
+exports.retweetTweet = async (req, res) => {
     try {
       const currUser = req.user;
       const tweet = await Tweet.findById(req.params.tweetId);
@@ -202,9 +235,24 @@ const TweetController = {
       console.log(err);
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  undoRetweetTweet: async (req, res) => {
+/**
+ * Undo a retweet of a tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the tweet or tweet owner is not found.
+ * @throws {Object} 400 - Bad Request if the user has not retweeted this tweet.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response indicating the status of the undo retweet operation.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.post('/undoRetweet/:tweetId', TweetController.undoRetweetTweet);
+ */
+exports.undoRetweetTweet = async (req, res) => {
     try {
       const currUser = req.user;
       const tweet = await Tweet.findById(req.params.tweetId);
@@ -245,9 +293,23 @@ const TweetController = {
     } catch (err) {
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  getTweet: async (req, res) => {
+/**
+ * Get details of a specific tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the tweet or tweet owner is not found.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response containing the details of the requested tweet.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.get('/getTweet/:tweetId', TweetController.getTweet);
+ */
+exports.getTweet = async (req, res) => {
     try {
       const tweet = await getTweetDatabyId(req.params.tweetId);
       if (tweet === null) {
@@ -313,9 +375,24 @@ const TweetController = {
     } catch (err) {
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  deleteTweet: async (req, res) => {
+/**
+ * Delete a tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 401 - Unauthorized if the current user is not authorized to delete the tweet.
+ * @throws {Object} 404 - Not Found if the tweet, tweet owner, or referred reply tweet is not found.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response indicating the success of the tweet deletion.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.delete('/deleteTweet/:tweetId', TweetController.deleteTweet);
+ */
+exports.deleteTweet = async (req, res) => {
     try {
       // req.body.userId = '65493dfd0e3d2798726f8f5b'; // will be updated according to auth
       req.body.userId = req.user._id;
@@ -389,9 +466,23 @@ const TweetController = {
       console.log(err);
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  getTweetLikers: async (req, res) => {
+/**
+ * Get the likers of a tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the tweet, tweet owner, or likers are not found, or if the tweet is deleted.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response containing the likers of the tweet.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.get('/getTweetLikers/:tweetId', TweetController.getTweetLikers);
+ */
+exports.getTweetLikers = async (req, res) => {
     try {
       const tweet = await Tweet.findById(req.params.tweetId).select(
         'likersList userId isDeleted',
@@ -480,9 +571,23 @@ const TweetController = {
     } catch (err) {
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  getTweetRetweeters: async (req, res) => {
+/**
+ * Get the retweeters of a tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the tweet, tweet owner, or retweeters are not found, or if the tweet is deleted.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response containing the retweeters of the tweet.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.get('/getTweetRetweeters/:tweetId', TweetController.getTweetRetweeters);
+ */
+exports.getTweetRetweeters = async (req, res) => {
     try {
       const tweet = await Tweet.findById(req.params.tweetId).select(
         'retweetList userId isDeleted',
@@ -571,9 +676,23 @@ const TweetController = {
     } catch (err) {
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  getTweetReplies: async (req, res) => {
+/**
+ * Get replies of a tweet, including replies of replies.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the tweet, tweet owner, or replies are not found, or if the tweet is deleted.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response containing the replies of the tweet.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.get('/getTweetReplies/:tweetId', TweetController.getTweetReplies);
+ */
+exports.getTweetReplies = async (req, res) => {
     try {
       const tweet = await Tweet.findById(req.params.tweetId).select(
         'userId isDeleted',
@@ -825,9 +944,23 @@ const TweetController = {
       console.log(err);
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
+};
 
-  getTweetOwner: async (req, res) => {
+/**
+ * Get the owner of a tweet.
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the tweet or tweet owner is not found.
+ * @throws {Object} 500 - Internal Server Error if an unexpected error occurs.
+ * @returns {Object} - JSON response containing the owner of the tweet.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.get('/getTweetOwner/:tweetId', TweetController.getTweetOwner);
+ */
+exports.getTweetOwner = async (req, res) => {
     try {
       const tweet = await getTweetDatabyId(req.params.tweetId);
       if (tweet === null) {
@@ -856,7 +989,4 @@ const TweetController = {
     } catch (err) {
       res.status(500).send({ error: 'Internal Server Error' });
     }
-  },
 };
-
-module.exports = TweetController;

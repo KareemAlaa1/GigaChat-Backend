@@ -1,11 +1,17 @@
 const { searchUser, searchTweets, searchHashtag } = require('./search_helper');
 const { paginate } = require('../utils/api_features');
+
+
+/**
+Controller for handling search. 
+@module controllers/searchController
+*/
+
 /**
  * This function performs a search based on the type specified in the request query.
  * It can search for words in tweets, search for users with usernames or with part of their username, or search for hashtags.
  *
  * @async
- * @exports
  * @function search
  * @param {Object} req - The request object from the client. It should contain the type of search and the search word in the query.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (search results) if successful.
@@ -16,6 +22,7 @@ const { paginate } = require('../utils/api_features');
  * @throws Will also throw an error if there is an issue with the database query.
  * @returns {Object} res - The response object containing the status of the request and the data (search results) if successful.
  */
+
 exports.search = async (req, res, next) => {
   try {
     let result;

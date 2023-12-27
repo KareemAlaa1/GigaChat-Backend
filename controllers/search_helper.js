@@ -14,8 +14,8 @@ const escape = (string) =>
  * This function retrieves users that match the search word. It can match users fully or partially.
  * The users are ranked based on whether the user itself matches the query, whether the users follow the current user, whether the current user follows the users, the number of followers the users have, and the number of users the users follow.
  *
- * @async
- * @exports
+ * @async\
+ * @memberof module:controllers/searchHelper
  * @function searchUser
  * @param {Object} req - The request object from the client. It should contain the user's ID and the search word.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (users) if successful.
@@ -82,7 +82,7 @@ exports.searchUser = async (req, res, next) => {
  * The hashtags are ranked based on their popularity (how often they are used).
  *
  * @async
- * @exports
+ * @memberof module:controllers/searchHelper
  * @function searchHashtag
  * @param {Object} req - The request object from the client. It should contain the search word.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (hashtags) if successful.
@@ -115,8 +115,8 @@ exports.searchHashtag = async (req, res, next) => {
  * The tweets are ranked based on their creation time, number of likes, number of replies, and number of reposts.
  *
  * @async
- * @exports
  * @function searchTweets
+ * @memberof module:controllers/searchHelper
  * @param {Object} req - The request object from the client. It should contain the search word.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (tweets) if successful.
  * @param {Function} next - The next middleware function in the application’s request-response cycle.

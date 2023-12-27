@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 const User = require('../models/user_model');
 const { paginate } = require('../utils/api_features');
+
+
+/**
+Controller for handling hompage. 
+@module controllers/hompageController
+*/
+
+
 /**
  * This function retrieves the latest tweets of a user within the last 2 hours.
  * It does not retrieve the tweets of muted users.
@@ -125,7 +133,6 @@ const getLatestUserTweet = async (reqUser) => {
  * The function also applies pagination to the results.
  *
  * @async
- * @exports
  * @function getFollowingTweets
  * @param {Object} req - The request object from the client. It should contain the user's ID.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (tweets) if successful.
@@ -318,7 +325,6 @@ exports.getFollowingTweets = async (req, res) => {
  * This function retrieves all tweets where the user is mentioned.
  *
  * @async
- * @exports
  * @function getMentionTweets
  * @param {Object} req - The request object from the client. It should contain the user's ID.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (tweets) if successful.

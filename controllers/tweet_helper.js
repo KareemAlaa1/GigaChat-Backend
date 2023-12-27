@@ -2,6 +2,19 @@ const mongoose = require('mongoose');
 const Tweet = require('../models/tweet_model');
 const User = require('../models/user_model');
 
+/**
+ * Get user data by user ID.
+ * @async
+ * @memberof module:controllers/tweetController
+ * @function
+ * @param {string} id - User ID.
+ * @throws {Object} - Returns null if the user is not found or is deleted.
+ * @returns {Object} - User data object containing relevant information.
+ *
+ * @example
+ * // Example usage
+ * const userData = await getUserDatabyId('123456789012345678901234');
+ */
 exports.getUserDatabyId = async (id) => {
   const user = await User.aggregate([
     {
@@ -42,6 +55,19 @@ exports.getUserDatabyId = async (id) => {
   return userData;
 };
 
+/**
+ * Get tweet data by tweet ID.
+ * @async
+ * @memberof module:controllers/tweetController
+ * @function
+ * @param {string} id - Tweet ID.
+ * @throws {Object} - Returns null if the tweet is not found or is deleted.
+ * @returns {Object} - Tweet data object containing relevant information.
+ *
+ * @example
+ * // Example usage
+ * const tweetData = await getTweetDatabyId('123456789012345678901234');
+ */
 exports.getTweetDatabyId = async (id) => {
   // const tweet = await Tweet.findById(id);
   const tweet = await Tweet.aggregate([
@@ -96,6 +122,18 @@ exports.getTweetDatabyId = async (id) => {
   tweetData.createdAt = tweet[0].createdAt;
   return tweetData;
 };
+
+/**
+ * Extract required tweet data from a tweet object.
+ * @async
+ * @memberof module:controllers/tweetController
+ * @function
+ * @param {Object} tweet - Tweet object.
+ * @returns {Object} - Tweet data object containing essential information.
+ *
+ * @throws {Error} - Throws an error if the tweet object is malformed or missing required fields.
+ *
+ */
 
 exports.getRequiredTweetDatafromTweetObject = async (tweet) => {
   const tweetData = {};

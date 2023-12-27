@@ -9,7 +9,7 @@ const { paginate } = require('../utils/api_features');
  * If the current user and the specified user have not blocked each other, the function retrieves the tweets of the specified user.
  *
  * @async
- * @exports
+ * @memberof module:controllers/userController
  * @function getUserTweets
  * @param {Object} req - The request object from the client. It should contain the user's ID and the username of the user whose tweets are to be retrieved.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (tweets) if successful.
@@ -159,7 +159,7 @@ exports.getUserTweets = async (req, res) => {
  * If the current user and the specified user have not blocked each other, the function retrieves the tweets that the specified user has liked.
  *
  * @async
- * @exports
+ * @memberof module:controllers/userController
  * @function getUserLikedTweets
  * @param {Object} req - The request object from the client. It should contain the user's ID and the username of the user whose liked tweets are to be retrieved.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (tweets) if successful.

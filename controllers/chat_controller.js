@@ -5,7 +5,29 @@ const User = require('../models/user_model');
 
 const { paginate } = require('../utils/api_features');
 
+/**
+Controller for handling chats.
+@module controllers/chats
+*/
 
+
+
+/**
+ * Get messages between the currently authenticated user and another user.
+ * @memberof module:controllers/userController
+ * 
+ * @async
+ * @function
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @throws {Object} 404 - Not Found if the specified user doesn't exist or the user tries to talk to themselves.
+ * @throws {Object} 500 - Internal Server Error for unexpected errors during the message retrieval process.
+ * @returns {Object} - JSON response containing the messages between the two users.
+ *
+ * @example
+ * // Example usage in Express route
+ * app.get('/api/user/chat/{userId}', getMessages);
+ */
 exports.getMessages = async (req, res) => {
   try {
     const recieverUser = await User.findById(req.params.userId).select('_id');
@@ -151,19 +173,20 @@ exports.getMessages = async (req, res) => {
   }
 };
 
+
 /**
- * This function retrieves all conversations of a specific user.
- * It checks if the current user has blocked the other user in the conversation or if the other user has blocked the current user.
- * If the current user and the other user have not blocked each other, the function retrieves the conversation.
- *
+ * Retrieve all conversations for the authenticated user, including details about chat members and the last message.
  * @async
- * @exports
- * @function getAllConversations
- * @param {Object} req - The request object from the client. It should contain the user's ID.
- * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (conversations) if successful.
- * @throws Will throw an error if the specified user is not found or if the specified user has no conversations.
- * @throws Will also throw an error if there is an issue with the database query.
- * @returns {Object} res - The response object containing the status of the request and the data (conversations) if successful.
+ * @function
+ * @param {Object} req - Express request object containing user information.
+ * @param {Object} res - Express response object to send the result.
+ * @returns {Object} - Response object with status and conversation data.
+ *
+ * @throws {Error} - Throws an error if there's an issue with retrieving or processing the conversations.
+ *
+ * @example
+ * // Example usage in an Express route
+ * app.get('/conversations', getAllConversations);
  */
 exports.getAllConversations = async (req, res) => {
   try {
@@ -263,6 +286,25 @@ exports.getAllConversations = async (req, res) => {
   }
 };
 
+/**
+ * Search messages based on a specific keyword for the authenticated user.
+ * Retrieves messages from conversations that match the provided keyword.
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing query parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Object} - Response object containing the status and data of the searched messages.
+ *
+ * @throws {Error} - Throws an error if there is an issue with the database query or response.
+ *
+ * @example
+ * // Example usage in an Express route
+ * app.get('/search-message', searchMessage);
+ *
+ * @example
+ * // Example query parameters
+ * // /search-message?word=example&count=10&page=1
+ */
 exports.searchMessage = async (req, res) => {
   try {
     const size = parseInt(req.query.count, 10) || 100;
@@ -424,6 +466,27 @@ exports.searchMessage = async (req, res) => {
   }
 };
 
+/**
+ * Retrieve messages from a chat with a specific user after a certain timestamp.
+ * Retrieves messages exchanged between the authenticated user and the specified recipient user
+ * after a certain timestamp. Updates the 'seen' status for messages sent by the recipient
+ * user and not yet seen by the authenticated user.
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing route parameters and query parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Object} - Response object containing the status and data of the retrieved messages.
+ *
+ * @throws {Error} - Throws an error if there is an issue with the database query or response.
+ *
+ * @example
+ * // Example usage in an Express route
+ * app.get('/get-messages/:userId', getMessagesAfterCertainTime);
+ *
+ * @example
+ * // Example query parameters
+ * // /get-messages/recipientUserId?count=10&page=1&time=2023-01-01T00:00:00Z
+ */
 exports.getMessagesAfterCertainTime = async (req, res) => {
   try {
     const recieverUser = await User.findById(req.params.userId).select('_id');
@@ -546,6 +609,27 @@ exports.getMessagesAfterCertainTime = async (req, res) => {
   }
 };
 
+/**
+ * Retrieve messages from a chat with a specific user before a certain timestamp.
+ * Retrieves messages exchanged between the authenticated user and the specified recipient user
+ * before a certain timestamp. Updates the 'seen' status for messages sent by the recipient
+ * user and not yet seen by the authenticated user.
+ * @async
+ * @function
+ * @param {Object} req - Express request object containing route parameters and query parameters.
+ * @param {Object} res - Express response object.
+ * @returns {Object} - Response object containing the status and data of the retrieved messages.
+ *
+ * @throws {Error} - Throws an error if there is an issue with the database query or response.
+ *
+ * @example
+ * // Example usage in an Express route
+ * app.get('/get-messages-before/:userId', getMessagesBeforeCertainTime);
+ *
+ * @example
+ * // Example query parameters
+ * // /get-messages-before/recipientUserId?count=10&page=1&time=2023-01-01T00:00:00Z
+ */
 exports.getMessagesBeforeCertainTime = async (req, res) => {
   try {
     const recieverUser = await User.findById(req.params.userId).select('_id');

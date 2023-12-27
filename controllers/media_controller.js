@@ -2,6 +2,9 @@ const express = require('express');
 const Media = require('../models/media_model');
 const { bucket, uuidv4 } = require('../utils/firebase');
 
+
+
+
 /**
 Controller for handling media.
 @module controllers/media
@@ -76,6 +79,19 @@ exports.addMedia = async (req, res) => {
     }
 }
 
+/**
+ * Check if media with given URLs already exist in the database.
+ * @async
+ * @function
+ * @param {Array} urlList - Array of URLs to check for existence.
+ * @returns {Array} - Array of media objects that match the provided URLs.
+ *
+ * @throws {Error} - Throws an error if the database query fails.
+ *
+ * @example
+ * // Example usage
+ * const existingMedia = await checkExistingUrl(['url1', 'url2']);
+ */
 exports.checkExistingUrl = async ([urlList]) => {
     try {
         const media = await Media.find({ url: { $in: urlList } });
@@ -86,6 +102,19 @@ exports.checkExistingUrl = async ([urlList]) => {
     }
 }
 
+/**
+ * Delete media with the provided URL from both the database and cloud storage.
+ * @async
+ * @function
+ * @param {string} url - URL of the media to be deleted.
+ * @returns {Object} - Object indicating the status of the deletion.
+ *
+ * @throws {Error} - Throws an error if the media deletion process fails.
+ *
+ * @example
+ * // Example usage
+ * const deletionStatus = await deleteMedia('urlToDelete');
+ */
 exports.deleteMedia = async (url) => {
     try {
         if (!url) return {error: "no url provided"};

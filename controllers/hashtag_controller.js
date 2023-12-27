@@ -3,11 +3,16 @@ const Hashtag = require('../models/hashtag_model');
 const { paginate } = require('../utils/api_features');
 const User = require('../models/user_model');
 
+
+/**
+Controller for handling hashtags.
+@module controllers/hashtagController
+*/
+
 /**
  * This function retrieves all hashtags from the database, sorts them in descending order of count, and sends them to the client.
  *
  * @async
- * @exports
  * @function getAllHashtags
  * @param {Object} req - The request object from the client. It should contain the necessary parameters for pagination.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (hashtags) if successful.
@@ -49,7 +54,6 @@ exports.getAllHashtages = async (req, res) => {
  * This function retrieves tweets associated with a specific hashtag.
  *
  * @async
- * @exports
  * @function getHashtagTweets
  * @param {Object} req - The request object from the client. It should contain the user's ID and the trending hashtag as parameters.
  * @param {Object} res - The response object that will be sent to the client. It will contain the status of the request and the data (tweets) if successful.
