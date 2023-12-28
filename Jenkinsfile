@@ -4,11 +4,6 @@ pipeline {
         disableConcurrentBuilds()
     }
     stages {  
-        stage('SCM Checkout') {  
-            steps {  
-               echo "Checkout in Progress ......"
-            }
-        } 
         stage('Install Dependencies') {  
             steps {  
                sh 'npm i'
