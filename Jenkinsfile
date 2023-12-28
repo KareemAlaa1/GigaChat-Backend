@@ -20,12 +20,6 @@ pipeline {
                 // sh 'npm run start:test'
             }
         }
-        stage('E2E') {  
-            steps {  
-                echo 'Running E2E Tests.....'
-                // sh 'npm run start:test'
-            }
-        }
         stage('Deploy') {  
             steps {  
                   sh  'docker compose -f docker-compose-dev.yml build'
