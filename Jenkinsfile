@@ -4,6 +4,11 @@ pipeline {
         disableConcurrentBuilds()
     }
     stages {  
+        stage('SCM Checkout') {  
+            steps {  
+               echo "Checkout in Progress ......"
+            }
+        } 
         stage('Install Dependencies') {  
             steps {  
                sh 'npm i'
@@ -17,6 +22,12 @@ pipeline {
         stage('Test') {  
             steps {  
                 echo 'Running Tests.....'
+                // sh 'npm run start:test'
+            }
+        }
+        stage('E2E') {  
+            steps {  
+                echo 'Running E2E Tests.....'
                 // sh 'npm run start:test'
             }
         }
