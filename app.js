@@ -17,18 +17,6 @@ const passportSetup = require('./google-passport');
 const passport = require('passport');
 
 const mongoose = require('mongoose');
-if (!process.argv.includes('--dev')) {
-  const DB = 'mongodb://127.0.0.1:27017/GigaChatUnitTest';
-  mongoose
-    .connect(DB, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    .then(() => console.log('DB connection successful!'))
-    .catch((error) => {
-      console.error('Error connecting to the database:', error);
-    });
-}
 if (process.argv.includes('--dev')) {
   try {
     require('./app_server');
